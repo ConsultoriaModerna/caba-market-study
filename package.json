@@ -1,0 +1,12 @@
+{
+  "name": "caba-market-study",
+  "version": "1.0.0",
+  "description": "Estudio de mercado inmobiliario interactivo — Casas en CABA, Buenos Aires",
+  "scripts": {
+    "dev": "npx serve public",
+    "build": "echo 'Static site — no build needed'"
+  },
+  "keywords": ["real-estate", "buenos-aires", "caba", "market-study"],
+  "author": "Nico <produnico@gmail.com>",
+  "license": "MIT"
+}
