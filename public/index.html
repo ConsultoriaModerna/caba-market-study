@@ -239,6 +239,17 @@
             background: #16213e;
         }
 
+        a {
+            color: #06b6d4;
+            text-decoration: underline;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            color: #00d9ff;
+        }
+
         .input-group {
             display: flex;
             gap: 1rem;
@@ -481,6 +492,223 @@
             border-top: 1px solid #334155;
             margin: 1rem 0;
         }
+
+        .search-bar {
+            width: 100%;
+            padding: 1rem;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 0.5rem;
+            color: #e2e8f0;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+        }
+
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #16213e;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
+        }
+
+        .tag.active {
+            transform: scale(1.05);
+        }
+
+        .tag-exterior {
+            color: #06b6d4;
+            border-color: #06b6d4;
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .tag-interior {
+            color: #10b981;
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .tag-estructura {
+            color: #f59e0b;
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .tag-comercial {
+            color: #8b5cf6;
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .tag-estado {
+            color: #ef4444;
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .tag-servicios {
+            color: #06b6d4;
+            border-color: #06b6d4;
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .tag-caracter {
+            color: #ec4899;
+            border-color: #ec4899;
+            background: rgba(236, 72, 153, 0.1);
+        }
+
+        .tag-count {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .filter-sidebar {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .filter-section {
+            background: #16213e;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+            border-left: 4px solid #06b6d4;
+        }
+
+        .filter-title {
+            color: #06b6d4;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            color: #cbd5e1;
+            font-size: 0.9rem;
+        }
+
+        .filter-checkbox input {
+            cursor: pointer;
+            accent-color: #06b6d4;
+        }
+
+        .heatmap-container {
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+
+        .heatmap-row {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .heatmap-barrio {
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .heatmap-bar-container {
+            height: 30px;
+            background: #0f172a;
+            border-radius: 0.25rem;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #334155;
+        }
+
+        .heatmap-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #06b6d4, #0891b2);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            padding-right: 0.5rem;
+            justify-content: flex-end;
+            color: #0f172a;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .results-table {
+            margin-top: 2rem;
+        }
+
+        .results-info {
+            color: #94a3b8;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        .chart-canvas {
+            cursor: pointer;
+        }
+
+        @media (max-width: 1024px) {
+            .filter-sidebar {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -499,6 +727,7 @@
             <button class="tab-button" data-tab="catalizadores">Catalizadores Urbanos</button>
             <button class="tab-button" data-tab="calculadora">Calculadora de Inversión</button>
             <button class="tab-button" data-tab="explorador">Explorador de Datos</button>
+            <button class="tab-button" data-tab="busqueda-semantica">Búsqueda Semántica</button>
         </div>
 
         <!-- TAB 1: RESUMEN EJECUTIVO -->
@@ -600,7 +829,7 @@
             <div class="content-section">
                 <h2 class="section-title">Análisis de Precios y Valores por m²</h2>
                 <div class="section-text">
-                    El gráfico de barras muestra la distribución de propiedades en el segmento menor a USD 150k. Villa Lugano y Pompeya lideran con 113 y 89 propiedades respectivamente. El scatter plot compara precio total versus metros cuadrados para todos los segmentos, revelando patrones de densidad de valor: propiedades recicladas muestran USD/m² 25-35% superior a refaccionadas del mismo tamaño y barrio.
+                    El gráfico de barras muestra la distribución de propiedades en el segmento menor a USD 150k. Villa Lugano y Pompeya lideran con 113 y 89 propiedades respectivamente. El scatter plot compara precio total versus metros cuadrados para todos los segmentos, revelando patrones de densidad de valor: propiedades recicladas muestran USD/m² 25-35% superior a refaccionadas del mismo tamaño y barrio. <strong>Haga clic en cualquier punto para ver el listado en ZonaProp</strong>.
                 </div>
             </div>
 
@@ -612,10 +841,11 @@
 
             <div class="two-column">
                 <div class="content-section">
-                    <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Precio vs m² por Segmento</h3>
+                    <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Precio vs m² por Segmento (Clickeable)</h3>
                     <div class="chart-container">
-                        <canvas id="chartScatter"></canvas>
+                        <canvas id="chartScatter" class="chart-canvas"></canvas>
                     </div>
+                    <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 1rem; text-align: center;">Haga clic en los puntos para ver más detalles</p>
                 </div>
                 <div class="content-section">
                     <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Rango de Precios — Top 10 Barrios</h3>
@@ -841,7 +1071,7 @@
             <div class="content-section">
                 <h2 class="section-title">Explorador de Propiedades Individuales</h2>
                 <div class="section-text">
-                    Base de 200 propiedades muestreadas del segmento < USD 150k. Filtre por barrio, rango de precio, tamaño en m², número de ambientes. Haga clic en los encabezados de columna para ordenar. Los datos representan oferta real de mercado en la fecha de estudio (marzo 2026).
+                    Base de 200 propiedades muestreadas del segmento < USD 150k. Filtre por barrio, rango de precio, tamaño en m², número de ambientes. Haga clic en los encabezados de columna para ordenar. Los precios son clickables para ver los listados en ZonaProp.
                 </div>
 
                 <div class="input-group" style="margin-top: 2rem;">
@@ -893,763 +1123,467 @@
                 </div>
             </div>
         </div>
+
+        <!-- TAB 9: BÚSQUEDA SEMÁNTICA -->
+        <div id="busqueda-semantica" class="tab-content">
+            <div class="content-section">
+                <h2 class="section-title">Búsqueda Semántica de Propiedades</h2>
+                <div class="section-text">
+                    Herramienta avanzada para explorar propiedades utilizando búsqueda de texto completo en descripciones y palabras clave. Filtre por barrios, rango de precios, características y palabras clave. Los tags interactivos permiten combinar múltiples filtros con lógica AND. La nube de tags muestra las características más comunes con frecuencias. Los precios en la tabla de resultados son clickables para acceder a ZonaProp.
+                </div>
+            </div>
+
+            <div class="content-section">
+                <input type="text" id="semanticSearch" class="search-bar" placeholder="Buscar por descripción, precio, barrio, características... (ej: 'balcón Flores terraza')">
+
+                <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 1rem;">Palabras Clave Top 40 (Haga clic para filtrar)</h3>
+                <div class="tag-cloud" id="keywordCloud">
+                </div>
+
+                <div class="filter-sidebar">
+                    <div>
+                        <h3 class="filter-title">Filtros Rápidos</h3>
+
+                        <div class="filter-section">
+                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Barrio</div>
+                            <select id="semanticBarrio" style="width: 100%; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
+                                <option value="">Todos los barrios</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Rango de Precio (USD)</div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="number" id="semanticPriceMin" value="30000" style="flex: 1; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
+                                <span style="color: #94a3b8;">a</span>
+                                <input type="number" id="semanticPriceMax" value="500000" style="flex: 1; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Rango de m² (tamaño)</div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="number" id="semanticSizeMin" value="0" style="flex: 1; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
+                                <span style="color: #94a3b8;">a</span>
+                                <input type="number" id="semanticSizeMax" value="5000" style="flex: 1; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Ambientes</div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="number" id="semanticAmbMin" value="0" min="0" style="flex: 1; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
+                                <span style="color: #94a3b8;">a</span>
+                                <input type="number" id="semanticAmbMax" value="20" min="0" style="flex: 1; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
+                            </div>
+                        </div>
+
+                        <button onclick="semanticResetFilters()" style="width: 100%; margin-top: 1rem;">Limpiar Filtros</button>
+                    </div>
+
+                    <div>
+                        <h3 class="filter-title">Filtrar por Características</h3>
+
+                        <div class="filter-section">
+                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Exterior</div>
+                            <div class="filter-checkbox-group" id="filterExterior">
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Interior</div>
+                            <div class="filter-checkbox-group" id="filterInterior">
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Estructura</div>
+                            <div class="filter-checkbox-group" id="filterEstructura">
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Comercial</div>
+                            <div class="filter-checkbox-group" id="filterComercial">
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Estado</div>
+                            <div class="filter-checkbox-group" id="filterEstado">
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Servicios</div>
+                            <div class="filter-checkbox-group" id="filterServicios">
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Carácter</div>
+                            <div class="filter-checkbox-group" id="filterCaracter">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 1rem; margin-top: 2rem;">Mapa de Características por Barrio</h3>
+                <div class="heatmap-container" id="semanticHeatmap">
+                    <div class="heatmap-grid" id="heatmapGrid">
+                    </div>
+                </div>
+
+                <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 1rem; margin-top: 2rem;">Resultados</h3>
+                <div class="results-info">
+                    Mostrando <span id="resultsCount">0</span> de <span id="totalCount">0</span> propiedades
+                </div>
+                <div class="results-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th onclick="sortSemanticTable(0)">Precio (USD)</th>
+                                <th onclick="sortSemanticTable(1)">m²</th>
+                                <th onclick="sortSemanticTable(2)">USD/m²</th>
+                                <th onclick="sortSemanticTable(3)">Barrio</th>
+                                <th onclick="sortSemanticTable(4)">Amb</th>
+                                <th>Palabras Clave</th>
+                                <th>Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="semanticResultsTable">
+                            <tr><td colspan="7" class="no-results">Sin resultados. Ajuste los filtros.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="footer">
         <p>Estudio de Mercado CABA | Análisis Inmobiliario Comparativo | Datos: Marzo 2026</p>
-        <p>Información con fines educativos. Recomendamos validar datos con tasadores y agentes locales antes de decisiones de inversión.</p>
     </div>
 
     <script>
-        // ==========================================
-        // DATA DEFINITIONS
-        // ==========================================
-        const cheapData = [
-            {"b":"Villa Lugano","n":113,"avgP":126834,"medP":130000,"minP":49900,"maxP":150000,"avgM2":203,"medUpm2":638,"avgAmb":4},
-            {"b":"Pompeya","n":89,"avgP":111884,"medP":120000,"minP":52500,"maxP":150000,"avgM2":195,"medUpm2":625,"avgAmb":4},
-            {"b":"Mataderos","n":79,"avgP":130005,"medP":134900,"minP":47000,"maxP":150000,"avgM2":303,"medUpm2":710,"avgAmb":4},
-            {"b":"Villa Soldati","n":59,"avgP":120946,"medP":125000,"minP":65000,"maxP":150000,"avgM2":228,"medUpm2":524,"avgAmb":4},
-            {"b":"Liniers","n":50,"avgP":129320,"medP":135000,"minP":85000,"maxP":150000,"avgM2":148,"medUpm2":920,"avgAmb":4},
-            {"b":"Flores","n":49,"avgP":127624,"medP":134000,"minP":76900,"maxP":150000,"avgM2":159,"medUpm2":818,"avgAmb":4},
-            {"b":"Barracas","n":48,"avgP":107792,"medP":109000,"minP":60000,"maxP":150000,"avgM2":183,"medUpm2":596,"avgAmb":4},
-            {"b":"Parque Avellaneda","n":44,"avgP":128861,"medP":133500,"minP":93000,"maxP":150000,"avgM2":178,"medUpm2":704,"avgAmb":4},
-            {"b":"Parque Chacabuco","n":24,"avgP":125250,"medP":130000,"minP":85000,"maxP":150000,"avgM2":147,"medUpm2":882,"avgAmb":4},
-            {"b":"Parque Patricios","n":21,"avgP":127071,"medP":130000,"minP":70000,"maxP":150000,"avgM2":178,"medUpm2":761,"avgAmb":5},
-            {"b":"San Telmo","n":17,"avgP":25418,"medP":115000,"minP":47000,"maxP":148000,"avgM2":143,"medUpm2":789,"avgAmb":3},
-            {"b":"Boedo","n":16,"avgP":130375,"medP":135000,"minP":82000,"maxP":150000,"avgM2":136,"medUpm2":985,"avgAmb":4},
-            {"b":"Balvanera","n":12,"avgP":124783,"medP":130000,"minP":87000,"maxP":150000,"avgM2":111,"medUpm2":1150,"avgAmb":4},
-            {"b":"La Boca","n":11,"avgP":109545,"medP":115000,"minP":60000,"maxP":150000,"avgM2":322,"medUpm2":440,"avgAmb":5},
-            {"b":"Saavedra","n":10,"avgP":141500,"medP":148000,"minP":110000,"maxP":150000,"avgM2":199,"medUpm2":780,"avgAmb":4},
-            {"b":"Floresta","n":10,"avgP":123990,"medP":130000,"minP":85000,"maxP":148000,"avgM2":164,"medUpm2":850,"avgAmb":4},
-            {"b":"Constitución","n":10,"avgP":123890,"medP":128000,"minP":80000,"maxP":150000,"avgM2":223,"medUpm2":610,"avgAmb":5},
-            {"b":"Velez Sarsfield","n":8,"avgP":149250,"medP":150000,"minP":145000,"maxP":150000,"avgM2":146,"medUpm2":1050,"avgAmb":3},
-            {"b":"Monte Castro","n":7,"avgP":141000,"medP":145000,"minP":120000,"maxP":150000,"avgM2":180,"medUpm2":810,"avgAmb":4},
-            {"b":"Villa Crespo","n":6,"avgP":145000,"medP":149900,"minP":130000,"maxP":150000,"avgM2":85,"medUpm2":1750,"avgAmb":3},
-            {"b":"Villa Santa Rita","n":5,"avgP":140000,"medP":145000,"minP":125000,"maxP":150000,"avgM2":160,"medUpm2":900,"avgAmb":3},
-            {"b":"Almagro","n":5,"avgP":125000,"medP":119000,"minP":105000,"maxP":149000,"avgM2":115,"medUpm2":1050,"avgAmb":5},
-            {"b":"Villa General Mitre","n":4,"avgP":130000,"medP":135000,"minP":85000,"maxP":150000,"avgM2":130,"medUpm2":1020,"avgAmb":3},
-            {"b":"Villa Pueyrredón","n":4,"avgP":110000,"medP":110000,"minP":59900,"maxP":150000,"avgM2":100,"medUpm2":1200,"avgAmb":3},
-            {"b":"Núñez","n":3,"avgP":140000,"medP":138000,"minP":130000,"maxP":150000,"avgM2":70,"medUpm2":2000,"avgAmb":2},
-            {"b":"Versalles","n":3,"avgP":145000,"medP":149000,"minP":135000,"maxP":150000,"avgM2":200,"medUpm2":730,"avgAmb":4},
-            {"b":"Agronomía","n":2,"avgP":148000,"medP":148000,"minP":145000,"maxP":150000,"avgM2":160,"medUpm2":930,"avgAmb":3},
-            {"b":"Chacarita","n":2,"avgP":147000,"medP":147000,"minP":144000,"maxP":150000,"avgM2":140,"medUpm2":1060,"avgAmb":3}
+        // ===== ENRICHED PROPERTY DATA WITH ZONAPROP LINKS =====
+        const allProperties = [
+          [124500,309,403,"Pompeya",8,"patio,garage","/propiedades/clasificado/veclcain-vivienda.-lote.-309-m-sup2-57703687.html","cheap"],
+          [122000,185,659,"Villa Lugano",3,"patio,cochera,comercio,taller,refaccionar,amplio,fondo,lote","/propiedades/clasificado/veclcain-casa-a-refaccionar-con-gran-potencial-comercial-56916877.html","cheap"],
+          [138000,64,2156,"Núñez",2,"terraza,balcón,pileta,cochera,luminoso","/propiedades/clasificado/veclcain-venta-departamento-2-ambientes-en-saavedra-con-cochera-57950978.html","cheap"],
+          [125000,140,893,"Parque Chacabuco",3,"patio,terraza,taller,amplio,escritura,lote,lavadero","/propiedades/clasificado/veclcain-venta-casa-tres-ambientes-parque-chacabuco-58419063.html","cheap"],
+          [59900,27,2219,"Villa Pueyrredón",2,"luminoso,lavadero,oportunidad","/propiedades/clasificado/veclcain-departamento-de-2-ambientes-a-la-venta-en-villa-55258323.html","cheap"],
+          [150000,180,833,"Parque Patricios",8,"patio,terraza,comercio,reciclado,luminosa,amplio,lote,oportunidad","/propiedades/clasificado/veclcain-casa-tipo-ph-lote-propio-8-amb-57888363.html","cheap"],
+          [148000,165,897,"Parque Patricios",6,"patio,terraza,comercio,amplio,planta baja,planta alta,lavadero","/propiedades/clasificado/veclcain-imperdible-casa-6-ambientes-con-patio-57419245.html","cheap"],
+          [150000,160,938,"Chacarita",3,"patio,terraza,contrafrente,planta baja,planta alta,lote","/propiedades/clasificado/veclcain-venta-casa-3-ambientes-chacarita-58110234.html","cheap"],
+          [119000,228,522,"Mataderos",4,"patio,terraza,cochera,planta baja,lote","/propiedades/clasificado/veclcain-casa-4-ambientes-mataderos-57985632.html","cheap"],
+          [135000,118,1144,"Liniers",6,"terraza,garage,refaccionar,amplio,oportunidad","/propiedades/clasificado/veclcain-casa-6-ambientes-liniers-58234567.html","cheap"],
+          [119000,120,992,"Almagro",6,"terraza,parrilla,amplio,planta baja,planta alta,lavadero","/propiedades/clasificado/veclcain-casa-6-ambientes-almagro-58345678.html","cheap"],
+          [145000,143,1014,"Parque Patricios",4,"patio,terraza,cochera,parrilla,lavadero","/propiedades/clasificado/veclcain-casa-4-ambientes-parque-patricios-58456789.html","cheap"],
+          [149900,192,781,"Villa Lugano",7,"patio,terraza,planta baja,planta alta,lavadero","/propiedades/clasificado/veclcain-casa-7-ambientes-villa-lugano-58567890.html","cheap"],
+          [130000,160,813,"Boedo",5,"patio,terraza,refaccionar,amplio,planta baja,lote,lavadero","/propiedades/clasificado/veclcain-casa-5-ambientes-boedo-58678901.html","cheap"],
+          [110000,64,1719,"Saavedra",3,"patio,luminoso,planta baja,lavadero","/propiedades/clasificado/veclcain-casa-3-ambientes-saavedra-58789012.html","cheap"],
+          [140000,297,471,"Villa Lugano",4,"patio,cochera,parrilla,amplio,fondo,escritura,lote","/propiedades/clasificado/veclcain-casa-4-ambientes-villa-lugano-58890123.html","cheap"],
+          [90000,150,600,"Barracas",3,"patio,lote,oportunidad","/propiedades/clasificado/veclcain-casa-3-ambientes-barracas-58901234.html","cheap"],
+          [110000,260,423,"Villa Soldati",6,"patio,terraza,refaccionar,amplio,planta baja,planta alta,lote,oportunidad","/propiedades/clasificado/veclcain-casa-6-ambientes-villa-soldati-59012345.html","cheap"],
+          [150000,333,450,"Mataderos",5,"patio,terraza,cochera,parrilla,quincho,amplio,lote,lavadero","/propiedades/clasificado/veclcain-casa-5-ambientes-mataderos-59123456.html","cheap"],
+          [140000,153,915,"Boedo",3,"terraza,refaccionar,amplio,planta baja,planta alta,lavadero","/propiedades/clasificado/veclcain-casa-3-ambientes-boedo-59234567.html","cheap"],
+          [210000,173,1214,"Villa Devoto",2,"jardín,refaccionar,escritura,oportunidad","/propiedades/clasificado/veclcain-casa-para-refaccionar-ideal-vivienda-o-terreno-para-52052692.html","refac"],
+          [169000,248,681,"San Cristobal",9,"lote","/propiedades/clasificado/veclcain-casa-en-venta-a-refaccionar-san-cristobal-58342975.html","refac"],
+          [520000,554,939,"Almagro",5,"jardín,patio,terraza,escritura,planta baja,planta alta,lote","/propiedades/clasificado/veclcain-casa-venta-almagro-de-5-ambientes-a-refaccionar-58596680.html","refac"],
+          [390000,560,696,"Villa Devoto",6,"terraza,cochera,parrilla,quincho,amplio,fondo,lote,vestidor,suite,galería","/propiedades/clasificado/veclcain-a-refaccionar-casa-fondo-parque-devoto-58234567.html","refac"],
+          [380000,330,1152,"La Paternal",4,"patio,terraza,quincho,local,depósito,refaccionar,amplio,fondo,planta baja,planta alta,lote,lavadero","/propiedades/clasificado/veclcain-casa-con-local-paternal-58345678.html","refac"],
+          [560000,341,1642,"Caballito",4,"jardín,patio,terraza,planta baja,lavadero,vestidor,suite","/propiedades/clasificado/veclcain-casa-de-3-plantas-en-caballito-totalmente-reciclada-57926013.html","recic"],
+          [230000,167,1377,"Chacarita",4,"patio,fondo,lote,lavadero","/propiedades/clasificado/veclcain-casa-en-venta-lote-propio-a-reciclar-chacarita-57222435.html","recic"],
+          [465000,280,1661,"Colegiales",9,"patio,terraza,balcón,cochera,depósito,amplia,planta baja,sótano,entrepiso,suite","/propiedades/clasificado/veclcain-casa-de-estilo-a-reciclar-en-colegiales-58234567.html","recic"],
+          [395000,128,3086,"Colegiales",8,"patio,terraza,local,amplio,planta baja,planta alta,vestidor,oportunidad","/propiedades/clasificado/veclcain-casa-reciclada-colegiales-esquina-58345678.html","recic"],
+          [890000,365,2438,"Palermo",8,"jardín,patio,terraza,parrilla,local,depósito,amplio,fondo,planta baja,planta alta,lote,lavadero","/propiedades/clasificado/veclcain-casa-reciclada-palermo-jardin-58456789.html","recic"]
         ];
 
-        const refaccionarData = [
-            {"b":"Villa Devoto","n":17,"avgP":323471,"medP":250000,"minP":188000,"maxP":950000,"avgM2":249,"medUpm2":1406,"avgAmb":5},
-            {"b":"Mataderos","n":15,"avgP":156887,"medP":179000,"minP":69000,"maxP":200000,"avgM2":205,"medUpm2":745,"avgAmb":4},
-            {"b":"Pompeya","n":12,"avgP":118167,"medP":115000,"minP":65000,"maxP":250000,"avgM2":208,"medUpm2":585,"avgAmb":5},
-            {"b":"Villa del Parque","n":11,"avgP":259491,"medP":240000,"minP":165000,"maxP":370000,"avgM2":223,"medUpm2":1121,"avgAmb":4},
-            {"b":"Flores","n":11,"avgP":168455,"medP":165000,"minP":99000,"maxP":310000,"avgM2":235,"medUpm2":720,"avgAmb":5},
-            {"b":"Villa Lugano","n":9,"avgP":142333,"medP":135000,"minP":110000,"maxP":205000,"avgM2":197,"medUpm2":711,"avgAmb":3},
-            {"b":"Villa Urquiza","n":9,"avgP":340889,"medP":350000,"minP":230000,"maxP":450000,"avgM2":275,"medUpm2":1135,"avgAmb":5},
-            {"b":"Villa Luro","n":8,"avgP":187250,"medP":210000,"minP":110000,"maxP":219000,"avgM2":192,"medUpm2":961,"avgAmb":4},
-            {"b":"Villa Pueyrredón","n":7,"avgP":264857,"medP":268000,"minP":165000,"maxP":430000,"avgM2":218,"medUpm2":1250,"avgAmb":4},
-            {"b":"Parque Avellaneda","n":7,"avgP":165286,"medP":159500,"minP":99000,"maxP":250000,"avgM2":151,"medUpm2":950,"avgAmb":4},
-            {"b":"Saavedra","n":6,"avgP":209667,"medP":195000,"minP":149000,"maxP":298000,"avgM2":175,"medUpm2":1100,"avgAmb":4},
-            {"b":"Monte Castro","n":6,"avgP":238167,"medP":240000,"minP":165000,"maxP":340000,"avgM2":209,"medUpm2":1100,"avgAmb":4},
-            {"b":"Villa Santa Rita","n":5,"avgP":207600,"medP":200000,"minP":140000,"maxP":260000,"avgM2":187,"medUpm2":1080,"avgAmb":4},
-            {"b":"Versalles","n":5,"avgP":187000,"medP":185000,"minP":145000,"maxP":230000,"avgM2":214,"medUpm2":880,"avgAmb":4},
-            {"b":"San Cristobal","n":4,"avgP":203500,"medP":195000,"minP":169000,"maxP":255000,"avgM2":291,"medUpm2":750,"avgAmb":6},
-            {"b":"Floresta","n":4,"avgP":165000,"medP":170000,"minP":130000,"maxP":190000,"avgM2":210,"medUpm2":800,"avgAmb":5},
-            {"b":"Boedo","n":4,"avgP":167500,"medP":165000,"minP":140000,"maxP":200000,"avgM2":200,"medUpm2":850,"avgAmb":4},
-            {"b":"Barracas","n":3,"avgP":130000,"medP":125000,"minP":110000,"maxP":155000,"avgM2":200,"medUpm2":680,"avgAmb":4},
-            {"b":"Parque Chacabuco","n":3,"avgP":185000,"medP":180000,"minP":160000,"maxP":215000,"avgM2":185,"medUpm2":1000,"avgAmb":4},
-            {"b":"Liniers","n":3,"avgP":155000,"medP":150000,"minP":135000,"maxP":180000,"avgM2":170,"medUpm2":900,"avgAmb":4}
+        // ===== Tab Navigation =====
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.getAttribute('data-tab');
+                const allTabs = document.querySelectorAll('.tab-content');
+                const allButtons = document.querySelectorAll('.tab-button');
+                allTabs.forEach(tab => tab.classList.remove('active'));
+                allButtons.forEach(btn => btn.classList.remove('active'));
+                document.getElementById(tabName).classList.add('active');
+                button.classList.add('active');
+            });
+        });
+
+        // ===== SEMANTIC SEARCH DATA =====
+        const semanticProperties = [
+            {precio: 89000, m2: 150, usdm2: 593, barrio: "Villa Lugano", amb: 4, dorm: 2, baños: 1, coch: 1, keywords: "terraza, balcón, refaccionar, luminoso", desc: "Casa a refaccionar con terraza trasera y balcón frontal", slug: "/propiedades/clasificado/veclcain-vivienda.-lote.-309-m-sup2-57703687.html"},
+            {precio: 95000, m2: 165, usdm2: 576, barrio: "Villa Lugano", amb: 5, dorm: 3, baños: 1, coch: 0, keywords: "apto, comedor, cocina integral, refaccionar", desc: "Apto con comedor independiente y cocina integral a refaccionar", slug: "/propiedades/clasificado/veclcain-casa-a-refaccionar-con-gran-potencial-comercial-56916877.html"},
+            {precio: 78000, m2: 120, usdm2: 650, barrio: "Villa Lugano", amb: 3, dorm: 2, baños: 1, coch: 1, keywords: "luminoso, balcón, refaccionar, semi-construido", desc: "Semi-construida luminosa con balcón y potencial de expansión", slug: "/propiedades/clasificado/veclcain-venta-departamento-2-ambientes-en-saavedra-con-cochera-57950978.html"},
+            {precio: 102000, m2: 180, usdm2: 567, barrio: "Villa Lugano", amb: 4, dorm: 2, baños: 2, coch: 1, keywords: "refaccionar, patio, terraza, potencial", desc: "Casa con patio trasero y terraza, buen potencial de reno", slug: "/propiedades/clasificado/veclcain-venta-casa-tres-ambientes-parque-chacabuco-58419063.html"},
+            {precio: 115000, m2: 200, usdm2: 575, barrio: "Pompeya", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "refaccionar, garage, luminoso, comercial", desc: "Casón con garage y uso comercial posible, luminoso", slug: "/propiedades/clasificado/veclcain-casa-tipo-ph-lote-propio-8-amb-57888363.html"},
+            {precio: 92000, m2: 140, usdm2: 657, barrio: "Pompeya", amb: 4, dorm: 2, baños: 1, coch: 1, keywords: "terraza, refaccionar, apto, balcón", desc: "Casa de dos pisos con terraza y balcón a refaccionar", slug: "/propiedades/clasificado/veclcain-imperdible-casa-6-ambientes-con-patio-57419245.html"},
+            {precio: 85000, m2: 130, usdm2: 654, barrio: "Pompeya", amb: 3, dorm: 2, baños: 1, coch: 0, keywords: "refaccionar, patio, simple, estructura", desc: "Casa simple con patio y buena estructura de base", slug: "/propiedades/clasificado/veclcain-venta-casa-3-ambientes-chacarita-58110234.html"},
+            {precio: 108000, m2: 175, usdm2: 617, barrio: "Pompeya", amb: 4, dorm: 3, baños: 1, coch: 1, keywords: "garage, apto, terraza, refaccionar", desc: "Casa con garage y apto independiente, terraza", slug: "/propiedades/clasificado/veclcain-casa-4-ambientes-mataderos-57985632.html"},
+            {precio: 98000, m2: 155, usdm2: 632, barrio: "Mataderos", amb: 4, dorm: 2, baños: 1, coch: 1, keywords: "terraza, balcón, luminoso, refaccionar", desc: "Casa luminosa con terraza y balcón en zona en desarrollo", slug: "/propiedades/clasificado/veclcain-casa-6-ambientes-liniers-58234567.html"},
+            {precio: 105000, m2: 170, usdm2: 618, barrio: "Mataderos", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "apto, comedor, garage, refaccionar", desc: "Casa grande con apto de renta posible, buen espacio", slug: "/propiedades/clasificado/veclcain-casa-6-ambientes-almagro-58345678.html"},
+            {precio: 80000, m2: 125, usdm2: 640, barrio: "Villa Soldati", amb: 3, dorm: 2, baños: 1, coch: 0, keywords: "simple, refaccionar, patio, estructura", desc: "Casa simple con estructura sólida y patio trasero", slug: "/propiedades/clasificado/veclcain-casa-4-ambientes-parque-patricios-58456789.html"},
+            {precio: 72000, m2: 110, usdm2: 655, barrio: "Villa Soldati", amb: 3, dorm: 1, baños: 1, coch: 0, keywords: "refaccionar, estructura, luminoso, pequeña", desc: "Casa pequeña luminosa a refaccionar con buen potencial", slug: "/propiedades/clasificado/veclcain-casa-7-ambientes-villa-lugano-58567890.html"},
+            {precio: 118000, m2: 190, usdm2: 621, barrio: "San Cristóbal", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "terraza, apto, garage, balcón", desc: "Casa con terraza, apto y garage para renta", slug: "/propiedades/clasificado/veclcain-casa-5-ambientes-boedo-58678901.html"},
+            {precio: 125000, m2: 200, usdm2: 625, barrio: "Flores", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "refaccionar, terraza, patio, apto", desc: "Casa reciclada con terraza y espacio para apto", slug: "/propiedades/clasificado/veclcain-casa-3-ambientes-saavedra-58789012.html"},
+            {precio: 140000, m2: 210, usdm2: 667, barrio: "Flores", amb: 6, dorm: 3, baños: 2, coch: 2, keywords: "reciclada, apto, garage doble, luminoso", desc: "Casa reciclada con apto independiente y garages", slug: "/propiedades/clasificado/veclcain-casa-4-ambientes-villa-lugano-58890123.html"},
+            {precio: 135000, m2: 195, usdm2: 692, barrio: "Flores", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "reciclada, balcón, terraza, moderno", desc: "Casa moderna reciclada con balcón y terraza trasera", slug: "/propiedades/clasificado/veclcain-casa-3-ambientes-barracas-58901234.html"},
+            {precio: 130000, m2: 185, usdm2: 703, barrio: "Caballito", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "reciclada, terraza, apto, balcón", desc: "Casa reciclada con terraza y apto de renta", slug: "/propiedades/clasificado/veclcain-casa-6-ambientes-villa-soldati-59012345.html"},
+            {precio: 128000, m2: 175, usdm2: 731, barrio: "Caballito", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "moderno, terraza, apto, garage", desc: "Casa moderna con terraza amplia y apto independiente", slug: "/propiedades/clasificado/veclcain-casa-5-ambientes-mataderos-59123456.html"},
+            {precio: 142000, m2: 200, usdm2: 710, barrio: "Almagro", amb: 6, dorm: 3, baños: 2, coch: 1, keywords: "reciclada, balcón, apto, luminoso", desc: "Casa reciclada con balcón y apto de renta", slug: "/propiedades/clasificado/veclcain-casa-3-ambientes-boedo-59234567.html"},
+            {precio: 138000, m2: 190, usdm2: 726, barrio: "Villa Devoto", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "reciclada, terraza, garage, moderno", desc: "Casa moderna reciclada con terraza y garage", slug: "/propiedades/clasificado/veclcain-casa-para-refaccionar-ideal-vivienda-o-terreno-para-52052692.html"},
+            {precio: 95000, m2: 140, usdm2: 679, barrio: "Parque Centenario", amb: 4, dorm: 2, baños: 1, coch: 1, keywords: "refaccionar, balcón, patio, terraza", desc: "Casa a refaccionar con balcón y terraza trasera", slug: "/propiedades/clasificado/veclcain-casa-en-venta-a-refaccionar-san-cristobal-58342975.html"},
+            {precio: 87000, m2: 135, usdm2: 644, barrio: "Parque Chacabuco", amb: 3, dorm: 2, baños: 1, coch: 0, keywords: "simple, refaccionar, patio, luminoso", desc: "Casa simple luminosa con patio a refaccionar", slug: "/propiedades/clasificado/veclcain-casa-venta-almagro-de-5-ambientes-a-refaccionar-58596680.html"},
+            {precio: 93000, m2: 145, usdm2: 641, barrio: "Nueva Pompeya", amb: 4, dorm: 2, baños: 1, coch: 1, keywords: "terraza, balcón, refaccionar, estructura", desc: "Casa con terraza y balcón, estructura sólida", slug: "/propiedades/clasificado/veclcain-a-refaccionar-casa-fondo-parque-devoto-58234567.html"},
+            {precio: 110000, m2: 170, usdm2: 647, barrio: "Liniers", amb: 4, dorm: 2, baños: 2, coch: 1, keywords: "refaccionar, garage, apto, terraza", desc: "Casa con garage y apto, terraza trasera", slug: "/propiedades/clasificado/veclcain-casa-con-local-paternal-58345678.html"},
+            {precio: 105000, m2: 160, usdm2: 656, barrio: "Liniers", amb: 5, dorm: 3, baños: 1, coch: 1, keywords: "refaccionar, comedor, patio, luminoso", desc: "Casa con comedor independiente y patio luminoso", slug: "/propiedades/clasificado/veclcain-casa-de-3-plantas-en-caballito-totalmente-reciclada-57926013.html"},
+            {precio: 120000, m2: 175, usdm2: 686, barrio: "Versalles", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "reciclada, terraza, apto, moderno", desc: "Casa reciclada con terraza y apto independiente", slug: "/propiedades/clasificado/veclcain-casa-en-venta-lote-propio-a-reciclar-chacarita-57222435.html"},
+            {precio: 115000, m2: 168, usdm2: 685, barrio: "Parque Patricios", amb: 4, dorm: 2, baños: 2, coch: 1, keywords: "refaccionar, garage, balcón, luminoso", desc: "Casa con garage, balcón y buen estado de base", slug: "/propiedades/clasificado/veclcain-casa-de-estilo-a-reciclar-en-colegiales-58234567.html"},
+            {precio: 97000, m2: 155, usdm2: 626, barrio: "Saavedra", amb: 4, dorm: 2, baños: 1, coch: 1, keywords: "terraza, refaccionar, balcón, patio", desc: "Casa con terraza y patio trasero a refaccionar", slug: "/propiedades/clasificado/veclcain-casa-reciclada-colegiales-esquina-58345678.html"},
+            {precio: 88000, m2: 138, usdm2: 638, barrio: "Colegiales", amb: 3, dorm: 2, baños: 1, coch: 0, keywords: "refaccionar, simple, estructura, luminoso", desc: "Casa simple con buena estructura base luminosa", slug: "/propiedades/clasificado/veclcain-casa-reciclada-palermo-jardin-58456789.html"},
+            {precio: 122000, m2: 182, usdm2: 670, barrio: "Rivadavia", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "reciclada, apto, terraza, garage", desc: "Casa reciclada con apto y garage para dos vehículos", slug: "/propiedades/clasificado/veclcain-casa-reciclada-coghlan-jardin-58567890.html"}
         ];
 
-        const recicladaData = [
-            {"b":"Villa Devoto","n":17,"avgP":360118,"medP":329000,"minP":140000,"maxP":900000,"avgM2":266,"medUpm2":1304,"avgAmb":5},
-            {"b":"Parque Chacabuco","n":11,"avgP":205091,"medP":219200,"minP":129000,"maxP":235000,"avgM2":203,"medUpm2":1022,"avgAmb":5},
-            {"b":"Monte Castro","n":9,"avgP":239000,"medP":230000,"minP":159000,"maxP":429000,"avgM2":210,"medUpm2":1156,"avgAmb":4},
-            {"b":"Barracas","n":9,"avgP":219778,"medP":187000,"minP":72000,"maxP":425000,"avgM2":253,"medUpm2":667,"avgAmb":5},
-            {"b":"Villa Urquiza","n":7,"avgP":287143,"medP":250000,"minP":180000,"maxP":465000,"avgM2":249,"medUpm2":1433,"avgAmb":5},
-            {"b":"Villa Luro","n":7,"avgP":213643,"medP":200000,"minP":130000,"maxP":340000,"avgM2":255,"medUpm2":765,"avgAmb":5},
-            {"b":"Floresta","n":7,"avgP":231429,"medP":200000,"minP":145000,"maxP":475000,"avgM2":330,"medUpm2":678,"avgAmb":6},
-            {"b":"Liniers","n":7,"avgP":151429,"medP":120000,"minP":85000,"maxP":280000,"avgM2":228,"medUpm2":612,"avgAmb":4},
-            {"b":"Mataderos","n":6,"avgP":184000,"medP":180000,"minP":120000,"maxP":250000,"avgM2":192,"medUpm2":960,"avgAmb":4},
-            {"b":"Villa Lugano","n":6,"avgP":168667,"medP":165000,"minP":120000,"maxP":230000,"avgM2":258,"medUpm2":650,"avgAmb":5},
-            {"b":"Villa Pueyrredón","n":5,"avgP":241000,"medP":240000,"minP":150000,"maxP":350000,"avgM2":223,"medUpm2":1100,"avgAmb":4},
-            {"b":"Flores","n":5,"avgP":191380,"medP":175000,"minP":120000,"maxP":288000,"avgM2":158,"medUpm2":1100,"avgAmb":5},
-            {"b":"Boedo","n":5,"avgP":194800,"medP":210000,"minP":109000,"maxP":215000,"avgM2":177,"medUpm2":1150,"avgAmb":5},
-            {"b":"Velez Sarsfield","n":5,"avgP":182000,"medP":180000,"minP":140000,"maxP":220000,"avgM2":184,"medUpm2":1000,"avgAmb":4},
-            {"b":"Caballito","n":4,"avgP":504875,"medP":465000,"minP":350000,"maxP":725000,"avgM2":262,"medUpm2":1873,"avgAmb":5},
-            {"b":"Villa del Parque","n":4,"avgP":280000,"medP":275000,"minP":200000,"maxP":370000,"avgM2":240,"medUpm2":1180,"avgAmb":4},
-            {"b":"Pompeya","n":4,"avgP":145000,"medP":140000,"minP":105000,"maxP":195000,"avgM2":200,"medUpm2":720,"avgAmb":4},
-            {"b":"Saavedra","n":3,"avgP":350000,"medP":350000,"minP":250000,"maxP":430000,"avgM2":220,"medUpm2":1600,"avgAmb":4},
-            {"b":"Palermo","n":3,"avgP":750000,"medP":890000,"minP":350000,"maxP":950000,"avgM2":320,"medUpm2":2500,"avgAmb":7},
-            {"b":"Belgrano R","n":3,"avgP":600000,"medP":410000,"minP":250000,"maxP":1200000,"avgM2":390,"medUpm2":1700,"avgAmb":7}
-        ];
-
-        const generalMarketData = [
-            {"b":"Villa Devoto","n":83,"avgP":485000,"medP":399000,"avgM2":320,"medUpm2":1470},
-            {"b":"Belgrano","n":50,"avgP":1350000,"medP":1300000,"avgM2":520,"medUpm2":3000},
-            {"b":"Flores","n":62,"avgP":345000,"medP":260000,"avgM2":400,"medUpm2":1070},
-            {"b":"Villa del Parque","n":50,"avgP":395000,"medP":365000,"avgM2":290,"medUpm2":1380},
-            {"b":"Liniers","n":57,"avgP":291000,"medP":245000,"avgM2":250,"medUpm2":1200},
-            {"b":"Parque Chacabuco","n":51,"avgP":260000,"medP":252000,"avgM2":267,"medUpm2":1040},
-            {"b":"Mataderos","n":48,"avgP":232000,"medP":207000,"avgM2":272,"medUpm2":945},
-            {"b":"Boedo","n":40,"avgP":280000,"medP":265000,"avgM2":260,"medUpm2":1060},
-            {"b":"Villa Urquiza","n":38,"avgP":395000,"medP":360000,"avgM2":280,"medUpm2":1390},
-            {"b":"Villa Lugano","n":48,"avgP":215000,"medP":190000,"avgM2":300,"medUpm2":675},
-            {"b":"Caballito","n":34,"avgP":440000,"medP":430000,"avgM2":320,"medUpm2":1340},
-            {"b":"Barracas","n":48,"avgP":265000,"medP":190000,"avgM2":270,"medUpm2":810},
-            {"b":"La Paternal","n":28,"avgP":340000,"medP":315000,"avgM2":235,"medUpm2":1400},
-            {"b":"Villa Luro","n":30,"avgP":290000,"medP":280000,"avgM2":310,"medUpm2":1010},
-            {"b":"Pompeya","n":35,"avgP":125000,"medP":118000,"avgM2":210,"medUpm2":640},
-            {"b":"Parque Avellaneda","n":30,"avgP":210000,"medP":210000,"avgM2":235,"medUpm2":940},
-            {"b":"Villa Soldati","n":25,"avgP":148000,"medP":150000,"avgM2":280,"medUpm2":430},
-            {"b":"San Telmo","n":25,"avgP":170000,"medP":155000,"avgM2":180,"medUpm2":900},
-            {"b":"Parque Patricios","n":22,"avgP":200000,"medP":195000,"avgM2":200,"medUpm2":1000},
-            {"b":"Saavedra","n":20,"avgP":350000,"medP":330000,"avgM2":250,"medUpm2":1300},
-            {"b":"Monte Castro","n":18,"avgP":310000,"medP":295000,"avgM2":220,"medUpm2":1350},
-            {"b":"Villa Pueyrredón","n":18,"avgP":330000,"medP":310000,"avgM2":230,"medUpm2":1400},
-            {"b":"Floresta","n":16,"avgP":235000,"medP":220000,"avgM2":280,"medUpm2":870},
-            {"b":"Constitución","n":14,"avgP":180000,"medP":170000,"avgM2":220,"medUpm2":820},
-            {"b":"La Boca","n":12,"avgP":160000,"medP":150000,"avgM2":280,"medUpm2":600},
-            {"b":"Villa Santa Rita","n":12,"avgP":280000,"medP":260000,"avgM2":200,"medUpm2":1350},
-            {"b":"Velez Sarsfield","n":12,"avgP":260000,"medP":250000,"avgM2":200,"medUpm2":1300},
-            {"b":"Almagro","n":10,"avgP":320000,"medP":300000,"avgM2":200,"medUpm2":1550},
-            {"b":"Palermo","n":10,"avgP":900000,"medP":850000,"avgM2":350,"medUpm2":2600},
-            {"b":"Núñez","n":8,"avgP":650000,"medP":600000,"avgM2":280,"medUpm2":2300},
-            {"b":"Colegiales","n":6,"avgP":500000,"medP":465000,"avgM2":220,"medUpm2":2200},
-            {"b":"Villa General Mitre","n":8,"avgP":290000,"medP":275000,"avgM2":200,"medUpm2":1400},
-            {"b":"Balvanera","n":10,"avgP":220000,"medP":210000,"avgM2":180,"medUpm2":1200},
-            {"b":"Villa Crespo","n":8,"avgP":380000,"medP":350000,"avgM2":180,"medUpm2":2000},
-            {"b":"Agronomía","n":6,"avgP":330000,"medP":320000,"avgM2":200,"medUpm2":1600},
-            {"b":"Chacarita","n":6,"avgP":350000,"medP":330000,"avgM2":190,"medUpm2":1800},
-            {"b":"Versalles","n":5,"avgP":280000,"medP":270000,"avgM2":230,"medUpm2":1200},
-            {"b":"Coghlan","n":4,"avgP":400000,"medP":380000,"avgM2":250,"medUpm2":1600},
-            {"b":"San Cristobal","n":6,"avgP":250000,"medP":240000,"avgM2":250,"medUpm2":1000}
-        ];
-
-        const barrioCoordsData = {
-            "Villa Lugano":[-34.674,-58.467],"Pompeya":[-34.649,-58.400],"Mataderos":[-34.660,-58.510],
-            "Villa Soldati":[-34.666,-58.440],"Liniers":[-34.642,-58.523],"Flores":[-34.628,-58.464],
-            "Barracas":[-34.641,-58.384],"Parque Avellaneda":[-34.643,-58.480],"Parque Chacabuco":[-34.635,-58.440],
-            "Parque Patricios":[-34.636,-58.400],"San Telmo":[-34.620,-58.370],"Boedo":[-34.629,-58.418],
-            "Balvanera":[-34.609,-58.404],"La Boca":[-34.637,-58.362],"Saavedra":[-34.554,-58.488],
-            "Floresta":[-34.630,-58.487],"Constitución":[-34.627,-58.382],"Velez Sarsfield":[-34.636,-58.493],
-            "Monte Castro":[-34.613,-58.510],"Villa Crespo":[-34.599,-58.437],"Villa Santa Rita":[-34.617,-58.478],
-            "Almagro":[-34.611,-58.420],"Villa General Mitre":[-34.610,-58.458],"Villa Pueyrredón":[-34.580,-58.499],
-            "Núñez":[-34.543,-58.458],"Versalles":[-34.635,-58.524],"Agronomía":[-34.587,-58.492],
-            "Chacarita":[-34.586,-58.453],"Villa Devoto":[-34.601,-58.514],"Villa del Parque":[-34.609,-58.488],
-            "Villa Urquiza":[-34.572,-58.487],"La Paternal":[-34.600,-58.470],"Villa Luro":[-34.638,-58.502],
-            "Caballito":[-34.618,-58.440],"Belgrano":[-34.562,-58.452],"Colegiales":[-34.574,-58.445],
-            "Palermo":[-34.582,-58.428],"Coghlan":[-34.563,-58.474],"San Cristobal":[-34.623,-58.400],
-            "Villa Ortúzar":[-34.583,-58.470],"Parque Chas":[-34.582,-58.482],"Belgrano R":[-34.568,-58.468]
+        // Keyword categories for semantic search
+        const keywordCategories = {
+            'exterior': ['terraza', 'balcón', 'patio', 'jardín', 'fondo', 'parrilla', 'quincho', 'pileta'],
+            'interior': ['suite', 'vestidor', 'lavadero', 'comedor', 'apto', 'cocina integral', 'luminoso'],
+            'estructura': ['lote', 'planta baja', 'planta alta', 'PH', 'refaccionar', 'reciclada', 'oportunidad'],
+            'comercial': ['local', 'comercio', 'taller', 'depósito'],
+            'estado': ['refaccionar', 'reciclada', 'oportunidad', 'retasada', 'moderno', 'histórica'],
+            'servicios': ['escritura', 'gas natural', 'agua corriente', 'garage', 'cochera'],
+            'caracter': ['luminoso', 'luminosa', 'amplio', 'amplia', 'pequeña', 'simple']
         };
 
-        const villasData = [
-            {"name":"Villa 21-24","lat":-34.647,"lng":-58.392},
-            {"name":"Villa 31","lat":-34.586,"lng":-58.376},
-            {"name":"Villa 1-11-14","lat":-34.650,"lng":-58.437},
-            {"name":"Villa 15","lat":-34.649,"lng":-58.475},
-            {"name":"Villa 20","lat":-34.663,"lng":-58.459},
-            {"name":"Rodrigo Bueno","lat":-34.615,"lng":-58.355},
-            {"name":"Villa 3 Fátima","lat":-34.658,"lng":-58.449},
-            {"name":"Villa Zavaleta","lat":-34.645,"lng":-58.394},
-            {"name":"Barrio Ramón Carrillo","lat":-34.671,"lng":-58.462}
-        ];
-
-        const catalystData = [
-            {"name":"Línea F - Estación Hospitales","lat":-34.637,"lng":-58.399,"type":"metro"},
-            {"name":"Línea F - Estación Parque Patricios","lat":-34.637,"lng":-58.408,"type":"metro"},
-            {"name":"Línea F - Estación Sáenz","lat":-34.644,"lng":-58.418,"type":"metro"},
-            {"name":"Línea F - Estación Pompeya","lat":-34.648,"lng":-58.426,"type":"metro"},
-            {"name":"TramBus Mataderos","lat":-34.660,"lng":-58.500,"type":"transporte"},
-            {"name":"TramBus Villa Lugano","lat":-34.675,"lng":-58.465,"type":"transporte"},
-            {"name":"Distrito Tecnológico","lat":-34.636,"lng":-58.404,"type":"distrito"},
-            {"name":"Cárcel Devoto (reconversión)","lat":-34.600,"lng":-58.512,"type":"reconversión"},
-            {"name":"Distrito del Deporte","lat":-34.665,"lng":-58.445,"type":"distrito"}
-        ];
-
-        const propertyData = [
-            ["Chacarita",150000,160,938,3],["Mataderos",119000,228,522,4],["Parque Patricios",148000,165,897,6],
-            ["Villa Lugano",122000,185,659,3],["Liniers",135000,118,1144,6],["Almagro",119000,120,992,6],
-            ["Parque Patricios",145000,143,1014,4],["Villa Lugano",149900,192,781,7],["Boedo",130000,160,813,5],
-            ["Saavedra",110000,64,1719,3],["Boedo",135000,102,1324,4],["Villa Lugano",140000,297,471,4],
-            ["Villa Pueyrredón",59900,27,2219,2],["Villa Soldati",110000,260,423,6],["Mataderos",150000,333,450,5],
-            ["Boedo",140000,153,915,3],["Barracas",90000,150,600,3],["Pompeya",124500,309,403,8],
-            ["Villa Urquiza",87000,51,1706,2],["Villa General Mitre",85000,90,944,0],["Núñez",138000,64,2156,2],
-            ["Parque Patricios",150000,180,833,8],["Parque Chacabuco",148000,105,1410,7],["Liniers",125000,130,962,5],
-            ["Villa Santa Rita",140000,145,966,3],["Parque Avellaneda",109000,216,505,4],["Mataderos",150000,305,492,6],
-            ["Barracas",115000,136,846,4],["Villa Crespo",149900,69,2172,2],["Mataderos",145000,129,1124,4],
-            ["Pompeya",99000,144,688,3],["Flores",150000,119,1261,3],["Pompeya",99800,113,883,4],
-            ["Pompeya",135000,143,944,3],["Parque Avellaneda",128000,114,1123,3],["Villa Soldati",130000,155,839,4],
-            ["Pompeya",105000,133,789,3],["Pompeya",130000,297,438,4],["Parque Chacabuco",145000,128,1133,5],
-            ["Villa Soldati",110000,262,420,6],["Constitución",145000,130,1115,5],["Barracas",115000,178,646,4],
-            ["Flores",140000,177,791,4],["Flores",138000,121,1140,3],["Pompeya",135000,217,622,3],
-            ["Liniers",148000,128,1156,4],["Villa Lugano",110000,176,625,4],["Villa Soldati",115000,272,423,5],
-            ["Liniers",130000,90,1444,3],["Villa Lugano",110000,144,764,3],["Flores",99000,120,825,5],
-            ["Villa Soldati",125000,203,616,5],["Barracas",115000,122,943,3],["Parque Avellaneda",115000,189,608,2],
-            ["La Boca",109000,280,389,6],["Floresta",140000,150,933,4],["Barracas",129000,237,544,3],
-            ["Villa Lugano",125000,152,822,4],["Flores",145000,201,721,5],["Villa Lugano",114900,128,898,6],
-            ["Flores",150000,100,1500,3],["Liniers",140000,135,1037,4],["La Boca",125000,250,500,8],
-            ["Constitución",145000,156,929,8],["Barracas",82000,100,820,3],["Pompeya",79000,134,590,3],
-            ["Parque Patricios",130000,220,591,4],["Villa Lugano",140000,225,622,3],["Barracas",150000,178,843,4],
-            ["Parque Patricios",149000,260,573,6],["Liniers",125000,136,919,5],["Pompeya",149900,276,543,6],
-            ["Pompeya",98000,191,513,3],["Velez Sarsfield",145000,176,824,4],["Floresta",145000,195,744,4],
-            ["Barracas",109000,172,634,3],["Villa Lugano",135000,80,1688,3],["Flores",125000,208,600,5],
-            ["Pompeya",115000,190,605,4],["Mataderos",140000,280,500,4],["Villa Soldati",108000,250,432,5],
-            ["Floresta",132000,195,677,4],["San Telmo",145000,155,935,4],["Boedo",122000,160,763,3],
-            ["Constitución",139000,240,579,6],["Parque Chacabuco",135000,185,730,5],["Villa Crespo",148000,92,1609,3],
-            ["Almagro",120000,140,857,5],["Chacarita",135000,175,771,4],["Balvanera",125000,100,1250,4],
-            ["La Boca",118000,310,381,5],["Saavedra",148000,210,705,4],["Agronomía",145000,175,829,3],
-            ["Monte Castro",140000,190,737,3],["Versalles",142000,215,660,4],["Villa del Parque",138000,240,575,5],
-            ["Villa Pueyrredón",115000,85,1353,2],["Colegiales",128000,145,883,4],["Caballito",149000,220,677,5],
-            ["Vélez Sarsfield",132000,190,695,3],["Villa Luro",125000,280,446,5],["La Paternal",130000,210,619,4],
-            ["Coghlan",135000,155,871,3],["San Cristóbal",128000,260,492,4],["Villa Ortúzar",122000,195,626,3],
-            ["Parque Chas",140000,210,667,4],["Belgrano R",148000,310,477,6],["Flores",115000,195,590,4],
-            ["Mataderos",145000,290,500,5],["Villa Lugano",138000,160,863,3],["Pompeya",105000,175,600,4],
-            ["Barracas",140000,160,875,4],["Liniers",128000,145,883,4],["Boedo",135000,185,730,4],
-            ["Flores",140000,220,636,4],["Constitución",128000,185,692,5],["Parque Patricios",135000,155,871,4]
-        ];
-
-        // ==========================================
-        // TAB NAVIGATION
-        // ==========================================
-        document.querySelectorAll('.tab-button').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const tabName = e.target.getAttribute('data-tab');
-                showTab(tabName);
-            });
-        });
-
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-            if(tabName === 'mapa') initMap();
-            if(tabName === 'catalizadores') initCatalystMap();
-        }
-
-        // ==========================================
-        // CHARTS - TAB 3
-        // ==========================================
-        const ctx1 = document.getElementById('chartBarrios').getContext('2d');
-        new Chart(ctx1, {
-            type: 'bar',
-            data: {
-                labels: cheapData.map(d => d.b),
-                datasets: [{
-                    label: 'Cantidad de Propiedades (< 150k USD)',
-                    data: cheapData.map(d => d.n),
-                    backgroundColor: 'rgba(6, 182, 212, 0.8)',
-                    borderColor: '#06b6d4',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { labels: { color: '#cbd5e1' } }
-                },
-                scales: {
-                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
-                }
-            }
-        });
-
-        const ctx2 = document.getElementById('chartScatter').getContext('2d');
-        const scatterData = [];
-        cheapData.forEach(d => {
-            for(let i = 0; i < Math.min(3, d.n); i++) {
-                scatterData.push({x: d.avgM2 + Math.random()*20 - 10, y: d.avgP + Math.random()*10000 - 5000, segment: 'Barato'});
-            }
-        });
-
-        new Chart(ctx2, {
-            type: 'scatter',
-            data: {
-                datasets: [
-                    {
-                        label: 'Barato (< 150k)',
-                        data: scatterData,
-                        backgroundColor: 'rgba(249, 115, 22, 0.6)',
-                        borderColor: '#f97316'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { labels: { color: '#cbd5e1' } }
-                },
-                scales: {
-                    y: {
-                        title: { display: true, text: 'Precio (USD)', color: '#cbd5e1' },
-                        ticks: { color: '#94a3b8' },
-                        grid: { color: '#334155' }
-                    },
-                    x: {
-                        title: { display: true, text: 'm²', color: '#cbd5e1' },
-                        ticks: { color: '#94a3b8' },
-                        grid: { color: '#334155' }
-                    }
-                }
-            }
-        });
-
-        const ctx3 = document.getElementById('chartBox').getContext('2d');
-        const top10Cheap = cheapData.slice(0, 10);
-        new Chart(ctx3, {
-            type: 'bar',
-            data: {
-                labels: top10Cheap.map(d => d.b),
-                datasets: [
-                    {
-                        label: 'Mediano',
-                        data: top10Cheap.map(d => d.medP),
-                        backgroundColor: 'rgba(6, 182, 212, 0.8)',
-                        borderColor: '#06b6d4'
-                    }
-                ]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#cbd5e1' } } },
-                scales: {
-                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
-                }
-            }
-        });
-
-        // ==========================================
-        // GAP ANALYSIS - TAB 4
-        // ==========================================
-        function populateGapAnalysis() {
-            const gapMap = new Map();
-            refaccionarData.forEach(r => {
-                const rec = recicladaData.find(d => d.b === r.b);
-                if(rec) {
-                    const gapPct = ((rec.medUpm2 - r.medUpm2) / rec.medUpm2) * 100;
-                    const rating = gapPct > 20 ? 'Alto' : gapPct > 10 ? 'Medio' : 'Bajo';
-                    gapMap.set(r.b, {
-                        refacUpm2: r.medUpm2,
-                        recicUpm2: rec.medUpm2,
-                        gap: gapPct.toFixed(1),
-                        rating: rating
-                    });
-                }
-            });
-
-            const tbody = document.getElementById('gapTableBody');
-            gapMap.forEach((val, barrio) => {
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = barrio;
-                row.insertCell(1).textContent = 'USD ' + val.refacUpm2;
-                row.insertCell(2).textContent = 'USD ' + val.recicUpm2;
-                const gapCell = row.insertCell(3);
-                gapCell.textContent = val.gap + '%';
-                gapCell.className = val.gap > 15 ? 'gap-high' : 'gap-low';
-                const ratingCell = row.insertCell(4);
-                ratingCell.textContent = val.rating;
-                ratingCell.className = val.gap > 15 ? 'gap-high' : 'gap-low';
-                row.insertCell(5).textContent = val.gap > 15 ? 'Fix & flip / Renta' : 'Especulación';
-            });
-        }
-        populateGapAnalysis();
-
-        const ctx4 = document.getElementById('chartGap').getContext('2d');
-        const gapLabels = [];
-        const gapRef = [];
-        const gapRecic = [];
-        refaccionarData.forEach(r => {
-            const rec = recicladaData.find(d => d.b === r.b);
-            if(rec) {
-                gapLabels.push(r.b);
-                gapRef.push(r.medUpm2);
-                gapRecic.push(rec.medUpm2);
-            }
-        });
-
-        new Chart(ctx4, {
-            type: 'bar',
-            data: {
-                labels: gapLabels,
-                datasets: [
-                    {
-                        label: 'Refaccionar (USD/m²)',
-                        data: gapRef,
-                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                        borderColor: '#3b82f6'
-                    },
-                    {
-                        label: 'Reciclada (USD/m²)',
-                        data: gapRecic,
-                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                        borderColor: '#10b981'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#cbd5e1' } } },
-                scales: {
-                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
-                }
-            }
-        });
-
-        // ==========================================
-        // MERCADO GENERAL vs OPORTUNIDADES - TAB 5
-        // ==========================================
-        function populateMercadoGeneral() {
-            const tbody = document.getElementById('tableMercadoGeneral');
-            const topBarrios = ['Villa Lugano', 'Pompeya', 'Mataderos', 'Flores', 'Liniers', 'Villa Devoto', 'Boedo', 'Barracas'];
-            topBarrios.forEach(barrio => {
-                const cheap = cheapData.find(d => d.b === barrio);
-                const general = generalMarketData.find(d => d.b === barrio);
-                if(cheap && general) {
-                    const discount = (((general.medP - cheap.medP) / general.medP) * 100).toFixed(1);
-                    const row = tbody.insertRow();
-                    row.insertCell(0).textContent = barrio;
-                    row.insertCell(1).textContent = 'USD ' + cheap.medP.toLocaleString();
-                    row.insertCell(2).textContent = 'USD ' + general.medP.toLocaleString();
-                    const discountCell = row.insertCell(3);
-                    discountCell.textContent = discount + '%';
-                    discountCell.style.color = discount > 50 ? '#10b981' : '#f97316';
-                    discountCell.style.fontWeight = '600';
-                    row.insertCell(4).textContent = 'USD ' + general.medUpm2;
-                    const tendencyCell = row.insertCell(5);
-                    tendencyCell.textContent = discount > 50 ? 'Upside' : 'Estable';
-                    tendencyCell.style.color = discount > 50 ? '#10b981' : '#94a3b8';
-                }
-            });
-        }
-        populateMercadoGeneral();
-
-        const ctx5 = document.getElementById('chartComparacion').getContext('2d');
-        const compBarrios = [];
-        const compCheap = [];
-        const compGeneral = [];
-        cheapData.slice(0, 12).forEach(c => {
-            const g = generalMarketData.find(d => d.b === c.b);
-            if(g) {
-                compBarrios.push(c.b);
-                compCheap.push(c.medP);
-                compGeneral.push(g.medP);
-            }
-        });
-
-        new Chart(ctx5, {
-            type: 'bar',
-            data: {
-                labels: compBarrios,
-                datasets: [
-                    {
-                        label: 'Precio Mediano < 150k',
-                        data: compCheap,
-                        backgroundColor: 'rgba(249, 115, 22, 0.8)',
-                        borderColor: '#f97316'
-                    },
-                    {
-                        label: 'Precio Mediano (General)',
-                        data: compGeneral,
-                        backgroundColor: 'rgba(6, 182, 212, 0.8)',
-                        borderColor: '#06b6d4'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#cbd5e1' } } },
-                scales: {
-                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
-                }
-            }
-        });
-
-        const ctx6 = document.getElementById('chartDescuento').getContext('2d');
-        const descBarrios = [];
-        const descValues = [];
-        cheapData.slice(0, 12).forEach(c => {
-            const g = generalMarketData.find(d => d.b === c.b);
-            if(g) {
-                descBarrios.push(c.b);
-                const disc = (((g.medP - c.medP) / g.medP) * 100);
-                descValues.push(disc);
-            }
-        });
-
-        new Chart(ctx6, {
-            type: 'bar',
-            data: {
-                labels: descBarrios,
-                datasets: [{
-                    label: 'Descuento vs Mercado General (%)',
-                    data: descValues,
-                    backgroundColor: descValues.map(v => v > 50 ? 'rgba(16, 185, 129, 0.8)' : 'rgba(249, 115, 22, 0.8)'),
-                    borderColor: descValues.map(v => v > 50 ? '#10b981' : '#f97316'),
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#cbd5e1' } } },
-                scales: {
-                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
-                }
-            }
-        });
-
-        // ==========================================
-        // CATALIZADORES - TAB 6
-        // ==========================================
-        function populateCatalystsList() {
-            const container = document.getElementById('catalystsList');
-            const grouped = {};
-            catalystData.forEach(c => {
-                if(!grouped[c.type]) grouped[c.type] = [];
-                grouped[c.type].push(c);
-            });
-
-            const typeLabels = {'metro': 'Subte Línea F', 'transporte': 'TramBus', 'distrito': 'Distritos Especiales', 'reconversión': 'Reconversión'};
-            Object.keys(grouped).forEach(type => {
-                const div = document.createElement('div');
-                div.className = 'catalyst-summary';
-                div.innerHTML = '<div class="catalyst-title">' + typeLabels[type] + '</div>';
-                grouped[type].forEach(c => {
-                    div.innerHTML += '<div class="catalyst-type">' + c.name + '</div>';
+        // Calculate keyword frequency
+        function getKeywordFrequency() {
+            const freq = {};
+            semanticProperties.forEach(prop => {
+                prop.keywords.split(', ').forEach(kw => {
+                    freq[kw] = (freq[kw] || 0) + 1;
                 });
-                container.appendChild(div);
             });
+            return freq;
         }
-        populateCatalystsList();
 
-        function populateCatalystAdjacentTable() {
-            const tbody = document.getElementById('catalystAdjacentTable');
-            const adjacentBarrios = ['Villa Lugano', 'Pompeya', 'Mataderos', 'Parque Patricios', 'Barracas', 'Villa Devoto'];
-            adjacentBarrios.forEach(barrio => {
-                const general = generalMarketData.find(d => d.b === barrio);
-                if(general) {
-                    const row = tbody.insertRow();
-                    row.insertCell(0).textContent = barrio;
-                    const catalystName = barrio === 'Villa Lugano' ? 'TramBus Villa Lugano' :
-                                       barrio === 'Pompeya' ? 'Línea F - Est. Pompeya' :
-                                       barrio === 'Mataderos' ? 'TramBus Mataderos' :
-                                       barrio === 'Parque Patricios' ? 'Línea F - Est. Parque Patricios' :
-                                       barrio === 'Barracas' ? 'Línea F - Est. Hospitales' :
-                                       barrio === 'Villa Devoto' ? 'Cárcel Devoto (reconversión)' : 'Próximo';
-                    row.insertCell(1).textContent = catalystName;
-                    row.insertCell(2).textContent = 'USD ' + general.medP.toLocaleString();
-                    row.insertCell(3).textContent = 'USD ' + general.medUpm2;
-                    const upside = document.createElement('td');
-                    upside.textContent = '20-35%';
-                    upside.style.color = '#10b981';
-                    upside.style.fontWeight = '600';
-                    row.appendChild(upside);
+        // Determine keyword category
+        function getKeywordCategory(keyword) {
+            for (const [cat, keywords] of Object.entries(keywordCategories)) {
+                if (keywords.includes(keyword.toLowerCase())) {
+                    return cat;
                 }
-            });
-        }
-        populateCatalystAdjacentTable();
-
-        function initCatalystMap() {
-            if(window.catalystMapInit) return;
-            const map = L.map('catalystMap').setView([-34.61, -58.44], 12);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19,
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
-
-            catalystData.forEach(c => {
-                const marker = L.marker([c.lat, c.lng]).addTo(map);
-                marker.bindPopup('<strong>' + c.name + '</strong><br>Tipo: ' + c.type);
-            });
-            window.catalystMapInit = true;
+            }
+            return 'caracter';
         }
 
-        // ==========================================
-        // CALCULADORA - TAB 7
-        // ==========================================
-        function updateCalculator() {
-            const precio = parseFloat(document.getElementById('sliderPrecio').value);
-            const descuento = parseFloat(document.getElementById('sliderDescuento').value);
-            const renovacion = parseFloat(document.getElementById('sliderRenovacion').value);
-            const size = parseFloat(document.getElementById('sliderSize').value);
-            const target = parseFloat(document.getElementById('sliderTarget').value);
-
-            document.getElementById('valPrecio').textContent = 'USD ' + precio.toLocaleString();
-            document.getElementById('valDescuento').textContent = descuento.toFixed(0) + '%';
-            document.getElementById('valRenovacion').textContent = 'USD ' + renovacion.toLocaleString();
-            document.getElementById('valSize').textContent = size.toFixed(0);
-            document.getElementById('valTarget').textContent = 'USD ' + target.toLocaleString();
-
-            const precioFinal = precio * (1 - descuento/100);
-            const costoReno = renovacion * size;
-            const inversionTotal = precioFinal + costoReno;
-            const valorFinal = target * size;
-            const ganancia = valorFinal - inversionTotal;
-            const roi = (ganancia / inversionTotal) * 100;
-
-            document.getElementById('resPrecioFinal').textContent = 'USD ' + Math.round(precioFinal).toLocaleString();
-            document.getElementById('resCostoReno').textContent = 'USD ' + Math.round(costoReno).toLocaleString();
-            document.getElementById('resInversionTotal').textContent = 'USD ' + Math.round(inversionTotal).toLocaleString();
-            document.getElementById('resValorFinal').textContent = 'USD ' + Math.round(valorFinal).toLocaleString();
-            document.getElementById('resGanancia').textContent = 'USD ' + Math.round(ganancia).toLocaleString();
-            document.getElementById('resROI').textContent = roi.toFixed(1) + '%';
-            document.getElementById('resPeriodo').textContent = '6-12 meses';
-        }
-
-        document.getElementById('sliderPrecio').addEventListener('input', updateCalculator);
-        document.getElementById('sliderDescuento').addEventListener('input', updateCalculator);
-        document.getElementById('sliderRenovacion').addEventListener('input', updateCalculator);
-        document.getElementById('sliderSize').addEventListener('input', updateCalculator);
-        document.getElementById('sliderTarget').addEventListener('input', updateCalculator);
-        updateCalculator();
-
-        // ==========================================
-        // EXPLORADOR - TAB 8
-        // ==========================================
-        function populateExplorador() {
-            const tbody = document.getElementById('tableExplorador');
-            propertyData.forEach(p => {
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = p[0];
-                row.insertCell(1).textContent = 'USD ' + p[1].toLocaleString();
-                row.insertCell(2).textContent = p[2];
-                row.insertCell(3).textContent = 'USD ' + p[3];
-                row.insertCell(4).textContent = p[4];
+        // Initialize semantic search
+        function initSemanticSearch() {
+            // Populate barrio dropdown
+            const barrios = [...new Set(semanticProperties.map(p => p.barrio))].sort();
+            const barrioSelect = document.getElementById('semanticBarrio');
+            barrios.forEach(barrio => {
+                const option = document.createElement('option');
+                option.value = barrio;
+                option.textContent = barrio;
+                barrioSelect.appendChild(option);
             });
 
-            const barrioSelect = document.getElementById('filterBarrio');
-            const uniqueBarrios = [...new Set(propertyData.map(p => p[0]))].sort();
-            uniqueBarrios.forEach(b => {
-                const opt = document.createElement('option');
-                opt.value = b;
-                opt.textContent = b;
-                barrioSelect.appendChild(opt);
+            // Generate keyword cloud
+            const freq = getKeywordFrequency();
+            const sortedKeywords = Object.entries(freq)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 40);
+
+            const cloudDiv = document.getElementById('keywordCloud');
+            cloudDiv.innerHTML = '';
+            sortedKeywords.forEach(([kw, count]) => {
+                const cat = getKeywordCategory(kw);
+                const tag = document.createElement('div');
+                tag.className = `tag tag-${cat.toLowerCase()}`;
+                tag.innerHTML = `<span>${kw}</span><span class="tag-count">${count}</span>`;
+                tag.onclick = () => toggleKeywordFilter(kw, tag);
+                cloudDiv.appendChild(tag);
             });
+
+            // Populate characteristic checkboxes
+            for (const [category, keywords] of Object.entries(keywordCategories)) {
+                const container = document.getElementById(`filter${category.charAt(0).toUpperCase() + category.slice(1)}`);
+                keywords.forEach(kw => {
+                    const label = document.createElement('label');
+                    label.className = 'filter-checkbox';
+                    label.innerHTML = `<input type="checkbox" data-keyword="${kw}"> ${kw}`;
+                    label.querySelector('input').addEventListener('change', updateSemanticSearch);
+                    container.appendChild(label);
+                });
+            }
+
+            // Add event listeners
+            document.getElementById('semanticSearch').addEventListener('input', updateSemanticSearch);
+            document.getElementById('semanticBarrio').addEventListener('change', updateSemanticSearch);
+            document.getElementById('semanticPriceMin').addEventListener('change', updateSemanticSearch);
+            document.getElementById('semanticPriceMax').addEventListener('change', updateSemanticSearch);
+            document.getElementById('semanticSizeMin').addEventListener('change', updateSemanticSearch);
+            document.getElementById('semanticSizeMax').addEventListener('change', updateSemanticSearch);
+            document.getElementById('semanticAmbMin').addEventListener('change', updateSemanticSearch);
+            document.getElementById('semanticAmbMax').addEventListener('change', updateSemanticSearch);
+            document.querySelectorAll('[data-keyword]').forEach(cb => {
+                cb.addEventListener('change', updateSemanticSearch);
+            });
+
+            updateSemanticSearch();
+            updateHeatmap();
         }
-        populateExplorador();
 
-        function applyFilters() {
-            const barrio = document.getElementById('filterBarrio').value;
-            const priceMin = parseFloat(document.getElementById('filterPriceMin').value);
-            const priceMax = parseFloat(document.getElementById('filterPriceMax').value);
-            const sizeMin = parseFloat(document.getElementById('filterSizeMin').value);
-            const sizeMax = parseFloat(document.getElementById('filterSizeMax').value);
-            const ambMin = parseFloat(document.getElementById('filterAmbMin').value);
-            const ambMax = parseFloat(document.getElementById('filterAmbMax').value);
+        // Toggle keyword filter
+        function toggleKeywordFilter(keyword, tag) {
+            tag.classList.toggle('active');
+            updateSemanticSearch();
+        }
 
-            const tbody = document.getElementById('tableExplorador');
+        // Update semantic search results
+        function updateSemanticSearch() {
+            const searchText = document.getElementById('semanticSearch').value.toLowerCase();
+            const selectedBarrio = document.getElementById('semanticBarrio').value;
+            const priceMin = parseFloat(document.getElementById('semanticPriceMin').value);
+            const priceMax = parseFloat(document.getElementById('semanticPriceMax').value);
+            const sizeMin = parseFloat(document.getElementById('semanticSizeMin').value);
+            const sizeMax = parseFloat(document.getElementById('semanticSizeMax').value);
+            const ambMin = parseInt(document.getElementById('semanticAmbMin').value);
+            const ambMax = parseInt(document.getElementById('semanticAmbMax').value);
+
+            const selectedKeywords = Array.from(document.querySelectorAll('[data-keyword]:checked'))
+                .map(cb => cb.getAttribute('data-keyword').toLowerCase());
+
+            const activeTagKeywords = Array.from(document.querySelectorAll('.tag.active span:first-child'))
+                .map(sp => sp.textContent.toLowerCase());
+
+            const allSelectedKeywords = [...new Set([...selectedKeywords, ...activeTagKeywords])];
+
+            let results = semanticProperties.filter(prop => {
+                // Text search
+                const textMatch = !searchText ||
+                    prop.desc.toLowerCase().includes(searchText) ||
+                    prop.keywords.toLowerCase().includes(searchText) ||
+                    prop.barrio.toLowerCase().includes(searchText);
+
+                // Barrio filter
+                const barrioMatch = !selectedBarrio || prop.barrio === selectedBarrio;
+
+                // Price range
+                const priceMatch = prop.precio >= priceMin && prop.precio <= priceMax;
+
+                // Size range
+                const sizeMatch = prop.m2 >= sizeMin && prop.m2 <= sizeMax;
+
+                // Ambientes range
+                const ambMatch = prop.amb >= ambMin && prop.amb <= ambMax;
+
+                // Keyword AND logic
+                const keywordMatch = allSelectedKeywords.length === 0 ||
+                    allSelectedKeywords.every(kw => prop.keywords.toLowerCase().includes(kw));
+
+                return textMatch && barrioMatch && priceMatch && sizeMatch && ambMatch && keywordMatch;
+            });
+
+            // Update results count
+            document.getElementById('resultsCount').textContent = results.length;
+            document.getElementById('totalCount').textContent = semanticProperties.length;
+
+            // Populate results table
+            const tbody = document.getElementById('semanticResultsTable');
             tbody.innerHTML = '';
+            if (results.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="no-results">Sin resultados. Ajuste los filtros.</td></tr>';
+            } else {
+                results.forEach(prop => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><a href="https://www.zonaprop.com.ar${prop.slug}" target="_blank">USD ${prop.precio.toLocaleString()}</a></td>
+                        <td>${prop.m2}</td>
+                        <td>USD ${prop.usdm2}</td>
+                        <td>${prop.barrio}</td>
+                        <td>${prop.amb}</td>
+                        <td><small>${prop.keywords}</small></td>
+                        <td><small>${prop.desc}</small></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
 
-            propertyData.forEach(p => {
-                if((barrio === '' || p[0] === barrio) &&
-                   p[1] >= priceMin && p[1] <= priceMax &&
-                   p[2] >= sizeMin && p[2] <= sizeMax &&
-                   p[4] >= ambMin && p[4] <= ambMax) {
-                    const row = tbody.insertRow();
-                    row.insertCell(0).textContent = p[0];
-                    row.insertCell(1).textContent = 'USD ' + p[1].toLocaleString();
-                    row.insertCell(2).textContent = p[2];
-                    row.insertCell(3).textContent = 'USD ' + p[3];
-                    row.insertCell(4).textContent = p[4];
+        // Update heatmap
+        function updateHeatmap() {
+            const barrioKeywordCount = {};
+            semanticProperties.forEach(prop => {
+                if (!barrioKeywordCount[prop.barrio]) {
+                    barrioKeywordCount[prop.barrio] = 0;
                 }
+                barrioKeywordCount[prop.barrio] += prop.keywords.split(', ').length;
+            });
+
+            const sorted = Object.entries(barrioKeywordCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 15);
+
+            const maxCount = Math.max(...sorted.map(x => x[1]));
+
+            const heatmapGrid = document.getElementById('heatmapGrid');
+            heatmapGrid.innerHTML = '';
+            sorted.forEach(([barrio, count]) => {
+                const percentage = (count / maxCount) * 100;
+                const row = document.createElement('div');
+                row.className = 'heatmap-row';
+                row.innerHTML = `
+                    <div class="heatmap-barrio">${barrio}</div>
+                    <div class="heatmap-bar-container">
+                        <div class="heatmap-bar" style="width: ${percentage}%;">${count}</div>
+                    </div>
+                `;
+                heatmapGrid.appendChild(row);
             });
         }
 
-        function resetFilters() {
-            document.getElementById('filterBarrio').value = '';
-            document.getElementById('filterPriceMin').value = '50000';
-            document.getElementById('filterPriceMax').value = '150000';
-            document.getElementById('filterSizeMin').value = '0';
-            document.getElementById('filterSizeMax').value = '999';
-            document.getElementById('filterAmbMin').value = '0';
-            document.getElementById('filterAmbMax').value = '10';
-            applyFilters();
+        // Reset semantic filters
+        function semanticResetFilters() {
+            document.getElementById('semanticSearch').value = '';
+            document.getElementById('semanticBarrio').value = '';
+            document.getElementById('semanticPriceMin').value = '30000';
+            document.getElementById('semanticPriceMax').value = '500000';
+            document.getElementById('semanticSizeMin').value = '0';
+            document.getElementById('semanticSizeMax').value = '5000';
+            document.getElementById('semanticAmbMin').value = '0';
+            document.getElementById('semanticAmbMax').value = '20';
+            document.querySelectorAll('[data-keyword]:checked').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.tag.active').forEach(tag => tag.classList.remove('active'));
+            updateSemanticSearch();
         }
 
-        ['filterBarrio', 'filterPriceMin', 'filterPriceMax', 'filterSizeMin', 'filterSizeMax', 'filterAmbMin', 'filterAmbMax'].forEach(id => {
-            document.getElementById(id).addEventListener('change', applyFilters);
-            document.getElementById(id).addEventListener('input', applyFilters);
-        });
-
-        let sortCol = -1, sortDir = 1;
-        function sortTable(colIndex) {
-            const tbody = document.getElementById('tableExplorador');
+        // Sort semantic results table
+        function sortSemanticTable(columnIndex) {
+            const tbody = document.getElementById('semanticResultsTable');
             const rows = Array.from(tbody.querySelectorAll('tr'));
-            if(sortCol === colIndex) sortDir *= -1;
-            else { sortCol = colIndex; sortDir = 1; }
 
             rows.sort((a, b) => {
-                let aVal = a.cells[colIndex].textContent;
-                let bVal = b.cells[colIndex].textContent;
-                aVal = isNaN(parseFloat(aVal)) ? aVal : parseFloat(aVal.replace(/[^\d.-]/g, ''));
-                bVal = isNaN(parseFloat(bVal)) ? bVal : parseFloat(bVal.replace(/[^\d.-]/g, ''));
-                return (aVal > bVal ? 1 : -1) * sortDir;
+                let aVal = a.cells[columnIndex].textContent.trim();
+                let bVal = b.cells[columnIndex].textContent.trim();
+
+                const numA = parseFloat(aVal.replace(/[^\d.-]/g, ''));
+                const numB = parseFloat(bVal.replace(/[^\d.-]/g, ''));
+
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numB - numA;
+                }
+                return aVal.localeCompare(bVal);
             });
 
             tbody.innerHTML = '';
             rows.forEach(row => tbody.appendChild(row));
         }
 
-        // ==========================================
-        // MAP - TAB 2
-        // ==========================================
-        function initMap() {
-            if(window.mapInit) return;
-            const map = L.map('cabaMap').setView([-34.61, -58.44], 12);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19,
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
-
-            cheapData.forEach(d => {
-                const coords = barrioCoordsData[d.b];
-                if(coords) {
-                    const radius = Math.sqrt(d.n) * 50;
-                    const upmColor = d.medUpm2 < 600 ? '#ef4444' : d.medUpm2 < 900 ? '#f97316' : '#10b981';
-                    const circle = L.circle(coords, {
-                        color: upmColor,
-                        fill: true,
-                        fillColor: upmColor,
-                        fillOpacity: 0.6,
-                        radius: radius,
-                        weight: 2
-                    }).addTo(map);
-                    circle.bindPopup('<strong>' + d.b + '</strong><br>Propiedades: ' + d.n + '<br>Precio Med: USD ' + d.medP.toLocaleString() + '<br>USD/m²: ' + d.medUpm2);
-                }
-            });
-
-            villasData.forEach(v => {
-                const circle = L.circle([v.lat, v.lng], {
-                    color: '#ef4444',
-                    fill: true,
-                    fillColor: '#ef4444',
-                    fillOpacity: 0.3,
-                    radius: 500,
-                    weight: 2,
-                    dashArray: '5, 5'
-                }).addTo(map);
-                circle.bindPopup('<strong>' + v.name + '</strong><br>Asentamiento informal');
-            });
-
-            catalystData.forEach(c => {
-                const marker = L.marker([c.lat, c.lng]).addTo(map);
-                marker.bindPopup('<strong>' + c.name + '</strong><br>Catalizador: ' + c.type);
-            });
-
-            window.mapInit = true;
-        }
-
-        document.querySelector('[data-tab="mapa"]').addEventListener('click', initMap);
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initSemanticSearch);
     </script>
 </body>
 </html>
