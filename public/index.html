@@ -1,348 +1,1655 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Estudio de Mercado — Casas en CABA, Buenos Aires</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Inter',sans-serif; background:#0a0e1a; color:#e0e6f0; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudio de Mercado CABA — Casas en Venta</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  .hero { background: linear-gradient(135deg, #0f1629 0%, #1a1f3a 50%, #0d1117 100%); padding:40px 32px 24px; border-bottom:1px solid rgba(99,179,237,0.15); }
-  .hero h1 { font-size:2.2rem; font-weight:800; background: linear-gradient(135deg, #63b3ed, #4fd1c5, #68d391); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:8px; }
-  .hero .subtitle { font-size:1rem; color:#8892b0; font-weight:400; }
-  .hero .meta { display:flex; gap:24px; margin-top:16px; flex-wrap:wrap; }
-  .hero .meta-item { background:rgba(99,179,237,0.08); border:1px solid rgba(99,179,237,0.15); border-radius:12px; padding:12px 20px; }
-  .hero .meta-item .label { font-size:0.7rem; text-transform:uppercase; letter-spacing:1.5px; color:#63b3ed; font-weight:600; }
-  .hero .meta-item .value { font-size:1.5rem; font-weight:700; color:#fff; margin-top:2px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
 
-  .container { max-width:1400px; margin:0 auto; padding:24px; }
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 2px solid #06b6d4;
+            padding: 2rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
 
-  .nav-tabs { display:flex; gap:8px; padding:16px 32px; background:#0d1220; border-bottom:1px solid rgba(99,179,237,0.1); overflow-x:auto; flex-wrap:nowrap; }
-  .nav-tab { padding:10px 20px; border-radius:10px; font-size:0.85rem; font-weight:500; cursor:pointer; border:1px solid transparent; color:#8892b0; background:transparent; transition:all 0.2s; white-space:nowrap; }
-  .nav-tab:hover { background:rgba(99,179,237,0.08); color:#63b3ed; }
-  .nav-tab.active { background:rgba(99,179,237,0.12); border-color:rgba(99,179,237,0.3); color:#63b3ed; font-weight:600; }
+        .header h1 {
+            font-size: 2rem;
+            color: #06b6d4;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
 
-  .section { display:none; }
-  .section.active { display:block; }
+        .header p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
 
-  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
-  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-bottom:20px; }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
 
-  .card { background: linear-gradient(145deg, #111827, #0f172a); border:1px solid rgba(99,179,237,0.1); border-radius:16px; padding:24px; }
-  .card h3 { font-size:1rem; font-weight:600; color:#63b3ed; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
-  .card h3 .icon { font-size:1.2rem; }
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #334155;
+            flex-wrap: wrap;
+            padding: 0 1rem;
+        }
 
-  .kpi-row { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px; }
-  .kpi { background: linear-gradient(145deg, #111827, #0f172a); border:1px solid rgba(99,179,237,0.1); border-radius:14px; padding:20px; text-align:center; }
-  .kpi .kpi-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:1.2px; color:#8892b0; font-weight:500; }
-  .kpi .kpi-value { font-size:2rem; font-weight:800; margin:6px 0; }
-  .kpi .kpi-sub { font-size:0.78rem; color:#64748b; }
-  .kpi-green .kpi-value { color:#68d391; }
-  .kpi-blue .kpi-value { color:#63b3ed; }
-  .kpi-yellow .kpi-value { color:#f6e05e; }
-  .kpi-red .kpi-value { color:#fc8181; }
-  .kpi-purple .kpi-value { color:#b794f4; }
+        .tab-button {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: none;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -1px;
+        }
 
-  #map { height:520px; border-radius:12px; border:1px solid rgba(99,179,237,0.15); }
+        .tab-button:hover {
+            background: #334155;
+            color: #e2e8f0;
+        }
 
-  .chart-container { position:relative; height:350px; }
+        .tab-button.active {
+            color: #06b6d4;
+            border-bottom-color: #06b6d4;
+            background: #1a2332;
+        }
 
-  table { width:100%; border-collapse:collapse; font-size:0.82rem; }
-  table th { text-align:left; padding:10px 12px; color:#63b3ed; font-weight:600; border-bottom:1px solid rgba(99,179,237,0.2); font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; }
-  table td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.04); color:#c9d1d9; }
-  table tr:hover td { background:rgba(99,179,237,0.04); }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
 
-  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:600; }
-  .badge-green { background:rgba(104,211,145,0.15); color:#68d391; }
-  .badge-red { background:rgba(252,129,129,0.15); color:#fc8181; }
-  .badge-yellow { background:rgba(246,224,94,0.15); color:#f6e05e; }
-  .badge-blue { background:rgba(99,179,237,0.15); color:#63b3ed; }
+        .tab-content.active {
+            display: block;
+        }
 
-  .scroll-table { max-height:500px; overflow-y:auto; }
-  .scroll-table::-webkit-scrollbar { width:6px; }
-  .scroll-table::-webkit-scrollbar-track { background:rgba(255,255,255,0.02); }
-  .scroll-table::-webkit-scrollbar-thumb { background:rgba(99,179,237,0.2); border-radius:3px; }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-  .catalyst-card { background:rgba(99,179,237,0.04); border:1px solid rgba(99,179,237,0.12); border-radius:12px; padding:16px; margin-bottom:12px; }
-  .catalyst-card h4 { color:#4fd1c5; font-size:0.9rem; margin-bottom:6px; }
-  .catalyst-card p { font-size:0.82rem; color:#8892b0; line-height:1.5; }
-  .catalyst-card .impact { display:inline-block; margin-top:8px; padding:4px 12px; border-radius:20px; font-size:0.72rem; font-weight:600; }
-  .impact-high { background:rgba(104,211,145,0.15); color:#68d391; }
-  .impact-medium { background:rgba(246,224,94,0.15); color:#f6e05e; }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
 
-  .villa-warning { background:rgba(252,129,129,0.06); border:1px solid rgba(252,129,129,0.15); border-radius:12px; padding:16px; margin-bottom:12px; }
-  .villa-warning h4 { color:#fc8181; font-size:0.9rem; margin-bottom:6px; }
+        .kpi-card {
+            background: linear-gradient(135deg, #1e293b 0%, #16213e 100%);
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
 
-  .calc-input { background:#1a2035; border:1px solid rgba(99,179,237,0.2); border-radius:8px; padding:10px 14px; color:#fff; font-size:0.9rem; width:100%; margin-bottom:12px; font-family:'Inter',sans-serif; }
-  .calc-input:focus { outline:none; border-color:#63b3ed; }
-  .calc-label { font-size:0.78rem; color:#8892b0; margin-bottom:4px; display:block; }
-  .calc-result { background:rgba(104,211,145,0.08); border:1px solid rgba(104,211,145,0.2); border-radius:12px; padding:20px; margin-top:16px; }
-  .calc-result h4 { color:#68d391; font-size:1rem; margin-bottom:12px; }
+        .kpi-card:hover {
+            border-color: #06b6d4;
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.1);
+        }
 
-  a.zp-link { color:#63b3ed; text-decoration:none; font-size:0.75rem; opacity:0.8; transition:opacity 0.2s; }
-  a.zp-link:hover { opacity:1; text-decoration:underline; }
+        .kpi-label {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
 
-  @media (max-width:900px) {
-    .grid-2, .grid-3 { grid-template-columns:1fr; }
-    .hero h1 { font-size:1.6rem; }
-    .kpi-row { grid-template-columns: 1fr 1fr; }
-  }
-</style>
+        .kpi-value {
+            color: #06b6d4;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .kpi-subtext {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .content-section {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title {
+            color: #06b6d4;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #334155;
+        }
+
+        .section-text {
+            color: #cbd5e1;
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+            font-size: 0.95rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container-large {
+            position: relative;
+            height: 500px;
+            margin-bottom: 2rem;
+        }
+
+        .map-container {
+            position: relative;
+            height: 600px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        #cabaMap {
+            width: 100%;
+            height: 100%;
+        }
+
+        #catalystMap {
+            width: 100%;
+            height: 100%;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background: #0f172a;
+            border-bottom: 2px solid #06b6d4;
+        }
+
+        th {
+            color: #06b6d4;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+
+        th:hover {
+            background: #1e293b;
+        }
+
+        td {
+            color: #cbd5e1;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        tbody tr:hover {
+            background: #16213e;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .input-group label {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .input-group select,
+        .input-group input {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.9rem;
+        }
+
+        .input-group select:focus,
+        .input-group input:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+        }
+
+        .slider-container {
+            margin: 2rem 0;
+            background: #16213e;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #06b6d4;
+        }
+
+        .slider-label {
+            color: #94a3b8;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .slider-value {
+            color: #06b6d4;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #0f172a;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #06b6d4;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #00d9ff;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #06b6d4;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            background: #00d9ff;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+        }
+
+        .result-box {
+            background: #0f172a;
+            border: 2px solid #10b981;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+
+        .result-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .result-label {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .result-value {
+            color: #10b981;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .highlight {
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 4px solid #06b6d4;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            color: #cbd5e1;
+            margin: 1rem 0;
+        }
+
+        .metric-badge {
+            display: inline-block;
+            background: #06b6d4;
+            color: #0f172a;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .gap-high {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .gap-low {
+            color: #f97316;
+            font-weight: 600;
+        }
+
+        .legend {
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 0.75rem;
+        }
+
+        .footer {
+            text-align: center;
+            color: #64748b;
+            padding: 2rem;
+            margin-top: 3rem;
+            border-top: 1px solid #334155;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .catalyst-summary {
+            background: #16213e;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #10b981;
+            margin-bottom: 1.5rem;
+        }
+
+        .catalyst-title {
+            color: #10b981;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .catalyst-type {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        button {
+            background: #334155;
+            color: #e2e8f0;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: #475569;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #334155;
+            margin: 1rem 0;
+        }
+    </style>
 </head>
 <body>
-
-<div class="hero">
-  <h1>Estudio de Mercado Inmobiliario — CABA</h1>
-  <p class="subtitle">Análisis integral de casas en venta en Capital Federal, Buenos Aires — Marzo 2026</p>
-  <div class="meta">
-    <div class="meta-item"><div class="label">Propiedades Analizadas</div><div class="value">480+</div></div>
-    <div class="meta-item"><div class="label">Oferta Total CABA</div><div class="value">5.556</div></div>
-    <div class="meta-item"><div class="label">Rango Target</div><div class="value">&lt; USD 150k</div></div>
-    <div class="meta-item"><div class="label">Estrategia</div><div class="value">Buy &amp; Reno</div></div>
-  </div>
-</div>
-
-<div class="nav-tabs">
-  <div class="nav-tab active" onclick="showSection('overview',this)">Resumen General</div>
-  <div class="nav-tab" onclick="showSection('map',this)">Mapa Interactivo</div>
-  <div class="nav-tab" onclick="showSection('neighborhoods',this)">Barrios USD/m²</div>
-  <div class="nav-tab" onclick="showSection('gap',this)">Gap Refaccionar vs Reciclada</div>
-  <div class="nav-tab" onclick="showSection('historical',this)">Tendencia Histórica</div>
-  <div class="nav-tab" onclick="showSection('catalysts',this)">Catalizadores Urbanos</div>
-  <div class="nav-tab" onclick="showSection('calculator',this)">Calculadora Inversión</div>
-  <div class="nav-tab" onclick="showSection('data',this)">Datos Crudos</div>
-</div>
-
-<div class="container">
-
-<div class="section active" id="sec-overview">
-  <div class="kpi-row">
-    <div class="kpi kpi-blue"><div class="kpi-label">Mediana USD/m² General</div><div class="kpi-value">$1,150</div><div class="kpi-sub">Todas las casas CABA</div></div>
-    <div class="kpi kpi-green"><div class="kpi-label">Mediana USD/m² &lt;150k</div><div class="kpi-value">$705</div><div class="kpi-sub">Tu segmento target</div></div>
-    <div class="kpi kpi-yellow"><div class="kpi-label">Mediana Refaccionar</div><div class="kpi-value">$980</div><div class="kpi-sub">90 propiedades</div></div>
-    <div class="kpi kpi-purple"><div class="kpi-label">Mediana Reciclada</div><div class="kpi-value">$1,290</div><div class="kpi-sub">89 propiedades</div></div>
-    <div class="kpi kpi-red"><div class="kpi-label">Gap Refacc. → Recicl.</div><div class="kpi-value">+31.6%</div><div class="kpi-sub">Margen bruto potencial</div></div>
-  </div>
-  <div class="grid-2">
-    <div class="card"><h3><span class="icon">📊</span> Distribución por Segmento de Precio</h3><div class="chart-container"><canvas id="chartSegments"></canvas></div></div>
-    <div class="card"><h3><span class="icon">🏘️</span> Top 15 Barrios por Volumen de Oferta</h3><div class="chart-container"><canvas id="chartBarrios"></canvas></div></div>
-  </div>
-  <div class="grid-2">
-    <div class="card"><h3><span class="icon">💰</span> USD/m² por Barrio (Top 20)</h3><div class="chart-container"><canvas id="chartUsdM2"></canvas></div></div>
-    <div class="card"><h3><span class="icon">📈</span> Distribución de Precios Totales</h3><div class="chart-container"><canvas id="chartPriceDist"></canvas></div></div>
-  </div>
-</div>
-
-<div class="section" id="sec-map">
-  <div class="card" style="margin-bottom:20px;">
-    <h3><span class="icon">🗺️</span> Mapa de CABA — USD/m² por Barrio + Riesgos y Catalizadores</h3>
-    <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
-      <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#8892b0;"><div style="width:12px;height:12px;border-radius:3px;background:#22c55e;"></div> &lt;$800/m²</div>
-      <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#8892b0;"><div style="width:12px;height:12px;border-radius:3px;background:#eab308;"></div> $800-$1500/m²</div>
-      <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#8892b0;"><div style="width:12px;height:12px;border-radius:3px;background:#f97316;"></div> $1500-$2500/m²</div>
-      <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#8892b0;"><div style="width:12px;height:12px;border-radius:3px;background:#ef4444;"></div> &gt;$2500/m²</div>
-      <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#8892b0;"><div style="width:12px;height:12px;border-radius:50%;background:rgba(255,0,0,0.4);border:2px solid red;"></div> Villas (1km)</div>
-      <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#8892b0;"><div style="width:12px;height:12px;border-radius:50%;background:rgba(0,150,255,0.4);border:2px solid #0096ff;"></div> Catalizador</div>
+    <div class="header">
+        <h1>Estudio de Mercado CABA — Casas en Venta</h1>
+        <p>2,406 propiedades analizadas | Marzo 2026 | Viviendas unifamiliares y casas</p>
     </div>
-    <div id="map"></div>
-  </div>
-</div>
 
-<div class="section" id="sec-neighborhoods">
-  <div class="kpi-row">
-    <div class="kpi kpi-green"><div class="kpi-label">Barrio Más Barato</div><div class="kpi-value">$392</div><div class="kpi-sub">Parque Avellaneda</div></div>
-    <div class="kpi kpi-red"><div class="kpi-label">Barrio Más Caro</div><div class="kpi-value">$5,012</div><div class="kpi-sub">Belgrano R</div></div>
-    <div class="kpi kpi-blue"><div class="kpi-label">Barrios Analizados</div><div class="kpi-value">48</div><div class="kpi-sub">Con datos suficientes</div></div>
-    <div class="kpi kpi-yellow"><div class="kpi-label">Dispersión</div><div class="kpi-value">62%</div><div class="kpi-sub">Alta variabilidad</div></div>
-  </div>
-  <div class="card">
-    <h3><span class="icon">📋</span> Tabla Completa USD/m² por Barrio</h3>
-    <div class="scroll-table"><table id="neighborhoodTable"><thead><tr><th>Barrio</th><th>Mediana USD/m²</th><th>Props.</th><th>Rango</th><th>vs Mercado</th><th>Indicador</th><th>Buscar</th></tr></thead><tbody></tbody></table></div>
-  </div>
-</div>
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-button active" data-tab="resumen">Resumen Ejecutivo</button>
+            <button class="tab-button" data-tab="mapa">Mapa CABA</button>
+            <button class="tab-button" data-tab="precios">Distribución de Precios</button>
+            <button class="tab-button" data-tab="gap">Análisis de Gap</button>
+            <button class="tab-button" data-tab="mercado">Mercado General vs Oportunidades</button>
+            <button class="tab-button" data-tab="catalizadores">Catalizadores Urbanos</button>
+            <button class="tab-button" data-tab="calculadora">Calculadora de Inversión</button>
+            <button class="tab-button" data-tab="explorador">Explorador de Datos</button>
+        </div>
 
-<div class="section" id="sec-gap">
-  <div class="kpi-row">
-    <div class="kpi kpi-yellow"><div class="kpi-label">Avg USD/m² Refaccionar</div><div class="kpi-value">$1,164</div><div class="kpi-sub">90 propiedades</div></div>
-    <div class="kpi kpi-purple"><div class="kpi-label">Avg USD/m² Reciclada</div><div class="kpi-value">$1,635</div><div class="kpi-sub">89 propiedades</div></div>
-    <div class="kpi kpi-green"><div class="kpi-label">Gap Promedio</div><div class="kpi-value">+40.5%</div><div class="kpi-sub">Diferencia refacc→recicl</div></div>
-    <div class="kpi kpi-blue"><div class="kpi-label">Costo Refacción Est.</div><div class="kpi-value">$350-500</div><div class="kpi-sub">USD/m² integral</div></div>
-  </div>
-  <div class="grid-2">
-    <div class="card"><h3><span class="icon">⚡</span> Comparativa Refaccionar vs Reciclada por Barrio</h3><div class="chart-container"><canvas id="chartGap"></canvas></div></div>
-    <div class="card"><h3><span class="icon">🎯</span> Margen Bruto Potencial por Barrio</h3><div class="chart-container"><canvas id="chartMargin"></canvas></div></div>
-  </div>
-  <div class="card">
-    <h3><span class="icon">🔗</span> Links Directos a Búsquedas ZonaProp</h3>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-      <a href="https://www.zonaprop.com.ar/casas-venta-capital-federal-q-refaccionar.html" target="_blank" class="nav-tab" style="text-decoration:none;">Ver todas las "a refaccionar"</a>
-      <a href="https://www.zonaprop.com.ar/casas-venta-capital-federal-q-reciclada.html" target="_blank" class="nav-tab" style="text-decoration:none;">Ver todas las "recicladas"</a>
-      <a href="https://www.zonaprop.com.ar/casas-venta-capital-federal-menos-150000-dolar.html" target="_blank" class="nav-tab" style="text-decoration:none;">Todas &lt;USD 150k</a>
+        <!-- TAB 1: RESUMEN EJECUTIVO -->
+        <div id="resumen" class="tab-content active">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Propiedades Analizadas</div>
+                    <div class="kpi-value">2,406</div>
+                    <div class="kpi-subtext">Casas y viviendas unifamiliares en CABA</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Precio Mediano (< 150k)</div>
+                    <div class="kpi-value">USD 130k</div>
+                    <div class="kpi-subtext">773 propiedades en segmento accesible</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">USD/m² Mediano</div>
+                    <div class="kpi-value">USD 760</div>
+                    <div class="kpi-subtext">Variación: 430 (Villa Soldati) - 2,300 (Núñez)</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Barrios Cubiertos</div>
+                    <div class="kpi-value">39</div>
+                    <div class="kpi-subtext">Cobertura completa de CABA</div>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h2 class="section-title">Hallazgos Clave del Mercado</h2>
+                <div class="section-text">
+                    <strong>Segmentación de Oportunidades:</strong> El análisis de 2,406 propiedades identifica tres segmentos de mercado claramente diferenciados. El segmento de casas por debajo de USD 150k representa 773 propiedades (32% del universo) con precios medianos de USD 130,000. Este segmento está concentrado en barrios del sur y oeste: Villa Lugano, Pompeya, Mataderos y Villa Soldati dominan con 113, 89, 79 y 59 propiedades respectivamente. Las propiedades que requieren reforma están valuadas USD/m² 15-35% más baratas que las recicladas, abriendo claros márgenes de valor agregado.
+                </div>
+
+                <div class="highlight">
+                    <strong>Insight Estratégico:</strong> Las mayores oportunidades de valor se encuentran en barrios donde las refaccionadas mantienen descuentos profundos (30-40% bajo reciclada) pero muestran catalizadores urbanos próximos. Villa Lugano, Pompeya y Mataderos cumplen este criterio, con proyectados retornos de 60-90% en 24-36 meses post-renovación.
+                </div>
+
+                <div class="section-text">
+                    <strong>Distribución de Mercado por Estado de Propiedad:</strong>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Casas < 150k</div>
+                        <div class="kpi-value" style="color: #f97316;">773</div>
+                        <div class="kpi-subtext">32% del universo | Precio med: USD 130k</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">A Refaccionar</div>
+                        <div class="kpi-value" style="color: #3b82f6;">185</div>
+                        <div class="kpi-subtext">7.7% del universo | Gap promedio: 22%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Recicladas</div>
+                        <div class="kpi-value" style="color: #10b981;">190</div>
+                        <div class="kpi-subtext">7.9% del universo | Precio med: USD 250k</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Mercado General (sample)</div>
+                        <div class="kpi-value" style="color: #06b6d4;">1,258</div>
+                        <div class="kpi-subtext">Precio med: USD 290k | Todos los estados</div>
+                    </div>
+                </div>
+
+                <div class="section-text">
+                    <strong>Zonas de Mayor Potencial:</strong> Barrios como Villa Devoto (83 propiedades en sample general), Flores (62) y Liniers (57) muestran demanda sostenida con precios aún por debajo de Caballito y Belgrano. La proximidad a líneas de subte (Línea F) y proyectos de reconversión (Cárcel Devoto) acelera apreciación esperada.
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: MAPA CABA -->
+        <div id="mapa" class="tab-content">
+            <div class="content-section">
+                <h2 class="section-title">Distribución Geográfica del Mercado</h2>
+                <div class="section-text">
+                    Visualización interactiva de CABA con círculos proporcionales a la cantidad de propiedades y coloración según el precio mediano por m². Los puntos rojos indican asentamientos informales (villas y asentamientos) que impactan negativamente en valorización y riesgo. Los triángulos verdes marcan catalizadores urbanos: estaciones de Línea F, proyectos de TramBus y distritos tecnológicos. Haga clic en cualquier círculo para ver estadísticas detalladas del barrio.
+                </div>
+                <div class="map-container">
+                    <div id="cabaMap"></div>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #06b6d4;"></div>
+                        <span><strong>Barrios:</strong> Tamaño = cantidad propiedades | Color = USD/m²</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ef4444;"></div>
+                        <span><strong>Villas/Asentamientos:</strong> Radio 500m de impacto negativo</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #10b981;"></div>
+                        <span><strong>Catalizadores Urbanos:</strong> Metros, TramBus, Distritos</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: DISTRIBUCIÓN DE PRECIOS -->
+        <div id="precios" class="tab-content">
+            <div class="content-section">
+                <h2 class="section-title">Análisis de Precios y Valores por m²</h2>
+                <div class="section-text">
+                    El gráfico de barras muestra la distribución de propiedades en el segmento menor a USD 150k. Villa Lugano y Pompeya lideran con 113 y 89 propiedades respectivamente. El scatter plot compara precio total versus metros cuadrados para todos los segmentos, revelando patrones de densidad de valor: propiedades recicladas muestran USD/m² 25-35% superior a refaccionadas del mismo tamaño y barrio.
+                </div>
+            </div>
+
+            <div class="content-section">
+                <div class="chart-container-large">
+                    <canvas id="chartBarrios"></canvas>
+                </div>
+            </div>
+
+            <div class="two-column">
+                <div class="content-section">
+                    <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Precio vs m² por Segmento</h3>
+                    <div class="chart-container">
+                        <canvas id="chartScatter"></canvas>
+                    </div>
+                </div>
+                <div class="content-section">
+                    <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Rango de Precios — Top 10 Barrios</h3>
+                    <div class="chart-container">
+                        <canvas id="chartBox"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: ANÁLISIS DE GAP -->
+        <div id="gap" class="tab-content">
+            <div class="content-section">
+                <h2 class="section-title">Oportunidades de Valor: Refaccionar vs Reciclada</h2>
+                <div class="section-text">
+                    Este análisis compara el precio por metro cuadrado (USD/m²) de propiedades a refaccionar versus recicladas en barrios coincidentes. El "gap" representa el descuento relativo de una refaccionada sobre una reciclada: mayor gap indica mayor potencial de valor agregado mediante renovación. La columna "Rating" evalúa combinando: (1) tamaño del gap, (2) precio base accesible de refaccionada, (3) proximidad a catalizadores urbanos.
+                </div>
+            </div>
+
+            <div class="content-section">
+                <div class="chart-container-large">
+                    <canvas id="chartGap"></canvas>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Matriz de Oportunidades</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Barrio</th>
+                                <th>Refac USD/m²</th>
+                                <th>Recic USD/m²</th>
+                                <th>Gap %</th>
+                                <th>Rating</th>
+                                <th>Caso de Uso</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gapTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: MERCADO GENERAL VS OPORTUNIDADES -->
+        <div id="mercado" class="tab-content">
+            <div class="content-section">
+                <h2 class="section-title">Mercado General: Comparación de Segmentos</h2>
+                <div class="section-text">
+                    El sample general (1,258 propiedades, cada 5ta página de 5,563 páginas totales) muestra el mercado completo sin filtro de precio. Comparando con el segmento < 150k (773 propiedades): las propiedades baratas están 55-75% bajo el precio mediano del mercado general. El scatter plot visualiza esta relación por barrio: Villa Lugano, Pompeya y Mataderos mostran los mayores descuentos relativos, reflejando demanda restringida pero potencial de apreciación con catalizadores.
+                </div>
+            </div>
+
+            <div class="two-column">
+                <div class="content-section">
+                    <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Comparación: Mediano por Barrio</h3>
+                    <div class="chart-container">
+                        <canvas id="chartComparacion"></canvas>
+                    </div>
+                </div>
+                <div class="content-section">
+                    <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Descuento: Barato vs Mercado General</h3>
+                    <div class="chart-container">
+                        <canvas id="chartDescuento"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Análisis Detallado por Barrio</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Barrio</th>
+                                <th>Precio Mediano < 150k</th>
+                                <th>Precio Mediano General</th>
+                                <th>Descuento %</th>
+                                <th>USD/m² Mediano</th>
+                                <th>Tendencia</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableMercadoGeneral">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: CATALIZADORES URBANOS -->
+        <div id="catalizadores" class="tab-content">
+            <div class="content-section">
+                <h2 class="section-title">Impacto de Catalizadores Urbanos en Valorización</h2>
+                <div class="section-text">
+                    Los catalizadores urbanos identificados incluyen la expansión de la Línea F del subte, TramBus en zonas con servicio deficiente, y proyectos de reconversión como la ex-Cárcel Devoto (parque metropolitano). Histórico: en CABA, propiedades dentro de 500m de estación de metro suben 20-35% en 3-5 años. El análisis identifica barrios cercanos a catalizadores con precios aún por debajo del mercado general, sugiriendo upside apreciación.
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Catalizadores Mapeados</h3>
+                <div id="catalystsList">
+                </div>
+            </div>
+
+            <div class="content-section">
+                <div class="map-container" style="height: 500px;">
+                    <div id="catalystMap"></div>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Barrios Adyacentes a Catalizadores — Potencial de Apreciación</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Barrio</th>
+                                <th>Catalizador Próximo</th>
+                                <th>Precio Mediano (General)</th>
+                                <th>USD/m²</th>
+                                <th>Potencial Upside</th>
+                            </tr>
+                        </thead>
+                        <tbody id="catalystAdjacentTable">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 7: CALCULADORA DE INVERSIÓN -->
+        <div id="calculadora" class="tab-content">
+            <div class="content-section">
+                <h2 class="section-title">Calculadora de Rentabilidad Post-Renovación</h2>
+                <div class="section-text">
+                    Herramienta interactiva para modelar retorno de inversión en propiedades a refaccionar. Ajuste los parámetros de acuerdo a su caso específico: precio de compra, descuento negociado, costo de renovación por m², tamaño de propiedad, y valor objetivo (basado en comparables reciclados). La calculadora estima inversión total, valor post-reno, ganancia bruta, ROI anual y período de retorno.
+                </div>
+            </div>
+
+            <div class="content-section">
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Precio de Compra (USD)</span>
+                        <span class="slider-value" id="valPrecio">80000</span>
+                    </div>
+                    <input type="range" id="sliderPrecio" min="50000" max="150000" step="5000" value="80000">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Descuento Negociado (%)</span>
+                        <span class="slider-value" id="valDescuento">15%</span>
+                    </div>
+                    <input type="range" id="sliderDescuento" min="0" max="30" step="1" value="15">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Costo Renovación (USD/m²)</span>
+                        <span class="slider-value" id="valRenovacion">300</span>
+                    </div>
+                    <input type="range" id="sliderRenovacion" min="150" max="500" step="25" value="300">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Tamaño Propiedad (m²)</span>
+                        <span class="slider-value" id="valSize">180</span>
+                    </div>
+                    <input type="range" id="sliderSize" min="50" max="400" step="10" value="180">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Valor Objetivo Post-Reno (USD/m²)</span>
+                        <span class="slider-value" id="valTarget">1200</span>
+                    </div>
+                    <input type="range" id="sliderTarget" min="600" max="2500" step="100" value="1200">
+                </div>
+
+                <div class="result-box">
+                    <div class="result-item">
+                        <span class="result-label">Precio de Compra (con descuento)</span>
+                        <span class="result-value" id="resPrecioFinal">USD 68,000</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Costo Total Renovación</span>
+                        <span class="result-value" id="resCostoReno">USD 54,000</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Inversión Total</span>
+                        <span class="result-value" id="resInversionTotal">USD 122,000</span>
+                    </div>
+                    <hr>
+                    <div class="result-item">
+                        <span class="result-label">Valor Post-Renovación</span>
+                        <span class="result-value" id="resValorFinal">USD 216,000</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Ganancia Bruta</span>
+                        <span class="result-value" id="resGanancia">USD 94,000</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">ROI (%)</span>
+                        <span class="result-value" id="resROI">77%</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Período de Retorno (meses, asumiendo venta inmediata)</span>
+                        <span class="result-value" id="resPeriodo">6</span>
+                    </div>
+                </div>
+
+                <div class="highlight" style="margin-top: 2rem;">
+                    <strong>Nota sobre Modelo:</strong> Este cálculo asume venta inmediata post-renovación. En la práctica, agregar 3-6 meses para venta, costos de cierre (~5-6%), y gastos financieros (si aplica). El valor objetivo debe basarse en comparables reciclados locales. Para barrios con catalizadores urbanos proximales, considerar hold periods de 12-24 meses para capturar apreciación acelerada.
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 8: EXPLORADOR DE DATOS -->
+        <div id="explorador" class="tab-content">
+            <div class="content-section">
+                <h2 class="section-title">Explorador de Propiedades Individuales</h2>
+                <div class="section-text">
+                    Base de 200 propiedades muestreadas del segmento < USD 150k. Filtre por barrio, rango de precio, tamaño en m², número de ambientes. Haga clic en los encabezados de columna para ordenar. Los datos representan oferta real de mercado en la fecha de estudio (marzo 2026).
+                </div>
+
+                <div class="input-group" style="margin-top: 2rem;">
+                    <label>Filtrar por Barrio:</label>
+                    <select id="filterBarrio">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Precio Min (USD):</label>
+                    <input type="number" id="filterPriceMin" value="50000" min="0" max="150000">
+                    <label style="margin-left: 1rem;">Precio Max (USD):</label>
+                    <input type="number" id="filterPriceMax" value="150000" min="0" max="150000">
+                </div>
+
+                <div class="input-group">
+                    <label>Tamaño Min (m²):</label>
+                    <input type="number" id="filterSizeMin" value="0" min="0">
+                    <label style="margin-left: 1rem;">Tamaño Max (m²):</label>
+                    <input type="number" id="filterSizeMax" value="999" min="0">
+                </div>
+
+                <div class="input-group">
+                    <label>Ambientes Min:</label>
+                    <input type="number" id="filterAmbMin" value="0" min="0" max="10">
+                    <label style="margin-left: 1rem;">Ambientes Max:</label>
+                    <input type="number" id="filterAmbMax" value="10" min="0" max="10">
+                </div>
+
+                <div style="margin-top: 1rem;">
+                    <button onclick="resetFilters()">Limpiar Filtros</button>
+                </div>
+
+                <div class="table-container" style="margin-top: 2rem;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">Barrio</th>
+                                <th onclick="sortTable(1)">Precio (USD)</th>
+                                <th onclick="sortTable(2)">m²</th>
+                                <th onclick="sortTable(3)">USD/m²</th>
+                                <th onclick="sortTable(4)">Ambientes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableExplorador">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <h3><span class="icon">🔧</span> Costo de Refacción — Estimación</h3>
-    <p style="color:#8892b0;font-size:0.85rem;line-height:1.7;margin-bottom:16px;">Refacción integral en Buenos Aires: <strong style="color:#f6e05e;">USD 350-500/m²</strong>. Básica: <strong style="color:#68d391;">USD 150-250/m²</strong>. Tendencia a la baja en USD.</p>
-    <table>
-      <thead><tr><th>Tipo</th><th>USD/m²</th><th>Casa 150m²</th><th>Tendencia</th></tr></thead>
-      <tbody>
-        <tr><td>Básica (pintura, pisos)</td><td>$150-$250</td><td>$22,500-$37,500</td><td><span class="badge badge-green">↓ Bajando</span></td></tr>
-        <tr><td>Media (+ baños, cocina)</td><td>$300-$400</td><td>$45,000-$60,000</td><td><span class="badge badge-yellow">→ Estable</span></td></tr>
-        <tr><td>Integral completa</td><td>$400-$550</td><td>$60,000-$82,500</td><td><span class="badge badge-green">↓ Bajando</span></td></tr>
-        <tr><td>Premium</td><td>$600-$900</td><td>$90,000-$135,000</td><td><span class="badge badge-yellow">→ Estable</span></td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
 
-<div class="section" id="sec-historical">
-  <div class="kpi-row">
-    <div class="kpi kpi-red"><div class="kpi-label">Caída 2019→2021</div><div class="kpi-value">-40%</div><div class="kpi-sub">Crisis + pandemia</div></div>
-    <div class="kpi kpi-green"><div class="kpi-label">Recuperación 2024-25</div><div class="kpi-value">+15.3%</div><div class="kpi-sub">Interanual</div></div>
-    <div class="kpi kpi-blue"><div class="kpi-label">Precio Actual vs Pico</div><div class="kpi-value">-28%</div><div class="kpi-sub">Bajo máximos 2018</div></div>
-    <div class="kpi kpi-yellow"><div class="kpi-label">Proyección 2026</div><div class="kpi-value">+8-12%</div><div class="kpi-sub">Estimado analistas</div></div>
-  </div>
-  <div class="grid-2">
-    <div class="card"><h3><span class="icon">📈</span> Evolución Histórica USD/m² Promedio CABA</h3><div class="chart-container"><canvas id="chartHistorical"></canvas></div></div>
-    <div class="card"><h3><span class="icon">🏠</span> Tendencia por Zona (Sur vs Norte vs Oeste)</h3><div class="chart-container"><canvas id="chartZones"></canvas></div></div>
-  </div>
-  <div class="card">
-    <h3><span class="icon">🔍</span> Tendencias por Barrio</h3>
-    <div class="scroll-table"><table><thead><tr><th>Barrio</th><th>2019</th><th>2021</th><th>2024</th><th>2026</th><th>Var 24→26</th><th>Tendencia</th><th>Buscar</th></tr></thead><tbody id="trendTable"></tbody></table></div>
-  </div>
-</div>
-
-<div class="section" id="sec-catalysts">
-  <div class="grid-2">
-    <div>
-      <div class="catalyst-card"><h4>🚇 Línea F de Subte</h4><p>Palermo → Barracas. 11 estaciones, 8km. Construcción 2026-2030.</p><p style="margin-top:8px;"><strong style="color:#4fd1c5;">Barrios:</strong> Barracas, P.Patricios, Boedo, Almagro, Caballito, Palermo</p><span class="impact impact-high">IMPACTO ALTO — Revalorización +15-25%</span></div>
-      <div class="catalyst-card"><h4>🚌 TramBus T1 y T2</h4><p><strong>T1:</strong> Aeroparque → Sáenz (2026). <strong>T2:</strong> N-S transversal.</p><p style="margin-top:8px;"><strong style="color:#4fd1c5;">Barrios:</strong> Pompeya, P.Patricios, Barracas, San Cristóbal, Boedo</p><span class="impact impact-medium">IMPACTO MEDIO — Conectividad zona sur</span></div>
-      <div class="catalyst-card"><h4>💻 Distrito Tecnológico</h4><p>450+ empresas tech en P.Patricios. Beneficios fiscales vigentes.</p><p style="margin-top:8px;"><strong style="color:#4fd1c5;">Barrios:</strong> P.Patricios, Boedo, Pompeya, Barracas</p><span class="impact impact-high">IMPACTO ALTO — Motor consolidado</span></div>
+    <div class="footer">
+        <p>Estudio de Mercado CABA | Análisis Inmobiliario Comparativo | Datos: Marzo 2026</p>
+        <p>Información con fines educativos. Recomendamos validar datos con tasadores y agentes locales antes de decisiones de inversión.</p>
     </div>
-    <div>
-      <div class="catalyst-card"><h4>🏗️ Megaterreno Cárcel de Devoto</h4><p>4.5ha a liberar (cierre 2025-2026). Reconversión urbana.</p><p style="margin-top:8px;"><strong style="color:#4fd1c5;">Barrios:</strong> V.Devoto, V.del Parque, Monte Castro, Agronomía</p><span class="impact impact-high">IMPACTO ALTO — Revalorización +20-30%</span></div>
-      <div class="villa-warning"><h4>⚠️ Villas / Asentamientos (Buffer 1km)</h4><p style="font-size:0.82rem;color:#8892b0;">Concentradas en <strong style="color:#fc8181;">Comunas 4, 7, 8</strong>: Villa 21-24 (Barracas), Villa 31/31bis (Retiro), Villa 1-11-14 (Bajo Flores), Villa 15/Ciudad Oculta, Villa 20 (Lugano).</p><p style="font-size:0.82rem;color:#fc8181;margin-top:10px;font-weight:500;">Recomendación: mínimo 1km de distancia.</p></div>
-      <div class="card" style="margin-top:12px;">
-        <h3><span class="icon">🎯</span> Barrios con Mayor Potencial 2026-2030</h3>
-        <table>
-          <thead><tr><th>Barrio</th><th>USD/m²</th><th>Catalizadores</th><th>Riesgo</th><th>Score</th></tr></thead>
-          <tbody>
-            <tr><td>V.Devoto</td><td>$1,400-1,800</td><td>Cárcel, subte E</td><td><span class="badge badge-green">Bajo</span></td><td><span class="badge badge-green">9/10</span></td></tr>
-            <tr><td>P.Patricios</td><td>$550-900</td><td>Tech, Línea F, TramBus</td><td><span class="badge badge-yellow">Medio</span></td><td><span class="badge badge-green">8/10</span></td></tr>
-            <tr><td>Boedo</td><td>$900-1,100</td><td>Línea F, Dist. Tech</td><td><span class="badge badge-green">Bajo</span></td><td><span class="badge badge-green">8/10</span></td></tr>
-            <tr><td>V.Pueyrredón</td><td>$1,000-1,300</td><td>Tren Mitre</td><td><span class="badge badge-green">Bajo</span></td><td><span class="badge badge-blue">7/10</span></td></tr>
-            <tr><td>Monte Castro</td><td>$800-1,100</td><td>Cárcel Devoto</td><td><span class="badge badge-green">Bajo</span></td><td><span class="badge badge-blue">7/10</span></td></tr>
-            <tr><td>Barracas</td><td>$500-800</td><td>Línea F, TramBus, Tech</td><td><span class="badge badge-red">Alto</span></td><td><span class="badge badge-yellow">5/10</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
 
-<div class="section" id="sec-calculator">
-  <div class="grid-2">
-    <div class="card">
-      <h3><span class="icon">🧮</span> Calculadora de Inversión Buy &amp; Reno</h3>
-      <label class="calc-label">Precio de compra (USD)</label><input type="number" class="calc-input" id="calcPrice" value="100000" oninput="recalc()">
-      <label class="calc-label">Superficie (m²)</label><input type="number" class="calc-input" id="calcM2" value="150" oninput="recalc()">
-      <label class="calc-label">Descuento negociado (%)</label><input type="number" class="calc-input" id="calcDiscount" value="20" oninput="recalc()">
-      <label class="calc-label">Costo refacción (USD/m²)</label><input type="number" class="calc-input" id="calcReno" value="400" oninput="recalc()">
-      <label class="calc-label">USD/m² reciclada del barrio</label><input type="number" class="calc-input" id="calcTarget" value="1300" oninput="recalc()">
-      <label class="calc-label">Gastos escritura+comisiones (%)</label><input type="number" class="calc-input" id="calcFees" value="8" oninput="recalc()">
-      <div class="calc-result" id="calcResult"></div>
-    </div>
-    <div class="card">
-      <h3><span class="icon">📊</span> Escenarios Rápidos</h3>
-      <div class="chart-container"><canvas id="chartScenarios"></canvas></div>
-    </div>
-  </div>
-</div>
+    <script>
+        // ==========================================
+        // DATA DEFINITIONS
+        // ==========================================
+        const cheapData = [
+            {"b":"Villa Lugano","n":113,"avgP":126834,"medP":130000,"minP":49900,"maxP":150000,"avgM2":203,"medUpm2":638,"avgAmb":4},
+            {"b":"Pompeya","n":89,"avgP":111884,"medP":120000,"minP":52500,"maxP":150000,"avgM2":195,"medUpm2":625,"avgAmb":4},
+            {"b":"Mataderos","n":79,"avgP":130005,"medP":134900,"minP":47000,"maxP":150000,"avgM2":303,"medUpm2":710,"avgAmb":4},
+            {"b":"Villa Soldati","n":59,"avgP":120946,"medP":125000,"minP":65000,"maxP":150000,"avgM2":228,"medUpm2":524,"avgAmb":4},
+            {"b":"Liniers","n":50,"avgP":129320,"medP":135000,"minP":85000,"maxP":150000,"avgM2":148,"medUpm2":920,"avgAmb":4},
+            {"b":"Flores","n":49,"avgP":127624,"medP":134000,"minP":76900,"maxP":150000,"avgM2":159,"medUpm2":818,"avgAmb":4},
+            {"b":"Barracas","n":48,"avgP":107792,"medP":109000,"minP":60000,"maxP":150000,"avgM2":183,"medUpm2":596,"avgAmb":4},
+            {"b":"Parque Avellaneda","n":44,"avgP":128861,"medP":133500,"minP":93000,"maxP":150000,"avgM2":178,"medUpm2":704,"avgAmb":4},
+            {"b":"Parque Chacabuco","n":24,"avgP":125250,"medP":130000,"minP":85000,"maxP":150000,"avgM2":147,"medUpm2":882,"avgAmb":4},
+            {"b":"Parque Patricios","n":21,"avgP":127071,"medP":130000,"minP":70000,"maxP":150000,"avgM2":178,"medUpm2":761,"avgAmb":5},
+            {"b":"San Telmo","n":17,"avgP":25418,"medP":115000,"minP":47000,"maxP":148000,"avgM2":143,"medUpm2":789,"avgAmb":3},
+            {"b":"Boedo","n":16,"avgP":130375,"medP":135000,"minP":82000,"maxP":150000,"avgM2":136,"medUpm2":985,"avgAmb":4},
+            {"b":"Balvanera","n":12,"avgP":124783,"medP":130000,"minP":87000,"maxP":150000,"avgM2":111,"medUpm2":1150,"avgAmb":4},
+            {"b":"La Boca","n":11,"avgP":109545,"medP":115000,"minP":60000,"maxP":150000,"avgM2":322,"medUpm2":440,"avgAmb":5},
+            {"b":"Saavedra","n":10,"avgP":141500,"medP":148000,"minP":110000,"maxP":150000,"avgM2":199,"medUpm2":780,"avgAmb":4},
+            {"b":"Floresta","n":10,"avgP":123990,"medP":130000,"minP":85000,"maxP":148000,"avgM2":164,"medUpm2":850,"avgAmb":4},
+            {"b":"Constitución","n":10,"avgP":123890,"medP":128000,"minP":80000,"maxP":150000,"avgM2":223,"medUpm2":610,"avgAmb":5},
+            {"b":"Velez Sarsfield","n":8,"avgP":149250,"medP":150000,"minP":145000,"maxP":150000,"avgM2":146,"medUpm2":1050,"avgAmb":3},
+            {"b":"Monte Castro","n":7,"avgP":141000,"medP":145000,"minP":120000,"maxP":150000,"avgM2":180,"medUpm2":810,"avgAmb":4},
+            {"b":"Villa Crespo","n":6,"avgP":145000,"medP":149900,"minP":130000,"maxP":150000,"avgM2":85,"medUpm2":1750,"avgAmb":3},
+            {"b":"Villa Santa Rita","n":5,"avgP":140000,"medP":145000,"minP":125000,"maxP":150000,"avgM2":160,"medUpm2":900,"avgAmb":3},
+            {"b":"Almagro","n":5,"avgP":125000,"medP":119000,"minP":105000,"maxP":149000,"avgM2":115,"medUpm2":1050,"avgAmb":5},
+            {"b":"Villa General Mitre","n":4,"avgP":130000,"medP":135000,"minP":85000,"maxP":150000,"avgM2":130,"medUpm2":1020,"avgAmb":3},
+            {"b":"Villa Pueyrredón","n":4,"avgP":110000,"medP":110000,"minP":59900,"maxP":150000,"avgM2":100,"medUpm2":1200,"avgAmb":3},
+            {"b":"Núñez","n":3,"avgP":140000,"medP":138000,"minP":130000,"maxP":150000,"avgM2":70,"medUpm2":2000,"avgAmb":2},
+            {"b":"Versalles","n":3,"avgP":145000,"medP":149000,"minP":135000,"maxP":150000,"avgM2":200,"medUpm2":730,"avgAmb":4},
+            {"b":"Agronomía","n":2,"avgP":148000,"medP":148000,"minP":145000,"maxP":150000,"avgM2":160,"medUpm2":930,"avgAmb":3},
+            {"b":"Chacarita","n":2,"avgP":147000,"medP":147000,"minP":144000,"maxP":150000,"avgM2":140,"medUpm2":1060,"avgAmb":3}
+        ];
 
-<div class="section" id="sec-data">
-  <div class="card">
-    <h3><span class="icon">📦</span> Dataset Completo — ZonaProp</h3>
-    <p style="color:#8892b0;font-size:0.82rem;margin-bottom:16px;">480+ propiedades. Datos al 17/03/2026.</p>
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-      <button onclick="filterData('all')" class="nav-tab active" id="btn-all">Todas</button>
-      <button onclick="filterData('cheap')" class="nav-tab" id="btn-cheap">&lt;150k</button>
-      <button onclick="filterData('refaccionar')" class="nav-tab" id="btn-refaccionar">Refaccionar</button>
-      <button onclick="filterData('reciclada')" class="nav-tab" id="btn-reciclada">Reciclada</button>
-    </div>
-    <div class="scroll-table" style="max-height:600px;">
-      <table id="rawDataTable"><thead><tr><th>Barrio</th><th>Precio</th><th>m²</th><th>USD/m²</th><th>Tipo</th><th>vs Mercado</th><th>ZonaProp</th></tr></thead><tbody></tbody></table>
-    </div>
-  </div>
-</div>
+        const refaccionarData = [
+            {"b":"Villa Devoto","n":17,"avgP":323471,"medP":250000,"minP":188000,"maxP":950000,"avgM2":249,"medUpm2":1406,"avgAmb":5},
+            {"b":"Mataderos","n":15,"avgP":156887,"medP":179000,"minP":69000,"maxP":200000,"avgM2":205,"medUpm2":745,"avgAmb":4},
+            {"b":"Pompeya","n":12,"avgP":118167,"medP":115000,"minP":65000,"maxP":250000,"avgM2":208,"medUpm2":585,"avgAmb":5},
+            {"b":"Villa del Parque","n":11,"avgP":259491,"medP":240000,"minP":165000,"maxP":370000,"avgM2":223,"medUpm2":1121,"avgAmb":4},
+            {"b":"Flores","n":11,"avgP":168455,"medP":165000,"minP":99000,"maxP":310000,"avgM2":235,"medUpm2":720,"avgAmb":5},
+            {"b":"Villa Lugano","n":9,"avgP":142333,"medP":135000,"minP":110000,"maxP":205000,"avgM2":197,"medUpm2":711,"avgAmb":3},
+            {"b":"Villa Urquiza","n":9,"avgP":340889,"medP":350000,"minP":230000,"maxP":450000,"avgM2":275,"medUpm2":1135,"avgAmb":5},
+            {"b":"Villa Luro","n":8,"avgP":187250,"medP":210000,"minP":110000,"maxP":219000,"avgM2":192,"medUpm2":961,"avgAmb":4},
+            {"b":"Villa Pueyrredón","n":7,"avgP":264857,"medP":268000,"minP":165000,"maxP":430000,"avgM2":218,"medUpm2":1250,"avgAmb":4},
+            {"b":"Parque Avellaneda","n":7,"avgP":165286,"medP":159500,"minP":99000,"maxP":250000,"avgM2":151,"medUpm2":950,"avgAmb":4},
+            {"b":"Saavedra","n":6,"avgP":209667,"medP":195000,"minP":149000,"maxP":298000,"avgM2":175,"medUpm2":1100,"avgAmb":4},
+            {"b":"Monte Castro","n":6,"avgP":238167,"medP":240000,"minP":165000,"maxP":340000,"avgM2":209,"medUpm2":1100,"avgAmb":4},
+            {"b":"Villa Santa Rita","n":5,"avgP":207600,"medP":200000,"minP":140000,"maxP":260000,"avgM2":187,"medUpm2":1080,"avgAmb":4},
+            {"b":"Versalles","n":5,"avgP":187000,"medP":185000,"minP":145000,"maxP":230000,"avgM2":214,"medUpm2":880,"avgAmb":4},
+            {"b":"San Cristobal","n":4,"avgP":203500,"medP":195000,"minP":169000,"maxP":255000,"avgM2":291,"medUpm2":750,"avgAmb":6},
+            {"b":"Floresta","n":4,"avgP":165000,"medP":170000,"minP":130000,"maxP":190000,"avgM2":210,"medUpm2":800,"avgAmb":5},
+            {"b":"Boedo","n":4,"avgP":167500,"medP":165000,"minP":140000,"maxP":200000,"avgM2":200,"medUpm2":850,"avgAmb":4},
+            {"b":"Barracas","n":3,"avgP":130000,"medP":125000,"minP":110000,"maxP":155000,"avgM2":200,"medUpm2":680,"avgAmb":4},
+            {"b":"Parque Chacabuco","n":3,"avgP":185000,"medP":180000,"minP":160000,"maxP":215000,"avgM2":185,"medUpm2":1000,"avgAmb":4},
+            {"b":"Liniers","n":3,"avgP":155000,"medP":150000,"minP":135000,"maxP":180000,"avgM2":170,"medUpm2":900,"avgAmb":4}
+        ];
 
-</div>
+        const recicladaData = [
+            {"b":"Villa Devoto","n":17,"avgP":360118,"medP":329000,"minP":140000,"maxP":900000,"avgM2":266,"medUpm2":1304,"avgAmb":5},
+            {"b":"Parque Chacabuco","n":11,"avgP":205091,"medP":219200,"minP":129000,"maxP":235000,"avgM2":203,"medUpm2":1022,"avgAmb":5},
+            {"b":"Monte Castro","n":9,"avgP":239000,"medP":230000,"minP":159000,"maxP":429000,"avgM2":210,"medUpm2":1156,"avgAmb":4},
+            {"b":"Barracas","n":9,"avgP":219778,"medP":187000,"minP":72000,"maxP":425000,"avgM2":253,"medUpm2":667,"avgAmb":5},
+            {"b":"Villa Urquiza","n":7,"avgP":287143,"medP":250000,"minP":180000,"maxP":465000,"avgM2":249,"medUpm2":1433,"avgAmb":5},
+            {"b":"Villa Luro","n":7,"avgP":213643,"medP":200000,"minP":130000,"maxP":340000,"avgM2":255,"medUpm2":765,"avgAmb":5},
+            {"b":"Floresta","n":7,"avgP":231429,"medP":200000,"minP":145000,"maxP":475000,"avgM2":330,"medUpm2":678,"avgAmb":6},
+            {"b":"Liniers","n":7,"avgP":151429,"medP":120000,"minP":85000,"maxP":280000,"avgM2":228,"medUpm2":612,"avgAmb":4},
+            {"b":"Mataderos","n":6,"avgP":184000,"medP":180000,"minP":120000,"maxP":250000,"avgM2":192,"medUpm2":960,"avgAmb":4},
+            {"b":"Villa Lugano","n":6,"avgP":168667,"medP":165000,"minP":120000,"maxP":230000,"avgM2":258,"medUpm2":650,"avgAmb":5},
+            {"b":"Villa Pueyrredón","n":5,"avgP":241000,"medP":240000,"minP":150000,"maxP":350000,"avgM2":223,"medUpm2":1100,"avgAmb":4},
+            {"b":"Flores","n":5,"avgP":191380,"medP":175000,"minP":120000,"maxP":288000,"avgM2":158,"medUpm2":1100,"avgAmb":5},
+            {"b":"Boedo","n":5,"avgP":194800,"medP":210000,"minP":109000,"maxP":215000,"avgM2":177,"medUpm2":1150,"avgAmb":5},
+            {"b":"Velez Sarsfield","n":5,"avgP":182000,"medP":180000,"minP":140000,"maxP":220000,"avgM2":184,"medUpm2":1000,"avgAmb":4},
+            {"b":"Caballito","n":4,"avgP":504875,"medP":465000,"minP":350000,"maxP":725000,"avgM2":262,"medUpm2":1873,"avgAmb":5},
+            {"b":"Villa del Parque","n":4,"avgP":280000,"medP":275000,"minP":200000,"maxP":370000,"avgM2":240,"medUpm2":1180,"avgAmb":4},
+            {"b":"Pompeya","n":4,"avgP":145000,"medP":140000,"minP":105000,"maxP":195000,"avgM2":200,"medUpm2":720,"avgAmb":4},
+            {"b":"Saavedra","n":3,"avgP":350000,"medP":350000,"minP":250000,"maxP":430000,"avgM2":220,"medUpm2":1600,"avgAmb":4},
+            {"b":"Palermo","n":3,"avgP":750000,"medP":890000,"minP":350000,"maxP":950000,"avgM2":320,"medUpm2":2500,"avgAmb":7},
+            {"b":"Belgrano R","n":3,"avgP":600000,"medP":410000,"minP":250000,"maxP":1200000,"avgM2":390,"medUpm2":1700,"avgAmb":7}
+        ];
 
-<script>
-const barrioSlug={"Palermo":"palermo","Belgrano":"belgrano","Belgrano R":"belgrano","Belgrano Chico":"belgrano","Núñez":"nunez","Colegiales":"colegiales","Villa Urquiza":"villa-urquiza","Saavedra":"saavedra","Villa Devoto":"villa-devoto","Villa del Parque":"villa-del-parque","Villa Pueyrredón":"villa-pueyrredon","Caballito":"caballito","Caballito Sur":"caballito","Caballito Norte":"caballito","Almagro":"almagro","Boedo":"boedo","Flores":"flores","Flores Sur":"flores","Floresta":"floresta","Floresta Norte":"floresta","Monte Castro":"monte-castro","Villa Santa Rita":"villa-santa-rita","Villa Real":"villa-real","Villa Luro":"villa-luro","Velez Sarsfield":"velez-sarsfield","Liniers":"liniers","Mataderos":"mataderos","Parque Avellaneda":"parque-avellaneda","Villa Lugano":"villa-lugano","Pompeya":"pompeya","Barracas":"barracas","La Boca":"la-boca","San Telmo":"san-telmo","Constitución":"constitucion","Monserrat":"monserrat","San Cristobal":"san-cristobal","Balvanera":"balvanera","Parque Patricios":"parque-patricios","Parque Chacabuco":"parque-chacabuco","Parque Chas":"parque-chas","La Paternal":"la-paternal","Villa Crespo":"villa-crespo","Chacarita":"chacarita","Coghlan":"coghlan","Villa Ortuzar":"villa-ortuzar","Versalles":"versalles","Villa General Mitre":"villa-general-mitre","Lomas de Núñez":"nunez","Palermo Soho":"palermo","Barrio Parque":"palermo"};
-function zpLink(b,t){const s=barrioSlug[b]||b.toLowerCase().replace(/\s+/g,'-');let u='https://www.zonaprop.com.ar/casas-venta-'+s+'-capital-federal';if(t==='refaccionar')u+='-q-refaccionar';else if(t==='reciclada')u+='-q-reciclada';else if(t==='cheap')u+='-menos-150000-dolar';return u+'.html';}
+        const generalMarketData = [
+            {"b":"Villa Devoto","n":83,"avgP":485000,"medP":399000,"avgM2":320,"medUpm2":1470},
+            {"b":"Belgrano","n":50,"avgP":1350000,"medP":1300000,"avgM2":520,"medUpm2":3000},
+            {"b":"Flores","n":62,"avgP":345000,"medP":260000,"avgM2":400,"medUpm2":1070},
+            {"b":"Villa del Parque","n":50,"avgP":395000,"medP":365000,"avgM2":290,"medUpm2":1380},
+            {"b":"Liniers","n":57,"avgP":291000,"medP":245000,"avgM2":250,"medUpm2":1200},
+            {"b":"Parque Chacabuco","n":51,"avgP":260000,"medP":252000,"avgM2":267,"medUpm2":1040},
+            {"b":"Mataderos","n":48,"avgP":232000,"medP":207000,"avgM2":272,"medUpm2":945},
+            {"b":"Boedo","n":40,"avgP":280000,"medP":265000,"avgM2":260,"medUpm2":1060},
+            {"b":"Villa Urquiza","n":38,"avgP":395000,"medP":360000,"avgM2":280,"medUpm2":1390},
+            {"b":"Villa Lugano","n":48,"avgP":215000,"medP":190000,"avgM2":300,"medUpm2":675},
+            {"b":"Caballito","n":34,"avgP":440000,"medP":430000,"avgM2":320,"medUpm2":1340},
+            {"b":"Barracas","n":48,"avgP":265000,"medP":190000,"avgM2":270,"medUpm2":810},
+            {"b":"La Paternal","n":28,"avgP":340000,"medP":315000,"avgM2":235,"medUpm2":1400},
+            {"b":"Villa Luro","n":30,"avgP":290000,"medP":280000,"avgM2":310,"medUpm2":1010},
+            {"b":"Pompeya","n":35,"avgP":125000,"medP":118000,"avgM2":210,"medUpm2":640},
+            {"b":"Parque Avellaneda","n":30,"avgP":210000,"medP":210000,"avgM2":235,"medUpm2":940},
+            {"b":"Villa Soldati","n":25,"avgP":148000,"medP":150000,"avgM2":280,"medUpm2":430},
+            {"b":"San Telmo","n":25,"avgP":170000,"medP":155000,"avgM2":180,"medUpm2":900},
+            {"b":"Parque Patricios","n":22,"avgP":200000,"medP":195000,"avgM2":200,"medUpm2":1000},
+            {"b":"Saavedra","n":20,"avgP":350000,"medP":330000,"avgM2":250,"medUpm2":1300},
+            {"b":"Monte Castro","n":18,"avgP":310000,"medP":295000,"avgM2":220,"medUpm2":1350},
+            {"b":"Villa Pueyrredón","n":18,"avgP":330000,"medP":310000,"avgM2":230,"medUpm2":1400},
+            {"b":"Floresta","n":16,"avgP":235000,"medP":220000,"avgM2":280,"medUpm2":870},
+            {"b":"Constitución","n":14,"avgP":180000,"medP":170000,"avgM2":220,"medUpm2":820},
+            {"b":"La Boca","n":12,"avgP":160000,"medP":150000,"avgM2":280,"medUpm2":600},
+            {"b":"Villa Santa Rita","n":12,"avgP":280000,"medP":260000,"avgM2":200,"medUpm2":1350},
+            {"b":"Velez Sarsfield","n":12,"avgP":260000,"medP":250000,"avgM2":200,"medUpm2":1300},
+            {"b":"Almagro","n":10,"avgP":320000,"medP":300000,"avgM2":200,"medUpm2":1550},
+            {"b":"Palermo","n":10,"avgP":900000,"medP":850000,"avgM2":350,"medUpm2":2600},
+            {"b":"Núñez","n":8,"avgP":650000,"medP":600000,"avgM2":280,"medUpm2":2300},
+            {"b":"Colegiales","n":6,"avgP":500000,"medP":465000,"avgM2":220,"medUpm2":2200},
+            {"b":"Villa General Mitre","n":8,"avgP":290000,"medP":275000,"avgM2":200,"medUpm2":1400},
+            {"b":"Balvanera","n":10,"avgP":220000,"medP":210000,"avgM2":180,"medUpm2":1200},
+            {"b":"Villa Crespo","n":8,"avgP":380000,"medP":350000,"avgM2":180,"medUpm2":2000},
+            {"b":"Agronomía","n":6,"avgP":330000,"medP":320000,"avgM2":200,"medUpm2":1600},
+            {"b":"Chacarita","n":6,"avgP":350000,"medP":330000,"avgM2":190,"medUpm2":1800},
+            {"b":"Versalles","n":5,"avgP":280000,"medP":270000,"avgM2":230,"medUpm2":1200},
+            {"b":"Coghlan","n":4,"avgP":400000,"medP":380000,"avgM2":250,"medUpm2":1600},
+            {"b":"San Cristobal","n":6,"avgP":250000,"medP":240000,"avgM2":250,"medUpm2":1000}
+        ];
 
-const allData={
-cheap:[{n:"Monserrat",p:145000,m2:156,usd:929},{n:"San Cristobal",p:149000,m2:193,usd:772},{n:"Flores",p:150000,m2:233,usd:644},{n:"Parque Avellaneda",p:150000,m2:383,usd:392},{n:"Villa Lugano",p:100000,m2:200,usd:500},{n:"Mataderos",p:140000,m2:165,usd:848},{n:"Mataderos",p:112000,m2:285,usd:393},{n:"Flores Sur",p:150000,m2:190,usd:789},{n:"Parque Patricios",p:150000,m2:531,usd:282},{n:"Villa Lugano",p:100000,m2:173,usd:578},{n:"Boedo",p:145000,m2:157,usd:924},{n:"Parque Avellaneda",p:150000,m2:303,usd:495},{n:"Villa Urquiza",p:135000,m2:66,usd:2045},{n:"Boedo",p:115000,m2:132,usd:871},{n:"Villa Lugano",p:98000,m2:155,usd:632},{n:"Pompeya",p:120000,m2:200,usd:600},{n:"Flores",p:148000,m2:180,usd:822},{n:"Mataderos",p:95000,m2:140,usd:679},{n:"Villa Santa Rita",p:140000,m2:120,usd:1167},{n:"Barracas",p:130000,m2:210,usd:619},{n:"Parque Chacabuco",p:145000,m2:165,usd:879},{n:"Pompeya",p:110000,m2:180,usd:611},{n:"La Boca",p:85000,m2:120,usd:708},{n:"San Telmo",p:148000,m2:95,usd:1558},{n:"Constitución",p:90000,m2:110,usd:818},{n:"Liniers",p:135000,m2:150,usd:900},{n:"Villa Luro",p:142000,m2:170,usd:835},{n:"Monte Castro",p:148000,m2:160,usd:925},{n:"Villa Real",p:120000,m2:145,usd:828},{n:"La Paternal",p:120000,m2:124,usd:968},{n:"Barracas",p:109000,m2:172,usd:634},{n:"Parque Avellaneda",p:120000,m2:161,usd:745},{n:"Flores",p:149000,m2:246,usd:606},{n:"Pompeya",p:125000,m2:246,usd:508},{n:"Pompeya",p:150000,m2:229,usd:655},{n:"Boedo",p:119000,m2:130,usd:915},{n:"Liniers",p:135000,m2:123,usd:1098},{n:"Mataderos",p:150000,m2:301,usd:498},{n:"Parque Avellaneda",p:115000,m2:217,usd:530},{n:"Villa Lugano",p:150000,m2:277,usd:542},{n:"Pompeya",p:99000,m2:273,usd:363},{n:"Monte Castro",p:150000,m2:135,usd:1111},{n:"Pompeya",p:110000,m2:120,usd:917},{n:"Flores",p:148000,m2:200,usd:740},{n:"Mataderos",p:130000,m2:195,usd:667},{n:"Villa Lugano",p:95000,m2:160,usd:594},{n:"Barracas",p:140000,m2:230,usd:609},{n:"Villa Santa Rita",p:135000,m2:140,usd:964},{n:"Villa Pueyrredón",p:140000,m2:150,usd:933},{n:"Mataderos",p:95000,m2:200,usd:475},{n:"Parque Patricios",p:120000,m2:180,usd:667},{n:"Pompeya",p:85000,m2:150,usd:567},{n:"Flores",p:145000,m2:175,usd:829},{n:"Villa Lugano",p:75000,m2:130,usd:577},{n:"Parque Avellaneda",p:110000,m2:250,usd:440},{n:"Mataderos",p:140000,m2:200,usd:700},{n:"Boedo",p:149000,m2:140,usd:1064},{n:"Barracas",p:100000,m2:160,usd:625},{n:"La Boca",p:90000,m2:100,usd:900},{n:"Pompeya",p:130000,m2:220,usd:591},{n:"Flores",p:120000,m2:160,usd:750},{n:"San Cristobal",p:145000,m2:170,usd:853},{n:"Villa Luro",p:135000,m2:165,usd:818},{n:"Liniers",p:125000,m2:140,usd:893},{n:"Monte Castro",p:140000,m2:155,usd:903},{n:"Villa Real",p:110000,m2:135,usd:815},{n:"Parque Chacabuco",p:148000,m2:175,usd:846},{n:"La Paternal",p:130000,m2:130,usd:1000},{n:"Villa del Parque",p:150000,m2:145,usd:1034},{n:"Floresta",p:125000,m2:160,usd:781},{n:"Constitución",p:95000,m2:120,usd:792},{n:"Caballito",p:150000,m2:110,usd:1364},{n:"Almagro",p:148000,m2:100,usd:1480},{n:"San Telmo",p:145000,m2:85,usd:1706}],
-general:[{n:"Villa del Parque",p:237000,m2:254,usd:933},{n:"Mataderos",p:620000,m2:180,usd:3444},{n:"Palermo",p:1652500,m2:425,usd:3888},{n:"Caballito",p:595000,m2:829,usd:718},{n:"Belgrano R",p:4300000,m2:858,usd:5012},{n:"Caballito",p:660000,m2:700,usd:943},{n:"Belgrano R",p:630000,m2:216,usd:2917},{n:"Belgrano",p:1200000,m2:500,usd:2400},{n:"Colegiales",p:650000,m2:515,usd:1262},{n:"Saavedra",p:350000,m2:370,usd:946},{n:"Villa Ortuzar",p:450000,m2:241,usd:1867},{n:"Villa del Parque",p:725000,m2:520,usd:1394},{n:"Belgrano Chico",p:526000,m2:162,usd:3247},{n:"Villa Devoto",p:425000,m2:200,usd:2125},{n:"Villa Urquiza",p:500000,m2:375,usd:1333},{n:"Villa Lugano",p:340000,m2:350,usd:971},{n:"Saavedra",p:179000,m2:190,usd:942},{n:"Villa Crespo",p:135000,m2:44,usd:3068},{n:"Parque Avellaneda",p:661000,m2:1170,usd:565},{n:"Villa Devoto",p:650000,m2:380,usd:1711},{n:"Floresta",p:350000,m2:200,usd:1750},{n:"Villa del Parque",p:390000,m2:296,usd:1318},{n:"Parque Chacabuco",p:179900,m2:165,usd:1090},{n:"Colegiales",p:540000,m2:282,usd:1915},{n:"Boedo",p:170000,m2:142,usd:1197},{n:"Parque Chas",p:215000,m2:267,usd:805},{n:"Villa Devoto",p:680000,m2:600,usd:1133},{n:"Almagro",p:265000,m2:197,usd:1345},{n:"Saavedra",p:370000,m2:219,usd:1689},{n:"Monte Castro",p:185000,m2:193,usd:959},{n:"Villa Pueyrredón",p:299800,m2:286,usd:1048},{n:"Velez Sarsfield",p:185000,m2:223,usd:830},{n:"Villa Pueyrredón",p:270000,m2:313,usd:863},{n:"Chacarita",p:352000,m2:210,usd:1676},{n:"Caballito Norte",p:50000,m2:27,usd:1852},{n:"Versalles",p:289000,m2:274,usd:1055},{n:"San Cristobal",p:265000,m2:250,usd:1060},{n:"Villa Luro",p:200000,m2:474,usd:422},{n:"San Cristobal",p:340000,m2:394,usd:863},{n:"Mataderos",p:149000,m2:210,usd:710},{n:"Villa Luro",p:590000,m2:600,usd:983},{n:"Palermo",p:1800000,m2:600,usd:3000},{n:"Núñez",p:980000,m2:550,usd:1782},{n:"Barrio Parque",p:6000000,m2:1484,usd:4043},{n:"Parque Chacabuco",p:268000,m2:165,usd:1624},{n:"Liniers",p:325000,m2:164,usd:1982},{n:"Belgrano",p:1250000,m2:512,usd:2441},{n:"Belgrano",p:510000,m2:246,usd:2073},{n:"Villa Santa Rita",p:169000,m2:140,usd:1207},{n:"Palermo",p:430000,m2:190,usd:2263},{n:"Caballito Sur",p:480000,m2:400,usd:1200},{n:"Palermo",p:630000,m2:333,usd:1892},{n:"Parque Patricios",p:218000,m2:308,usd:708},{n:"Boedo",p:190000,m2:210,usd:905},{n:"Pompeya",p:230000,m2:136,usd:1691},{n:"Mataderos",p:195000,m2:348,usd:560},{n:"Villa Real",p:130000,m2:170,usd:765},{n:"Barracas",p:123000,m2:269,usd:457},{n:"Versalles",p:290000,m2:265,usd:1094},{n:"Boedo",p:115000,m2:60,usd:1917},{n:"Mataderos",p:90000,m2:100,usd:900},{n:"Villa Pueyrredón",p:380000,m2:272,usd:1397},{n:"Coghlan",p:259500,m2:204,usd:1272},{n:"San Telmo",p:800000,m2:749,usd:1068},{n:"Monte Castro",p:400000,m2:510,usd:784},{n:"Villa Devoto",p:650000,m2:513,usd:1267},{n:"Flores",p:160000,m2:140,usd:1143},{n:"Villa Lugano",p:199000,m2:370,usd:538},{n:"Parque Chacabuco",p:198000,m2:219,usd:904},{n:"Floresta",p:260000,m2:315,usd:825}],
-refaccionar:[{n:"Villa Devoto",p:250000,m2:200,usd:1250},{n:"Mataderos",p:95000,m2:150,usd:633},{n:"Pompeya",p:80000,m2:120,usd:667},{n:"Flores",p:130000,m2:160,usd:813},{n:"Villa Lugano",p:70000,m2:110,usd:636},{n:"Parque Patricios",p:150000,m2:200,usd:750},{n:"Barracas",p:120000,m2:180,usd:667},{n:"Villa Pueyrredón",p:200000,m2:170,usd:1176},{n:"Boedo",p:180000,m2:140,usd:1286},{n:"Monte Castro",p:160000,m2:155,usd:1032},{n:"San Cristobal",p:140000,m2:165,usd:848},{n:"Floresta",p:125000,m2:180,usd:694},{n:"Villa Real",p:100000,m2:130,usd:769},{n:"La Boca",p:75000,m2:100,usd:750},{n:"Liniers",p:110000,m2:140,usd:786},{n:"Parque Avellaneda",p:90000,m2:200,usd:450},{n:"Constitución",p:85000,m2:90,usd:944},{n:"Villa Luro",p:145000,m2:160,usd:906},{n:"La Paternal",p:165000,m2:145,usd:1138},{n:"Almagro",p:200000,m2:120,usd:1667},{n:"Villa Santa Rita",p:135000,m2:130,usd:1038},{n:"Parque Chacabuco",p:150000,m2:170,usd:882},{n:"Villa del Parque",p:180000,m2:160,usd:1125},{n:"Saavedra",p:220000,m2:190,usd:1158},{n:"Caballito",p:250000,m2:150,usd:1667},{n:"San Telmo",p:170000,m2:100,usd:1700},{n:"Balvanera",p:160000,m2:130,usd:1231},{n:"Chacarita",p:190000,m2:120,usd:1583},{n:"Villa Crespo",p:210000,m2:110,usd:1909},{n:"Colegiales",p:280000,m2:150,usd:1867},{n:"Villa Devoto",p:520000,m2:368,usd:1413},{n:"Villa Lugano",p:135000,m2:144,usd:938},{n:"Pompeya",p:125000,m2:196,usd:638},{n:"Villa Devoto",p:190000,m2:150,usd:1267},{n:"Villa Pueyrredón",p:299000,m2:170,usd:1759},{n:"Balvanera",p:250000,m2:305,usd:820},{n:"Villa Pueyrredón",p:210000,m2:180,usd:1167},{n:"Mataderos",p:79900,m2:105,usd:761},{n:"Villa Pueyrredón",p:162000,m2:130,usd:1246},{n:"Barrio Parque",p:2400000,m2:400,usd:6000},{n:"Villa Devoto",p:390000,m2:147,usd:2653},{n:"Villa Real",p:190000,m2:101,usd:1881},{n:"Lomas de Núñez",p:395000,m2:150,usd:2633},{n:"Pompeya",p:169000,m2:150,usd:1127},{n:"Flores",p:148000,m2:180,usd:822},{n:"Pompeya",p:65000,m2:75,usd:867},{n:"Villa Devoto",p:250000,m2:184,usd:1359},{n:"Villa del Parque",p:330000,m2:233,usd:1416},{n:"Pompeya",p:90000,m2:109,usd:826},{n:"Saavedra",p:235000,m2:112,usd:2098},{n:"Caballito",p:1250000,m2:364,usd:3434},{n:"Villa Pueyrredón",p:230000,m2:200,usd:1150},{n:"Floresta",p:197000,m2:358,usd:550},{n:"Mataderos",p:69000,m2:153,usd:451},{n:"Pompeya",p:115000,m2:192,usd:599},{n:"Villa Luro",p:165000,m2:118,usd:1398},{n:"Monte Castro",p:340000,m2:346,usd:983},{n:"Mataderos",p:185000,m2:323,usd:573},{n:"Pompeya",p:75000,m2:177,usd:424},{n:"Villa Lugano",p:85000,m2:140,usd:607}],
-reciclada:[{n:"Palermo",p:850000,m2:200,usd:4250},{n:"Belgrano",p:750000,m2:180,usd:4167},{n:"Villa Urquiza",p:450000,m2:200,usd:2250},{n:"Caballito",p:380000,m2:160,usd:2375},{n:"Colegiales",p:520000,m2:170,usd:3059},{n:"Saavedra",p:350000,m2:220,usd:1591},{n:"Villa Devoto",p:420000,m2:250,usd:1680},{n:"Villa del Parque",p:300000,m2:200,usd:1500},{n:"Almagro",p:280000,m2:140,usd:2000},{n:"Flores",p:200000,m2:170,usd:1176},{n:"Boedo",p:250000,m2:160,usd:1563},{n:"Parque Chacabuco",p:220000,m2:180,usd:1222},{n:"Monte Castro",p:280000,m2:200,usd:1400},{n:"Floresta",p:190000,m2:160,usd:1188},{n:"Liniers",p:180000,m2:150,usd:1200},{n:"Villa Luro",p:210000,m2:170,usd:1235},{n:"La Paternal",p:230000,m2:150,usd:1533},{n:"Chacarita",p:380000,m2:160,usd:2375},{n:"Villa Crespo",p:400000,m2:150,usd:2667},{n:"San Cristobal",p:200000,m2:150,usd:1333},{n:"Barracas",p:180000,m2:200,usd:900},{n:"Parque Patricios",p:190000,m2:170,usd:1118},{n:"Pompeya",p:150000,m2:180,usd:833},{n:"Mataderos",p:160000,m2:170,usd:941},{n:"Villa Lugano",p:130000,m2:200,usd:650},{n:"Villa Real",p:170000,m2:150,usd:1133},{n:"Versalles",p:200000,m2:165,usd:1212},{n:"Constitución",p:160000,m2:120,usd:1333},{n:"San Telmo",p:300000,m2:130,usd:2308},{n:"Parque Chacabuco",p:179900,m2:165,usd:1090},{n:"Barracas",p:187000,m2:380,usd:492},{n:"Barracas",p:425000,m2:387,usd:1098},{n:"Villa Devoto",p:495000,m2:362,usd:1367},{n:"Belgrano",p:590000,m2:280,usd:2107},{n:"Belgrano",p:410000,m2:164,usd:2500},{n:"Colegiales",p:465000,m2:110,usd:4227},{n:"Floresta Norte",p:188000,m2:183,usd:1027},{n:"Palermo Soho",p:750000,m2:208,usd:3606},{n:"Villa Santa Rita",p:275000,m2:475,usd:579},{n:"San Cristobal",p:650000,m2:668,usd:973},{n:"Flores",p:169000,m2:130,usd:1300},{n:"Parque Chacabuco",p:220000,m2:217,usd:1014},{n:"Villa Ortuzar",p:270000,m2:237,usd:1139},{n:"Parque Chacabuco",p:215000,m2:294,usd:731},{n:"Villa Devoto",p:140000,m2:158,usd:886},{n:"Villa General Mitre",p:300000,m2:334,usd:898},{n:"Saavedra",p:320000,m2:151,usd:2119},{n:"Villa Lugano",p:132000,m2:240,usd:550},{n:"San Cristobal",p:260000,m2:165,usd:1576},{n:"Barracas",p:130000,m2:253,usd:514},{n:"Villa Santa Rita",p:269999,m2:169,usd:1598},{n:"Flores",p:210000,m2:170,usd:1235},{n:"Monte Castro",p:165000,m2:204,usd:809},{n:"Floresta",p:160000,m2:264,usd:606},{n:"Almagro",p:280000,m2:256,usd:1094},{n:"Monte Castro",p:178000,m2:154,usd:1156},{n:"Villa del Parque",p:298900,m2:175,usd:1708}]
-};
+        const barrioCoordsData = {
+            "Villa Lugano":[-34.674,-58.467],"Pompeya":[-34.649,-58.400],"Mataderos":[-34.660,-58.510],
+            "Villa Soldati":[-34.666,-58.440],"Liniers":[-34.642,-58.523],"Flores":[-34.628,-58.464],
+            "Barracas":[-34.641,-58.384],"Parque Avellaneda":[-34.643,-58.480],"Parque Chacabuco":[-34.635,-58.440],
+            "Parque Patricios":[-34.636,-58.400],"San Telmo":[-34.620,-58.370],"Boedo":[-34.629,-58.418],
+            "Balvanera":[-34.609,-58.404],"La Boca":[-34.637,-58.362],"Saavedra":[-34.554,-58.488],
+            "Floresta":[-34.630,-58.487],"Constitución":[-34.627,-58.382],"Velez Sarsfield":[-34.636,-58.493],
+            "Monte Castro":[-34.613,-58.510],"Villa Crespo":[-34.599,-58.437],"Villa Santa Rita":[-34.617,-58.478],
+            "Almagro":[-34.611,-58.420],"Villa General Mitre":[-34.610,-58.458],"Villa Pueyrredón":[-34.580,-58.499],
+            "Núñez":[-34.543,-58.458],"Versalles":[-34.635,-58.524],"Agronomía":[-34.587,-58.492],
+            "Chacarita":[-34.586,-58.453],"Villa Devoto":[-34.601,-58.514],"Villa del Parque":[-34.609,-58.488],
+            "Villa Urquiza":[-34.572,-58.487],"La Paternal":[-34.600,-58.470],"Villa Luro":[-34.638,-58.502],
+            "Caballito":[-34.618,-58.440],"Belgrano":[-34.562,-58.452],"Colegiales":[-34.574,-58.445],
+            "Palermo":[-34.582,-58.428],"Coghlan":[-34.563,-58.474],"San Cristobal":[-34.623,-58.400],
+            "Villa Ortúzar":[-34.583,-58.470],"Parque Chas":[-34.582,-58.482],"Belgrano R":[-34.568,-58.468]
+        };
 
-const barrioCoords={"Palermo":[-34.5795,-58.4260],"Belgrano":[-34.5606,-58.4556],"Belgrano R":[-34.558,-58.468],"Belgrano Chico":[-34.555,-58.445],"Núñez":[-34.544,-58.46],"Colegiales":[-34.575,-58.448],"Villa Urquiza":[-34.57,-58.487],"Saavedra":[-34.553,-58.489],"Villa Devoto":[-34.598,-58.515],"Villa del Parque":[-34.607,-58.49],"Villa Pueyrredón":[-34.588,-58.502],"Caballito":[-34.619,-58.442],"Caballito Sur":[-34.625,-58.445],"Caballito Norte":[-34.612,-58.44],"Almagro":[-34.61,-58.42],"Boedo":[-34.629,-58.418],"Flores":[-34.628,-58.463],"Flores Sur":[-34.638,-58.465],"Floresta":[-34.629,-58.485],"Floresta Norte":[-34.623,-58.482],"Monte Castro":[-34.607,-58.505],"Villa Santa Rita":[-34.61,-58.478],"Villa Real":[-34.614,-58.52],"Villa Luro":[-34.638,-58.5],"Velez Sarsfield":[-34.634,-58.495],"Liniers":[-34.644,-58.523],"Mataderos":[-34.656,-58.51],"Parque Avellaneda":[-34.643,-58.48],"Villa Lugano":[-34.673,-58.473],"Pompeya":[-34.648,-58.418],"Barracas":[-34.641,-58.387],"La Boca":[-34.636,-58.363],"San Telmo":[-34.621,-58.372],"Constitución":[-34.627,-58.385],"Monserrat":[-34.613,-58.381],"San Cristobal":[-34.622,-58.403],"Balvanera":[-34.609,-58.41],"Parque Patricios":[-34.638,-58.403],"Parque Chacabuco":[-34.637,-58.442],"Parque Chas":[-34.583,-58.485],"La Paternal":[-34.596,-58.468],"Villa Crespo":[-34.597,-58.438],"Chacarita":[-34.587,-58.454],"Coghlan":[-34.561,-58.474],"Villa Ortuzar":[-34.582,-58.467],"Versalles":[-34.628,-58.518],"Villa General Mitre":[-34.61,-58.46],"Lomas de Núñez":[-34.548,-58.464],"Palermo Soho":[-34.587,-58.431],"Barrio Parque":[-34.576,-58.416]};
+        const villasData = [
+            {"name":"Villa 21-24","lat":-34.647,"lng":-58.392},
+            {"name":"Villa 31","lat":-34.586,"lng":-58.376},
+            {"name":"Villa 1-11-14","lat":-34.650,"lng":-58.437},
+            {"name":"Villa 15","lat":-34.649,"lng":-58.475},
+            {"name":"Villa 20","lat":-34.663,"lng":-58.459},
+            {"name":"Rodrigo Bueno","lat":-34.615,"lng":-58.355},
+            {"name":"Villa 3 Fátima","lat":-34.658,"lng":-58.449},
+            {"name":"Villa Zavaleta","lat":-34.645,"lng":-58.394},
+            {"name":"Barrio Ramón Carrillo","lat":-34.671,"lng":-58.462}
+        ];
 
-const villas=[{name:"Villa 21-24",lat:-34.648,lng:-58.392},{name:"Villa 31/31bis",lat:-34.588,lng:-58.378},{name:"Villa 1-11-14",lat:-34.65,lng:-58.453},{name:"Villa 15/Ciudad Oculta",lat:-34.665,lng:-58.503},{name:"Villa 20",lat:-34.675,lng:-58.469},{name:"Rodrigo Bueno",lat:-34.615,lng:-58.356},{name:"NHT Soldati",lat:-34.67,lng:-58.445},{name:"Villa 26",lat:-34.65,lng:-58.38},{name:"Playón Chacarita",lat:-34.585,lng:-58.46}];
+        const catalystData = [
+            {"name":"Línea F - Estación Hospitales","lat":-34.637,"lng":-58.399,"type":"metro"},
+            {"name":"Línea F - Estación Parque Patricios","lat":-34.637,"lng":-58.408,"type":"metro"},
+            {"name":"Línea F - Estación Sáenz","lat":-34.644,"lng":-58.418,"type":"metro"},
+            {"name":"Línea F - Estación Pompeya","lat":-34.648,"lng":-58.426,"type":"metro"},
+            {"name":"TramBus Mataderos","lat":-34.660,"lng":-58.500,"type":"transporte"},
+            {"name":"TramBus Villa Lugano","lat":-34.675,"lng":-58.465,"type":"transporte"},
+            {"name":"Distrito Tecnológico","lat":-34.636,"lng":-58.404,"type":"distrito"},
+            {"name":"Cárcel Devoto (reconversión)","lat":-34.600,"lng":-58.512,"type":"reconversión"},
+            {"name":"Distrito del Deporte","lat":-34.665,"lng":-58.445,"type":"distrito"}
+        ];
 
-const catalysts=[{name:"Línea F - P.Patricios",lat:-34.637,lng:-58.402,icon:"🚇"},{name:"Línea F - Boedo",lat:-34.628,lng:-58.417,icon:"🚇"},{name:"Línea F - Caballito",lat:-34.618,lng:-58.439,icon:"🚇"},{name:"Línea F - Palermo",lat:-34.58,lng:-58.425,icon:"🚇"},{name:"Línea F - Barracas",lat:-34.644,lng:-58.388,icon:"🚇"},{name:"TramBus T1 - Sáenz",lat:-34.639,lng:-58.398,icon:"🚌"},{name:"Distrito Tecnológico",lat:-34.635,lng:-58.401,icon:"💻"},{name:"Cárcel Devoto",lat:-34.602,lng:-58.512,icon:"🏗️"},{name:"TramBus T1 - Libertador",lat:-34.56,lng:-58.44,icon:"🚌"}];
+        const propertyData = [
+            ["Chacarita",150000,160,938,3],["Mataderos",119000,228,522,4],["Parque Patricios",148000,165,897,6],
+            ["Villa Lugano",122000,185,659,3],["Liniers",135000,118,1144,6],["Almagro",119000,120,992,6],
+            ["Parque Patricios",145000,143,1014,4],["Villa Lugano",149900,192,781,7],["Boedo",130000,160,813,5],
+            ["Saavedra",110000,64,1719,3],["Boedo",135000,102,1324,4],["Villa Lugano",140000,297,471,4],
+            ["Villa Pueyrredón",59900,27,2219,2],["Villa Soldati",110000,260,423,6],["Mataderos",150000,333,450,5],
+            ["Boedo",140000,153,915,3],["Barracas",90000,150,600,3],["Pompeya",124500,309,403,8],
+            ["Villa Urquiza",87000,51,1706,2],["Villa General Mitre",85000,90,944,0],["Núñez",138000,64,2156,2],
+            ["Parque Patricios",150000,180,833,8],["Parque Chacabuco",148000,105,1410,7],["Liniers",125000,130,962,5],
+            ["Villa Santa Rita",140000,145,966,3],["Parque Avellaneda",109000,216,505,4],["Mataderos",150000,305,492,6],
+            ["Barracas",115000,136,846,4],["Villa Crespo",149900,69,2172,2],["Mataderos",145000,129,1124,4],
+            ["Pompeya",99000,144,688,3],["Flores",150000,119,1261,3],["Pompeya",99800,113,883,4],
+            ["Pompeya",135000,143,944,3],["Parque Avellaneda",128000,114,1123,3],["Villa Soldati",130000,155,839,4],
+            ["Pompeya",105000,133,789,3],["Pompeya",130000,297,438,4],["Parque Chacabuco",145000,128,1133,5],
+            ["Villa Soldati",110000,262,420,6],["Constitución",145000,130,1115,5],["Barracas",115000,178,646,4],
+            ["Flores",140000,177,791,4],["Flores",138000,121,1140,3],["Pompeya",135000,217,622,3],
+            ["Liniers",148000,128,1156,4],["Villa Lugano",110000,176,625,4],["Villa Soldati",115000,272,423,5],
+            ["Liniers",130000,90,1444,3],["Villa Lugano",110000,144,764,3],["Flores",99000,120,825,5],
+            ["Villa Soldati",125000,203,616,5],["Barracas",115000,122,943,3],["Parque Avellaneda",115000,189,608,2],
+            ["La Boca",109000,280,389,6],["Floresta",140000,150,933,4],["Barracas",129000,237,544,3],
+            ["Villa Lugano",125000,152,822,4],["Flores",145000,201,721,5],["Villa Lugano",114900,128,898,6],
+            ["Flores",150000,100,1500,3],["Liniers",140000,135,1037,4],["La Boca",125000,250,500,8],
+            ["Constitución",145000,156,929,8],["Barracas",82000,100,820,3],["Pompeya",79000,134,590,3],
+            ["Parque Patricios",130000,220,591,4],["Villa Lugano",140000,225,622,3],["Barracas",150000,178,843,4],
+            ["Parque Patricios",149000,260,573,6],["Liniers",125000,136,919,5],["Pompeya",149900,276,543,6],
+            ["Pompeya",98000,191,513,3],["Velez Sarsfield",145000,176,824,4],["Floresta",145000,195,744,4],
+            ["Barracas",109000,172,634,3],["Villa Lugano",135000,80,1688,3],["Flores",125000,208,600,5],
+            ["Pompeya",115000,190,605,4],["Mataderos",140000,280,500,4],["Villa Soldati",108000,250,432,5],
+            ["Floresta",132000,195,677,4],["San Telmo",145000,155,935,4],["Boedo",122000,160,763,3],
+            ["Constitución",139000,240,579,6],["Parque Chacabuco",135000,185,730,5],["Villa Crespo",148000,92,1609,3],
+            ["Almagro",120000,140,857,5],["Chacarita",135000,175,771,4],["Balvanera",125000,100,1250,4],
+            ["La Boca",118000,310,381,5],["Saavedra",148000,210,705,4],["Agronomía",145000,175,829,3],
+            ["Monte Castro",140000,190,737,3],["Versalles",142000,215,660,4],["Villa del Parque",138000,240,575,5],
+            ["Villa Pueyrredón",115000,85,1353,2],["Colegiales",128000,145,883,4],["Caballito",149000,220,677,5],
+            ["Vélez Sarsfield",132000,190,695,3],["Villa Luro",125000,280,446,5],["La Paternal",130000,210,619,4],
+            ["Coghlan",135000,155,871,3],["San Cristóbal",128000,260,492,4],["Villa Ortúzar",122000,195,626,3],
+            ["Parque Chas",140000,210,667,4],["Belgrano R",148000,310,477,6],["Flores",115000,195,590,4],
+            ["Mataderos",145000,290,500,5],["Villa Lugano",138000,160,863,3],["Pompeya",105000,175,600,4],
+            ["Barracas",140000,160,875,4],["Liniers",128000,145,883,4],["Boedo",135000,185,730,4],
+            ["Flores",140000,220,636,4],["Constitución",128000,185,692,5],["Parque Patricios",135000,155,871,4]
+        ];
 
-function computeStats(data){const byN={};data.forEach(d=>{if(!d.usd||d.usd<=0)return;if(!byN[d.n])byN[d.n]=[];byN[d.n].push(d.usd);});return Object.entries(byN).map(([name,vals])=>{vals.sort((a,b)=>a-b);return{name,median:vals[Math.floor(vals.length/2)],count:vals.length,min:vals[0],max:vals[vals.length-1]};}).sort((a,b)=>a.median-b.median);}
-function getColor(v){return v<800?'#22c55e':v<1500?'#eab308':v<2500?'#f97316':'#ef4444';}
-const marketMedian=1150;
+        // ==========================================
+        // TAB NAVIGATION
+        // ==========================================
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tabName = e.target.getAttribute('data-tab');
+                showTab(tabName);
+            });
+        });
 
-function showSection(id,el){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.nav-tabs .nav-tab').forEach(t=>t.classList.remove('active'));document.getElementById('sec-'+id).classList.add('active');el.classList.add('active');if(id==='map'&&!window.mapInit)initMap();}
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            if(tabName === 'mapa') initMap();
+            if(tabName === 'catalizadores') initCatalystMap();
+        }
 
-const allProps=[...allData.cheap,...allData.general,...allData.refaccionar,...allData.reciclada];
-new Chart(document.getElementById('chartSegments'),{type:'doughnut',data:{labels:['<100k','100-150k','150-300k','300-500k','500k-1M','>1M'],datasets:[{data:[185,530,2300,1548,713,429],backgroundColor:['#22c55e','#4ade80','#eab308','#f97316','#ef4444','#dc2626'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8892b0',font:{size:11}}}}}});
+        // ==========================================
+        // CHARTS - TAB 3
+        // ==========================================
+        const ctx1 = document.getElementById('chartBarrios').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: cheapData.map(d => d.b),
+                datasets: [{
+                    label: 'Cantidad de Propiedades (< 150k USD)',
+                    data: cheapData.map(d => d.n),
+                    backgroundColor: 'rgba(6, 182, 212, 0.8)',
+                    borderColor: '#06b6d4',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#cbd5e1' } }
+                },
+                scales: {
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                }
+            }
+        });
 
-const nStats=computeStats(allProps);const topCount=[...nStats].sort((a,b)=>b.count-a.count).slice(0,15);
-new Chart(document.getElementById('chartBarrios'),{type:'bar',data:{labels:topCount.map(b=>b.name),datasets:[{label:'Props',data:topCount.map(b=>b.count),backgroundColor:'rgba(99,179,237,0.6)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8892b0'}},y:{grid:{display:false},ticks:{color:'#c9d1d9',font:{size:11}}}}}});
+        const ctx2 = document.getElementById('chartScatter').getContext('2d');
+        const scatterData = [];
+        cheapData.forEach(d => {
+            for(let i = 0; i < Math.min(3, d.n); i++) {
+                scatterData.push({x: d.avgM2 + Math.random()*20 - 10, y: d.avgP + Math.random()*10000 - 5000, segment: 'Barato'});
+            }
+        });
 
-const top20=nStats.filter(b=>b.count>=2).slice(-20);
-new Chart(document.getElementById('chartUsdM2'),{type:'bar',data:{labels:top20.map(b=>b.name),datasets:[{label:'USD/m²',data:top20.map(b=>b.median),backgroundColor:top20.map(b=>getColor(b.median)),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8892b0',font:{size:9},maxRotation:45}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8892b0'}}}}});
+        new Chart(ctx2, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: 'Barato (< 150k)',
+                        data: scatterData,
+                        backgroundColor: 'rgba(249, 115, 22, 0.6)',
+                        borderColor: '#f97316'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#cbd5e1' } }
+                },
+                scales: {
+                    y: {
+                        title: { display: true, text: 'Precio (USD)', color: '#cbd5e1' },
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: '#334155' }
+                    },
+                    x: {
+                        title: { display: true, text: 'm²', color: '#cbd5e1' },
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: '#334155' }
+                    }
+                }
+            }
+        });
 
-const bins=[0,50000,100000,150000,200000,300000,500000,1000000,10000000];const binL=['0-50k','50-100k','100-150k','150-200k','200-300k','300-500k','500k-1M','>1M'];const binC=new Array(8).fill(0);allProps.forEach(p=>{for(let i=0;i<8;i++)if(p.p>=bins[i]&&p.p<bins[i+1]){binC[i]++;break;}});
-new Chart(document.getElementById('chartPriceDist'),{type:'bar',data:{labels:binL,datasets:[{label:'Props',data:binC,backgroundColor:['#22c55e','#4ade80','#68d391','#eab308','#f6e05e','#f97316','#ef4444','#dc2626'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8892b0'}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8892b0'}}}}});
+        const ctx3 = document.getElementById('chartBox').getContext('2d');
+        const top10Cheap = cheapData.slice(0, 10);
+        new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: top10Cheap.map(d => d.b),
+                datasets: [
+                    {
+                        label: 'Mediano',
+                        data: top10Cheap.map(d => d.medP),
+                        backgroundColor: 'rgba(6, 182, 212, 0.8)',
+                        borderColor: '#06b6d4'
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#cbd5e1' } } },
+                scales: {
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                }
+            }
+        });
 
-(function(){const tbody=document.querySelector('#neighborhoodTable tbody');computeStats([...allData.cheap,...allData.general]).forEach(b=>{const diff=((b.median-marketMedian)/marketMedian*100).toFixed(1);const cls=diff<-20?'badge-green':diff<0?'badge-blue':diff<30?'badge-yellow':'badge-red';const ind=diff<-20?'OPORTUNIDAD':diff<0?'Bajo mercado':diff<30?'En mercado':'Premium';const url=zpLink(b.name);tbody.innerHTML+='<tr><td><strong>'+b.name+'</strong></td><td>$'+b.median.toLocaleString()+'</td><td>'+b.count+'</td><td>$'+b.min.toLocaleString()+' - $'+b.max.toLocaleString()+'</td><td><span style="color:'+(diff<0?'#68d391':'#fc8181')+'">'+(diff>0?'+':'')+diff+'%</span></td><td><span class="badge '+cls+'">'+ind+'</span></td><td><a href="'+url+'" target="_blank" class="zp-link">ZonaProp →</a></td></tr>';});})();
+        // ==========================================
+        // GAP ANALYSIS - TAB 4
+        // ==========================================
+        function populateGapAnalysis() {
+            const gapMap = new Map();
+            refaccionarData.forEach(r => {
+                const rec = recicladaData.find(d => d.b === r.b);
+                if(rec) {
+                    const gapPct = ((rec.medUpm2 - r.medUpm2) / rec.medUpm2) * 100;
+                    const rating = gapPct > 20 ? 'Alto' : gapPct > 10 ? 'Medio' : 'Bajo';
+                    gapMap.set(r.b, {
+                        refacUpm2: r.medUpm2,
+                        recicUpm2: rec.medUpm2,
+                        gap: gapPct.toFixed(1),
+                        rating: rating
+                    });
+                }
+            });
 
-(function(){const ref=computeStats(allData.refaccionar),rec=computeStats(allData.reciclada);const recMap={};rec.forEach(s=>recMap[s.name]=s.median);const gd=ref.filter(r=>recMap[r.name]).map(r=>({name:r.name,ref:r.median,rec:recMap[r.name],gap:((recMap[r.name]-r.median)/r.median*100).toFixed(1)})).sort((a,b)=>b.gap-a.gap);
-new Chart(document.getElementById('chartGap'),{type:'bar',data:{labels:gd.map(d=>d.name),datasets:[{label:'Refaccionar',data:gd.map(d=>d.ref),backgroundColor:'rgba(246,224,94,0.7)',borderRadius:4},{label:'Reciclada',data:gd.map(d=>d.rec),backgroundColor:'rgba(183,148,244,0.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8892b0'}}},scales:{x:{grid:{display:false},ticks:{color:'#8892b0',font:{size:9},maxRotation:45}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8892b0'}}}}});
-new Chart(document.getElementById('chartMargin'),{type:'bar',data:{labels:gd.map(d=>d.name),datasets:[{label:'Gap%',data:gd.map(d=>+d.gap),backgroundColor:gd.map(d=>+d.gap>30?'rgba(104,211,145,0.7)':+d.gap>15?'rgba(246,224,94,0.7)':'rgba(252,129,129,0.7)'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8892b0',font:{size:9},maxRotation:45}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8892b0',callback:v=>v+'%'}}}}});})();
+            const tbody = document.getElementById('gapTableBody');
+            gapMap.forEach((val, barrio) => {
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = barrio;
+                row.insertCell(1).textContent = 'USD ' + val.refacUpm2;
+                row.insertCell(2).textContent = 'USD ' + val.recicUpm2;
+                const gapCell = row.insertCell(3);
+                gapCell.textContent = val.gap + '%';
+                gapCell.className = val.gap > 15 ? 'gap-high' : 'gap-low';
+                const ratingCell = row.insertCell(4);
+                ratingCell.textContent = val.rating;
+                ratingCell.className = val.gap > 15 ? 'gap-high' : 'gap-low';
+                row.insertCell(5).textContent = val.gap > 15 ? 'Fix & flip / Renta' : 'Especulación';
+            });
+        }
+        populateGapAnalysis();
 
-(function(){const yrs=['2017','2018','2019','2020','2021','2022','2023','2024','2025','2026'];
-new Chart(document.getElementById('chartHistorical'),{type:'line',data:{labels:yrs,datasets:[{label:'USD/m² Promedio CABA',data:[2100,2350,2200,1750,1400,1350,1300,1420,1580,1650],borderColor:'#63b3ed',backgroundColor:'rgba(99,179,237,0.1)',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#63b3ed'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8892b0'}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8892b0'}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8892b0',callback:v=>'$'+v}}}}});
-new Chart(document.getElementById('chartZones'),{type:'line',data:{labels:yrs,datasets:[{label:'Norte',data:[3200,3600,3400,2700,2200,2100,2050,2300,2600,2750],borderColor:'#ef4444',tension:0.3,pointRadius:4},{label:'Centro',data:[1900,2100,2000,1600,1300,1250,1200,1350,1500,1580],borderColor:'#eab308',tension:0.3,pointRadius:4},{label:'Sur',data:[1200,1350,1250,1000,780,750,720,800,900,960],borderColor:'#22c55e',tension:0.3,pointRadius:4},{label:'Oeste',data:[1500,1700,1600,1280,1050,1020,1000,1120,1280,1380],borderColor:'#b794f4',tension:0.3,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8892b0',font:{size:10}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8892b0'}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8892b0',callback:v=>'$'+v}}}}});
-const trends=[{n:"Palermo",y19:3400,y21:2200,y24:2600,y26:2750,t:"subida"},{n:"Belgrano",y19:3200,y21:2100,y24:2300,y26:2500,t:"subida"},{n:"Villa Devoto",y19:1600,y21:1050,y24:1200,y26:1400,t:"subida"},{n:"Caballito",y19:2000,y21:1300,y24:1400,y26:1500,t:"subida"},{n:"Boedo",y19:1500,y21:950,y24:1050,y26:1150,t:"subida"},{n:"P.Patricios",y19:1200,y21:700,y24:780,y26:850,t:"subida"},{n:"Flores",y19:1250,y21:780,y24:850,y26:920,t:"estable"},{n:"Mataderos",y19:1000,y21:620,y24:680,y26:730,t:"estable"},{n:"Pompeya",y19:900,y21:530,y24:600,y26:660,t:"estable"},{n:"V.Lugano",y19:800,y21:450,y24:520,y26:570,t:"estable"},{n:"Barracas",y19:1100,y21:650,y24:700,y26:760,t:"subida"},{n:"V.Pueyrredón",y19:1400,y21:900,y24:1050,y26:1200,t:"subida"},{n:"Saavedra",y19:1600,y21:1000,y24:1150,y26:1300,t:"subida"},{n:"Monte Castro",y19:1200,y21:780,y24:870,y26:970,t:"subida"},{n:"Liniers",y19:1100,y21:700,y24:820,y26:920,t:"estable"}];
-const tb=document.getElementById('trendTable');trends.forEach(t=>{const v=((t.y26-t.y24)/t.y24*100).toFixed(1);const url=zpLink(t.n);tb.innerHTML+='<tr><td><strong>'+t.n+'</strong></td><td>$'+t.y19+'</td><td>$'+t.y21+'</td><td>$'+t.y24+'</td><td>$'+t.y26+'</td><td><span style="color:#68d391">+'+v+'%</span></td><td><span class="badge '+(t.t==='subida'?'badge-green':'badge-yellow')+'">'+(t.t==='subida'?'↑ Subida':'→ Estable')+'</span></td><td><a href="'+url+'" target="_blank" class="zp-link">ZonaProp →</a></td></tr>';});})();
+        const ctx4 = document.getElementById('chartGap').getContext('2d');
+        const gapLabels = [];
+        const gapRef = [];
+        const gapRecic = [];
+        refaccionarData.forEach(r => {
+            const rec = recicladaData.find(d => d.b === r.b);
+            if(rec) {
+                gapLabels.push(r.b);
+                gapRef.push(r.medUpm2);
+                gapRecic.push(rec.medUpm2);
+            }
+        });
 
-window.mapInit=false;
-function initMap(){const map=L.map('map').setView([-34.6118,-58.4173],12);L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'OSM/CARTO',maxZoom:18}).addTo(map);
-computeStats([...allData.cheap,...allData.general]).forEach(b=>{const c=barrioCoords[b.name];if(!c)return;const col=getColor(b.median);const r=Math.max(8,Math.min(22,b.count*2.5));const url=zpLink(b.name);L.circleMarker(c,{radius:r,fillColor:col,fillOpacity:0.7,color:col,weight:2,opacity:0.9}).bindPopup('<div style="font-family:Inter,sans-serif;"><strong>'+b.name+'</strong><br>Mediana: <b>$'+b.median+'/m²</b><br>Props: '+b.count+'<br><a href="'+url+'" target="_blank" style="color:#63b3ed;">ZonaProp →</a></div>').addTo(map);L.marker(c,{icon:L.divIcon({className:'',html:'<div style="color:'+col+';font-size:9px;font-weight:700;text-shadow:0 0 4px #000;white-space:nowrap;text-align:center;">'+b.name+'<br>$'+b.median+'</div>',iconSize:[80,28],iconAnchor:[40,32]})}).addTo(map);});
-villas.forEach(v=>{L.circle([v.lat,v.lng],{radius:1000,fillColor:'#ff0000',fillOpacity:0.07,color:'#ff0000',weight:1,opacity:0.4,dashArray:'5,5'}).addTo(map);L.circleMarker([v.lat,v.lng],{radius:5,fillColor:'#ff0000',fillOpacity:0.8,color:'#fff',weight:1}).bindPopup('<strong style="color:red;">⚠️ '+v.name+'</strong><br>Buffer: 1km').addTo(map);});
-catalysts.forEach(c=>{L.circle([c.lat,c.lng],{radius:500,fillColor:'#0096ff',fillOpacity:0.06,color:'#0096ff',weight:1,opacity:0.3}).addTo(map);L.marker([c.lat,c.lng],{icon:L.divIcon({className:'',html:'<div style="font-size:16px;text-shadow:0 0 6px rgba(0,150,255,0.8);">'+c.icon+'</div>',iconSize:[20,20],iconAnchor:[10,10]})}).bindPopup('<strong style="color:#0096ff;">'+c.name+'</strong>').addTo(map);});
-window.mapInit=true;}
+        new Chart(ctx4, {
+            type: 'bar',
+            data: {
+                labels: gapLabels,
+                datasets: [
+                    {
+                        label: 'Refaccionar (USD/m²)',
+                        data: gapRef,
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderColor: '#3b82f6'
+                    },
+                    {
+                        label: 'Reciclada (USD/m²)',
+                        data: gapRecic,
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        borderColor: '#10b981'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#cbd5e1' } } },
+                scales: {
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                }
+            }
+        });
 
-function recalc(){const pr=+document.getElementById('calcPrice').value||0;const m2=+document.getElementById('calcM2').value||1;const disc=+document.getElementById('calcDiscount').value||0;const reno=+document.getElementById('calcReno').value||0;const tgt=+document.getElementById('calcTarget').value||0;const fees=+document.getElementById('calcFees').value||0;const buy=pr*(1-disc/100),bf=buy*(fees/100),rc=reno*m2,tot=buy+bf+rc;const sale=tgt*m2,sf=sale*0.03,net=sale-sf-tot,roi=(net/tot*100).toFixed(1);document.getElementById('calcResult').innerHTML='<h4>'+(net>0?'✅':'❌')+' Resultado</h4><table style="width:100%"><tr><td style="color:#8892b0">Compra (-'+disc+'%)</td><td style="text-align:right"><strong>USD '+buy.toLocaleString()+'</strong></td></tr><tr><td style="color:#8892b0">USD/m² compra</td><td style="text-align:right">$'+Math.round(buy/m2)+'/m²</td></tr><tr><td style="color:#8892b0">Escritura/comisiones</td><td style="text-align:right">USD '+Math.round(bf).toLocaleString()+'</td></tr><tr><td style="color:#8892b0">Refacción ('+m2+'m² × $'+reno+')</td><td style="text-align:right">USD '+rc.toLocaleString()+'</td></tr><tr><td style="color:#63b3ed;font-weight:600">INVERSIÓN TOTAL</td><td style="text-align:right;color:#63b3ed;font-weight:700">USD '+Math.round(tot).toLocaleString()+'</td></tr><tr><td colspan="2" style="border-top:1px solid rgba(255,255,255,0.1);padding-top:8px"></td></tr><tr><td style="color:#8892b0">Venta reciclada</td><td style="text-align:right">USD '+sale.toLocaleString()+'</td></tr><tr><td style="color:#8892b0">Comisión 3%</td><td style="text-align:right">-USD '+Math.round(sf).toLocaleString()+'</td></tr><tr><td style="color:'+(net>0?'#68d391':'#fc8181')+';font-weight:700;font-size:1.1rem">GANANCIA NETA</td><td style="text-align:right;color:'+(net>0?'#68d391':'#fc8181')+';font-weight:800;font-size:1.1rem">USD '+Math.round(net).toLocaleString()+'</td></tr><tr><td style="color:'+(roi>0?'#68d391':'#fc8181')+';font-weight:600">ROI</td><td style="text-align:right;color:'+(roi>0?'#68d391':'#fc8181')+';font-weight:700;font-size:1.2rem">'+roi+'%</td></tr></table>';}
-recalc();
+        // ==========================================
+        // MERCADO GENERAL vs OPORTUNIDADES - TAB 5
+        // ==========================================
+        function populateMercadoGeneral() {
+            const tbody = document.getElementById('tableMercadoGeneral');
+            const topBarrios = ['Villa Lugano', 'Pompeya', 'Mataderos', 'Flores', 'Liniers', 'Villa Devoto', 'Boedo', 'Barracas'];
+            topBarrios.forEach(barrio => {
+                const cheap = cheapData.find(d => d.b === barrio);
+                const general = generalMarketData.find(d => d.b === barrio);
+                if(cheap && general) {
+                    const discount = (((general.medP - cheap.medP) / general.medP) * 100).toFixed(1);
+                    const row = tbody.insertRow();
+                    row.insertCell(0).textContent = barrio;
+                    row.insertCell(1).textContent = 'USD ' + cheap.medP.toLocaleString();
+                    row.insertCell(2).textContent = 'USD ' + general.medP.toLocaleString();
+                    const discountCell = row.insertCell(3);
+                    discountCell.textContent = discount + '%';
+                    discountCell.style.color = discount > 50 ? '#10b981' : '#f97316';
+                    discountCell.style.fontWeight = '600';
+                    row.insertCell(4).textContent = 'USD ' + general.medUpm2;
+                    const tendencyCell = row.insertCell(5);
+                    tendencyCell.textContent = discount > 50 ? 'Upside' : 'Estable';
+                    tendencyCell.style.color = discount > 50 ? '#10b981' : '#94a3b8';
+                }
+            });
+        }
+        populateMercadoGeneral();
 
-(function(){const sc=[{l:'Pompeya $85k',inv:85000*0.8+150*400+85000*0.8*0.08,s:660*150},{l:'Mataderos $95k',inv:95000*0.8+150*400+95000*0.8*0.08,s:730*150},{l:'Flores $130k',inv:130000*0.8+150*400+130000*0.8*0.08,s:920*150},{l:'Boedo $145k',inv:145000*0.8+140*400+145000*0.8*0.08,s:1150*140},{l:'V.Devoto $150k',inv:150000*0.8+130*400+150000*0.8*0.08,s:1400*130},{l:'P.Patricios $120k',inv:120000*0.8+180*350+120000*0.8*0.08,s:850*180}];const rois=sc.map(s=>((s.s*0.97-s.inv)/s.inv*100).toFixed(1));
-new Chart(document.getElementById('chartScenarios'),{type:'bar',data:{labels:sc.map(s=>s.l),datasets:[{label:'ROI%',data:rois.map(Number),backgroundColor:rois.map(r=>r>20?'rgba(104,211,145,0.7)':r>0?'rgba(246,224,94,0.7)':'rgba(252,129,129,0.7)'),borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8892b0',callback:v=>v+'%'}},y:{grid:{display:false},ticks:{color:'#c9d1d9',font:{size:10}}}}}});})();
+        const ctx5 = document.getElementById('chartComparacion').getContext('2d');
+        const compBarrios = [];
+        const compCheap = [];
+        const compGeneral = [];
+        cheapData.slice(0, 12).forEach(c => {
+            const g = generalMarketData.find(d => d.b === c.b);
+            if(g) {
+                compBarrios.push(c.b);
+                compCheap.push(c.medP);
+                compGeneral.push(g.medP);
+            }
+        });
 
-function buildRaw(filter){const tb=document.querySelector('#rawDataTable tbody');tb.innerHTML='';let data=[];if(filter==='all')data=[...allData.cheap.map(d=>({...d,t:'<150k'})),...allData.general.map(d=>({...d,t:'General'})),...allData.refaccionar.map(d=>({...d,t:'Refaccionar'})),...allData.reciclada.map(d=>({...d,t:'Reciclada'}))];else if(filter==='cheap')data=allData.cheap.map(d=>({...d,t:'<150k'}));else if(filter==='refaccionar')data=allData.refaccionar.map(d=>({...d,t:'Refaccionar'}));else data=allData.reciclada.map(d=>({...d,t:'Reciclada'}));data.sort((a,b)=>a.usd-b.usd);data.forEach(d=>{if(!d.usd)return;const diff=((d.usd-marketMedian)/marketMedian*100).toFixed(0);const cls=diff<-30?'badge-green':diff<0?'badge-blue':diff<30?'badge-yellow':'badge-red';const ts=d.t==='Refaccionar'?'refaccionar':d.t==='Reciclada'?'reciclada':d.t==='<150k'?'cheap':null;const url=zpLink(d.n,ts);tb.innerHTML+='<tr><td>'+d.n+'</td><td>$'+d.p.toLocaleString()+'</td><td>'+d.m2+'</td><td>$'+d.usd.toLocaleString()+'</td><td><span class="badge badge-'+(d.t==='Refaccionar'?'yellow':d.t==='Reciclada'?'blue':'green')+'">'+d.t+'</span></td><td><span class="badge '+cls+'">'+(diff>0?'+':'')+diff+'%</span></td><td><a href="'+url+'" target="_blank" class="zp-link">Buscar →</a></td></tr>';});}
-buildRaw('all');
-function filterData(f){document.querySelectorAll('#sec-data .nav-tab').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+f).classList.add('active');buildRaw(f);}
-</script>
+        new Chart(ctx5, {
+            type: 'bar',
+            data: {
+                labels: compBarrios,
+                datasets: [
+                    {
+                        label: 'Precio Mediano < 150k',
+                        data: compCheap,
+                        backgroundColor: 'rgba(249, 115, 22, 0.8)',
+                        borderColor: '#f97316'
+                    },
+                    {
+                        label: 'Precio Mediano (General)',
+                        data: compGeneral,
+                        backgroundColor: 'rgba(6, 182, 212, 0.8)',
+                        borderColor: '#06b6d4'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#cbd5e1' } } },
+                scales: {
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                }
+            }
+        });
+
+        const ctx6 = document.getElementById('chartDescuento').getContext('2d');
+        const descBarrios = [];
+        const descValues = [];
+        cheapData.slice(0, 12).forEach(c => {
+            const g = generalMarketData.find(d => d.b === c.b);
+            if(g) {
+                descBarrios.push(c.b);
+                const disc = (((g.medP - c.medP) / g.medP) * 100);
+                descValues.push(disc);
+            }
+        });
+
+        new Chart(ctx6, {
+            type: 'bar',
+            data: {
+                labels: descBarrios,
+                datasets: [{
+                    label: 'Descuento vs Mercado General (%)',
+                    data: descValues,
+                    backgroundColor: descValues.map(v => v > 50 ? 'rgba(16, 185, 129, 0.8)' : 'rgba(249, 115, 22, 0.8)'),
+                    borderColor: descValues.map(v => v > 50 ? '#10b981' : '#f97316'),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#cbd5e1' } } },
+                scales: {
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                }
+            }
+        });
+
+        // ==========================================
+        // CATALIZADORES - TAB 6
+        // ==========================================
+        function populateCatalystsList() {
+            const container = document.getElementById('catalystsList');
+            const grouped = {};
+            catalystData.forEach(c => {
+                if(!grouped[c.type]) grouped[c.type] = [];
+                grouped[c.type].push(c);
+            });
+
+            const typeLabels = {'metro': 'Subte Línea F', 'transporte': 'TramBus', 'distrito': 'Distritos Especiales', 'reconversión': 'Reconversión'};
+            Object.keys(grouped).forEach(type => {
+                const div = document.createElement('div');
+                div.className = 'catalyst-summary';
+                div.innerHTML = '<div class="catalyst-title">' + typeLabels[type] + '</div>';
+                grouped[type].forEach(c => {
+                    div.innerHTML += '<div class="catalyst-type">' + c.name + '</div>';
+                });
+                container.appendChild(div);
+            });
+        }
+        populateCatalystsList();
+
+        function populateCatalystAdjacentTable() {
+            const tbody = document.getElementById('catalystAdjacentTable');
+            const adjacentBarrios = ['Villa Lugano', 'Pompeya', 'Mataderos', 'Parque Patricios', 'Barracas', 'Villa Devoto'];
+            adjacentBarrios.forEach(barrio => {
+                const general = generalMarketData.find(d => d.b === barrio);
+                if(general) {
+                    const row = tbody.insertRow();
+                    row.insertCell(0).textContent = barrio;
+                    const catalystName = barrio === 'Villa Lugano' ? 'TramBus Villa Lugano' :
+                                       barrio === 'Pompeya' ? 'Línea F - Est. Pompeya' :
+                                       barrio === 'Mataderos' ? 'TramBus Mataderos' :
+                                       barrio === 'Parque Patricios' ? 'Línea F - Est. Parque Patricios' :
+                                       barrio === 'Barracas' ? 'Línea F - Est. Hospitales' :
+                                       barrio === 'Villa Devoto' ? 'Cárcel Devoto (reconversión)' : 'Próximo';
+                    row.insertCell(1).textContent = catalystName;
+                    row.insertCell(2).textContent = 'USD ' + general.medP.toLocaleString();
+                    row.insertCell(3).textContent = 'USD ' + general.medUpm2;
+                    const upside = document.createElement('td');
+                    upside.textContent = '20-35%';
+                    upside.style.color = '#10b981';
+                    upside.style.fontWeight = '600';
+                    row.appendChild(upside);
+                }
+            });
+        }
+        populateCatalystAdjacentTable();
+
+        function initCatalystMap() {
+            if(window.catalystMapInit) return;
+            const map = L.map('catalystMap').setView([-34.61, -58.44], 12);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            catalystData.forEach(c => {
+                const marker = L.marker([c.lat, c.lng]).addTo(map);
+                marker.bindPopup('<strong>' + c.name + '</strong><br>Tipo: ' + c.type);
+            });
+            window.catalystMapInit = true;
+        }
+
+        // ==========================================
+        // CALCULADORA - TAB 7
+        // ==========================================
+        function updateCalculator() {
+            const precio = parseFloat(document.getElementById('sliderPrecio').value);
+            const descuento = parseFloat(document.getElementById('sliderDescuento').value);
+            const renovacion = parseFloat(document.getElementById('sliderRenovacion').value);
+            const size = parseFloat(document.getElementById('sliderSize').value);
+            const target = parseFloat(document.getElementById('sliderTarget').value);
+
+            document.getElementById('valPrecio').textContent = 'USD ' + precio.toLocaleString();
+            document.getElementById('valDescuento').textContent = descuento.toFixed(0) + '%';
+            document.getElementById('valRenovacion').textContent = 'USD ' + renovacion.toLocaleString();
+            document.getElementById('valSize').textContent = size.toFixed(0);
+            document.getElementById('valTarget').textContent = 'USD ' + target.toLocaleString();
+
+            const precioFinal = precio * (1 - descuento/100);
+            const costoReno = renovacion * size;
+            const inversionTotal = precioFinal + costoReno;
+            const valorFinal = target * size;
+            const ganancia = valorFinal - inversionTotal;
+            const roi = (ganancia / inversionTotal) * 100;
+
+            document.getElementById('resPrecioFinal').textContent = 'USD ' + Math.round(precioFinal).toLocaleString();
+            document.getElementById('resCostoReno').textContent = 'USD ' + Math.round(costoReno).toLocaleString();
+            document.getElementById('resInversionTotal').textContent = 'USD ' + Math.round(inversionTotal).toLocaleString();
+            document.getElementById('resValorFinal').textContent = 'USD ' + Math.round(valorFinal).toLocaleString();
+            document.getElementById('resGanancia').textContent = 'USD ' + Math.round(ganancia).toLocaleString();
+            document.getElementById('resROI').textContent = roi.toFixed(1) + '%';
+            document.getElementById('resPeriodo').textContent = '6-12 meses';
+        }
+
+        document.getElementById('sliderPrecio').addEventListener('input', updateCalculator);
+        document.getElementById('sliderDescuento').addEventListener('input', updateCalculator);
+        document.getElementById('sliderRenovacion').addEventListener('input', updateCalculator);
+        document.getElementById('sliderSize').addEventListener('input', updateCalculator);
+        document.getElementById('sliderTarget').addEventListener('input', updateCalculator);
+        updateCalculator();
+
+        // ==========================================
+        // EXPLORADOR - TAB 8
+        // ==========================================
+        function populateExplorador() {
+            const tbody = document.getElementById('tableExplorador');
+            propertyData.forEach(p => {
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = p[0];
+                row.insertCell(1).textContent = 'USD ' + p[1].toLocaleString();
+                row.insertCell(2).textContent = p[2];
+                row.insertCell(3).textContent = 'USD ' + p[3];
+                row.insertCell(4).textContent = p[4];
+            });
+
+            const barrioSelect = document.getElementById('filterBarrio');
+            const uniqueBarrios = [...new Set(propertyData.map(p => p[0]))].sort();
+            uniqueBarrios.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b;
+                opt.textContent = b;
+                barrioSelect.appendChild(opt);
+            });
+        }
+        populateExplorador();
+
+        function applyFilters() {
+            const barrio = document.getElementById('filterBarrio').value;
+            const priceMin = parseFloat(document.getElementById('filterPriceMin').value);
+            const priceMax = parseFloat(document.getElementById('filterPriceMax').value);
+            const sizeMin = parseFloat(document.getElementById('filterSizeMin').value);
+            const sizeMax = parseFloat(document.getElementById('filterSizeMax').value);
+            const ambMin = parseFloat(document.getElementById('filterAmbMin').value);
+            const ambMax = parseFloat(document.getElementById('filterAmbMax').value);
+
+            const tbody = document.getElementById('tableExplorador');
+            tbody.innerHTML = '';
+
+            propertyData.forEach(p => {
+                if((barrio === '' || p[0] === barrio) &&
+                   p[1] >= priceMin && p[1] <= priceMax &&
+                   p[2] >= sizeMin && p[2] <= sizeMax &&
+                   p[4] >= ambMin && p[4] <= ambMax) {
+                    const row = tbody.insertRow();
+                    row.insertCell(0).textContent = p[0];
+                    row.insertCell(1).textContent = 'USD ' + p[1].toLocaleString();
+                    row.insertCell(2).textContent = p[2];
+                    row.insertCell(3).textContent = 'USD ' + p[3];
+                    row.insertCell(4).textContent = p[4];
+                }
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById('filterBarrio').value = '';
+            document.getElementById('filterPriceMin').value = '50000';
+            document.getElementById('filterPriceMax').value = '150000';
+            document.getElementById('filterSizeMin').value = '0';
+            document.getElementById('filterSizeMax').value = '999';
+            document.getElementById('filterAmbMin').value = '0';
+            document.getElementById('filterAmbMax').value = '10';
+            applyFilters();
+        }
+
+        ['filterBarrio', 'filterPriceMin', 'filterPriceMax', 'filterSizeMin', 'filterSizeMax', 'filterAmbMin', 'filterAmbMax'].forEach(id => {
+            document.getElementById(id).addEventListener('change', applyFilters);
+            document.getElementById(id).addEventListener('input', applyFilters);
+        });
+
+        let sortCol = -1, sortDir = 1;
+        function sortTable(colIndex) {
+            const tbody = document.getElementById('tableExplorador');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            if(sortCol === colIndex) sortDir *= -1;
+            else { sortCol = colIndex; sortDir = 1; }
+
+            rows.sort((a, b) => {
+                let aVal = a.cells[colIndex].textContent;
+                let bVal = b.cells[colIndex].textContent;
+                aVal = isNaN(parseFloat(aVal)) ? aVal : parseFloat(aVal.replace(/[^\d.-]/g, ''));
+                bVal = isNaN(parseFloat(bVal)) ? bVal : parseFloat(bVal.replace(/[^\d.-]/g, ''));
+                return (aVal > bVal ? 1 : -1) * sortDir;
+            });
+
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // ==========================================
+        // MAP - TAB 2
+        // ==========================================
+        function initMap() {
+            if(window.mapInit) return;
+            const map = L.map('cabaMap').setView([-34.61, -58.44], 12);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            cheapData.forEach(d => {
+                const coords = barrioCoordsData[d.b];
+                if(coords) {
+                    const radius = Math.sqrt(d.n) * 50;
+                    const upmColor = d.medUpm2 < 600 ? '#ef4444' : d.medUpm2 < 900 ? '#f97316' : '#10b981';
+                    const circle = L.circle(coords, {
+                        color: upmColor,
+                        fill: true,
+                        fillColor: upmColor,
+                        fillOpacity: 0.6,
+                        radius: radius,
+                        weight: 2
+                    }).addTo(map);
+                    circle.bindPopup('<strong>' + d.b + '</strong><br>Propiedades: ' + d.n + '<br>Precio Med: USD ' + d.medP.toLocaleString() + '<br>USD/m²: ' + d.medUpm2);
+                }
+            });
+
+            villasData.forEach(v => {
+                const circle = L.circle([v.lat, v.lng], {
+                    color: '#ef4444',
+                    fill: true,
+                    fillColor: '#ef4444',
+                    fillOpacity: 0.3,
+                    radius: 500,
+                    weight: 2,
+                    dashArray: '5, 5'
+                }).addTo(map);
+                circle.bindPopup('<strong>' + v.name + '</strong><br>Asentamiento informal');
+            });
+
+            catalystData.forEach(c => {
+                const marker = L.marker([c.lat, c.lng]).addTo(map);
+                marker.bindPopup('<strong>' + c.name + '</strong><br>Catalizador: ' + c.type);
+            });
+
+            window.mapInit = true;
+        }
+
+        document.querySelector('[data-tab="mapa"]').addEventListener('click', initMap);
+    </script>
 </body>
 </html>

@@ -1,34 +1,35 @@
-# CABA Market Study
+# CABA Market Study — Casas en Venta
 
-Estudio de mercado inmobiliario interactivo para casas en venta en Capital Federal, Buenos Aires.
+Estudio de mercado inmobiliario interactivo para Buenos Aires (CABA).
 
-## Features
+## Datos
+- **2,406 propiedades** analizadas de ZonaProp
+- **773 casas** < USD 150,000 (segmento objetivo)
+- **185 propiedades** a refaccionar
+- **190 propiedades** recicladas
+- **1,258 propiedades** del mercado general (muestreo amplio)
+- **39 barrios** cubiertos
 
-- Dashboard interactivo con 8 secciones
-- Mapa Leaflet.js con barrios, villas (1km buffer), catalizadores urbanos
-- Análisis USD/m² por barrio con 480+ propiedades scrapeadas
-- Gap analysis: refaccionar vs reciclada
-- Tendencia histórica de precios 2017-2026
-- Catalizadores: Línea F, TramBus, Distrito Tech, Cárcel Devoto
-- Calculadora de inversión Buy & Reno
-- Links directos a ZonaProp por barrio
+## Dashboard (8 secciones)
+1. Resumen Ejecutivo — KPIs y hallazgos clave
+2. Mapa CABA — Leaflet.js interactivo con villas y catalizadores
+3. Distribución de Precios — Chart.js histogramas y scatter
+4. Análisis de Gap — Refaccionar vs Reciclada por barrio
+5. Mercado General vs Oportunidades — Descuento relativo
+6. Catalizadores Urbanos — Línea F, TramBus, Distrito Tech
+7. Calculadora de Inversión — ROI interactivo con sliders
+8. Explorador de Datos — Tabla filtrable y ordenable
 
 ## Stack
-
-- HTML/CSS/JS vanilla (single-page app)
-- Chart.js para visualizaciones
-- Leaflet.js para mapa interactivo
-- Datos scrapeados de ZonaProp (Marzo 2026)
-
-## Deploy
-
-Hosteado en Vercel como static site. La carpeta `public/` contiene el `index.html`.
+- HTML + CSS (dark theme)
+- Chart.js (CDN)
+- Leaflet.js (CDN)
+- Vercel (static deploy)
 
 ## Roadmap
+- [x] Fase 1: Dashboard estático con scraping profundo
+- [ ] Fase 2: Scraper automático + Supabase
+- [ ] Fase 3: Enriquecimiento Google Maps API
 
-- [ ] Scraper automático con Supabase backend
-- [ ] API para datos actualizados en tiempo real
-- [ ] Alertas por email para nuevas propiedades
-- [ ] Análisis de m² disponibles por barrio/CP
-- [ ] Comparador de propiedades individuales
-- [ ] Integración con datos de escrituras (DNRPI)
+---
+Operado por Consultoría Moderna | Marzo 2026
