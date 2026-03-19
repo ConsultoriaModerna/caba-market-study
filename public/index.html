@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estudio de Mercado CABA — Casas en Venta</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <title>CABA Real Estate Investment Dashboard | 6,489 Properties Analyzed</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -14,75 +15,140 @@
             box-sizing: border-box;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
+        :root {
+            --bg-dark: #0a0e1a;
+            --bg-card: #1a1f3a;
+            --bg-light: #242d4d;
+            --primary-cyan: #00d4ff;
+            --primary-emerald: #10b981;
+            --primary-amber: #f59e0b;
+            --primary-red: #ef4444;
+            --text-primary: #f0f4f8;
+            --text-secondary: #a0aec0;
+            --border-color: #2d3748;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1f3a 100%);
+            color: var(--text-primary);
             line-height: 1.6;
         }
 
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
         .header {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border-bottom: 2px solid #06b6d4;
-            padding: 2rem 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            background: rgba(10, 14, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 2rem 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
         }
 
-        .header h1 {
-            font-size: 2rem;
-            color: #06b6d4;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
-
-        .header p {
-            color: #94a3b8;
-            font-size: 0.95rem;
-        }
-
-        .container {
+        .header-content {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
         }
 
-        .tabs {
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-emerald));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .header-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-stat-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .header-stat-value {
+            font-weight: 700;
+            color: var(--primary-cyan);
+        }
+
+        /* Main Container */
+        .container {
+            flex: 1;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Tab Navigation */
+        .tabs-nav {
             display: flex;
             gap: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+            padding-bottom: 0;
             margin-bottom: 2rem;
-            border-bottom: 1px solid #334155;
-            flex-wrap: wrap;
-            padding: 0 1rem;
         }
 
-        .tab-button {
-            background: #1e293b;
-            color: #cbd5e1;
-            border: none;
+        .tab-btn {
             padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
             cursor: pointer;
+            font-weight: 600;
             font-size: 0.95rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
             border-bottom: 3px solid transparent;
-            margin-bottom: -1px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            position: relative;
         }
 
-        .tab-button:hover {
-            background: #334155;
-            color: #e2e8f0;
+        .tab-btn:hover {
+            color: var(--primary-cyan);
+            border-bottom-color: var(--primary-cyan);
         }
 
-        .tab-button.active {
-            color: #06b6d4;
-            border-bottom-color: #06b6d4;
-            background: #1a2332;
+        .tab-btn.active {
+            color: var(--primary-cyan);
+            border-bottom-color: var(--primary-cyan);
         }
 
+        /* Tab Content */
         .tab-content {
             display: none;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.5s ease-in;
         }
 
         .tab-content.active {
@@ -90,116 +156,132 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
+        /* KPI Cards */
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
 
         .kpi-card {
-            background: linear-gradient(135deg, #1e293b 0%, #16213e 100%);
-            border: 1px solid #334155;
-            border-radius: 0.5rem;
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-light));
             padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
             transition: all 0.3s ease;
         }
 
         .kpi-card:hover {
-            border-color: #06b6d4;
-            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.1);
+            transform: translateY(-5px);
+            border-color: var(--primary-cyan);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
         }
 
-        .kpi-label {
-            color: #94a3b8;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.5rem;
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at top right, rgba(0, 212, 255, 0.1), transparent);
+            pointer-events: none;
+        }
+
+        .kpi-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            display: inline-block;
         }
 
         .kpi-value {
-            color: #06b6d4;
             font-size: 2rem;
             font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-emerald));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .kpi-subtext {
-            color: #64748b;
-            font-size: 0.85rem;
-            margin-top: 0.5rem;
+        .kpi-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
         }
 
-        .content-section {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 0.5rem;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        .kpi-card.accent-emerald .kpi-value {
+            background: linear-gradient(135deg, var(--primary-emerald), var(--primary-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .section-title {
-            color: #06b6d4;
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #334155;
+        .kpi-card.accent-amber .kpi-value {
+            background: linear-gradient(135deg, var(--primary-amber), var(--primary-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .section-text {
-            color: #cbd5e1;
-            margin-bottom: 1.5rem;
-            line-height: 1.8;
-            font-size: 0.95rem;
-        }
-
+        /* Charts */
         .chart-container {
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-light));
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at top right, rgba(0, 212, 255, 0.08), transparent);
+            pointer-events: none;
+        }
+
+        .chart-inner {
+            position: relative;
+            z-index: 1;
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .chart-wrapper {
             position: relative;
             height: 400px;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
 
-        .chart-container-large {
-            position: relative;
-            height: 500px;
-            margin-bottom: 2rem;
-        }
-
-        .map-container {
-            position: relative;
-            height: 600px;
-            border-radius: 0.5rem;
+        /* Table Styles */
+        .table-container {
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-light));
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
             overflow: hidden;
             margin-bottom: 2rem;
         }
 
-        #cabaMap {
-            width: 100%;
-            height: 100%;
-        }
-
-        #catalystMap {
-            width: 100%;
-            height: 100%;
-        }
-
-        .table-container {
+        .table-wrapper {
             overflow-x: auto;
-            margin-top: 1.5rem;
         }
 
         table {
@@ -208,107 +290,180 @@
             font-size: 0.9rem;
         }
 
-        thead {
-            background: #0f172a;
-            border-bottom: 2px solid #06b6d4;
-        }
-
         th {
-            color: #06b6d4;
+            background: rgba(0, 212, 255, 0.1);
             padding: 1rem;
             text-align: left;
-            font-weight: 600;
-            cursor: pointer;
-            user-select: none;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.05em;
-        }
-
-        th:hover {
-            background: #1e293b;
+            font-weight: 700;
+            color: var(--primary-cyan);
+            border-bottom: 1px solid var(--border-color);
         }
 
         td {
-            color: #cbd5e1;
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #334155;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
         }
 
-        tbody tr:hover {
-            background: #16213e;
+        tr:hover {
+            background: rgba(0, 212, 255, 0.05);
         }
 
-        a {
-            color: #06b6d4;
-            text-decoration: underline;
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-zp {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--primary-cyan);
+        }
+
+        .badge-ml {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--primary-amber);
+        }
+
+        .badge-hot {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--primary-emerald);
+        }
+
+        .badge-warm {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--primary-amber);
+        }
+
+        .badge-cold {
+            background: rgba(107, 114, 128, 0.2);
+            color: var(--text-secondary);
+        }
+
+        .link-property {
+            color: var(--primary-cyan);
+            text-decoration: none;
+            font-weight: 600;
             cursor: pointer;
-            transition: color 0.2s ease;
+            transition: all 0.2s ease;
         }
 
-        a:hover {
-            color: #00d9ff;
+        .link-property:hover {
+            text-decoration: underline;
+            color: var(--primary-emerald);
         }
 
-        .input-group {
+        /* Gap Analysis Specific */
+        .gap-bar-container {
+            margin-bottom: 2rem;
+        }
+
+        .gap-bar {
             display: flex;
             gap: 1rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
             align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
         }
 
-        .input-group label {
-            color: #94a3b8;
-            font-weight: 500;
+        .gap-bar:hover {
+            background: rgba(0, 212, 255, 0.08);
         }
 
-        .input-group select,
-        .input-group input {
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: #e2e8f0;
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.375rem;
-            font-size: 0.9rem;
-        }
-
-        .input-group select:focus,
-        .input-group input:focus {
-            outline: none;
-            border-color: #06b6d4;
-            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
-        }
-
-        .slider-container {
-            margin: 2rem 0;
-            background: #16213e;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid #06b6d4;
-        }
-
-        .slider-label {
-            color: #94a3b8;
+        .gap-label {
+            min-width: 120px;
             font-weight: 600;
-            margin-bottom: 0.5rem;
-            display: flex;
-            justify-content: space-between;
+            color: var(--text-primary);
         }
 
-        .slider-value {
-            color: #06b6d4;
+        .gap-fill {
+            height: 35px;
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 1rem;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .gap-fill.hot {
+            background: linear-gradient(90deg, var(--primary-emerald), #059669);
+        }
+
+        .gap-fill.warm {
+            background: linear-gradient(90deg, var(--primary-amber), #d97706);
+        }
+
+        .gap-fill.cold {
+            background: linear-gradient(90deg, #6b7280, #4b5563);
+        }
+
+        .gap-value {
             font-weight: 700;
-            font-size: 1.1rem;
+            color: var(--text-secondary);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* Calculator */
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .calc-section {
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-light));
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .calc-input-group {
+            margin-bottom: 2rem;
+        }
+
+        .calc-label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .calc-value {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-cyan);
         }
 
         input[type="range"] {
             width: 100%;
             height: 6px;
             border-radius: 3px;
-            background: #0f172a;
+            background: linear-gradient(90deg, var(--primary-cyan), var(--primary-emerald));
             outline: none;
             -webkit-appearance: none;
+            cursor: pointer;
         }
 
         input[type="range"]::-webkit-slider-thumb {
@@ -317,1273 +472,1776 @@
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background: #06b6d4;
+            background: var(--primary-cyan);
             cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        input[type="range"]::-webkit-slider-thumb:hover {
-            background: #00d9ff;
-            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
         }
 
         input[type="range"]::-moz-range-thumb {
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background: #06b6d4;
+            background: var(--primary-cyan);
             cursor: pointer;
             border: none;
-            transition: all 0.2s ease;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
         }
 
-        input[type="range"]::-moz-range-thumb:hover {
-            background: #00d9ff;
-            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .result-box {
-            background: #0f172a;
-            border: 2px solid #10b981;
+        select:hover {
+            border-color: var(--primary-cyan);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .calc-results {
+            grid-column: 1 / -1;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(16, 185, 129, 0.1));
             padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin-top: 1.5rem;
-        }
-
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-            color: #cbd5e1;
-        }
-
-        .result-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .result-label {
-            color: #94a3b8;
-            font-weight: 500;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            text-align: center;
         }
 
         .result-value {
-            color: #10b981;
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .highlight {
-            background: rgba(6, 182, 212, 0.1);
-            border-left: 4px solid #06b6d4;
-            padding: 1rem;
-            border-radius: 0.375rem;
-            color: #cbd5e1;
-            margin: 1rem 0;
-        }
-
-        .metric-badge {
-            display: inline-block;
-            background: #06b6d4;
-            color: #0f172a;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .gap-high {
-            color: #10b981;
-            font-weight: 600;
-        }
-
-        .gap-low {
-            color: #f97316;
-            font-weight: 600;
-        }
-
-        .legend {
-            background: #0f172a;
-            border: 1px solid #334155;
-            padding: 1rem;
-            border-radius: 0.375rem;
-            margin-top: 1rem;
-            font-size: 0.85rem;
-            color: #cbd5e1;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .legend-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            margin-right: 0.75rem;
-        }
-
-        .footer {
-            text-align: center;
-            color: #64748b;
-            padding: 2rem;
-            margin-top: 3rem;
-            border-top: 1px solid #334155;
-        }
-
-        .two-column {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        @media (max-width: 1024px) {
-            .two-column {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .catalyst-summary {
-            background: #16213e;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid #10b981;
-            margin-bottom: 1.5rem;
-        }
-
-        .catalyst-title {
-            color: #10b981;
+            font-size: 2.2rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-emerald));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .catalyst-type {
-            color: #94a3b8;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        button {
-            background: #334155;
-            color: #e2e8f0;
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        button:hover {
-            background: #475569;
-        }
-
-        hr {
-            border: none;
-            border-top: 1px solid #334155;
-            margin: 1rem 0;
-        }
-
-        .search-bar {
-            width: 100%;
-            padding: 1rem;
-            background: #0f172a;
-            border: 2px solid #334155;
-            border-radius: 0.5rem;
-            color: #e2e8f0;
-            font-size: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .search-bar:focus {
-            outline: none;
-            border-color: #06b6d4;
-            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
-        }
-
-        .tag-cloud {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background: #16213e;
-            border-radius: 0.5rem;
-            border: 1px solid #334155;
-        }
-
-        .tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: 1px solid;
-            font-weight: 500;
-            font-size: 0.85rem;
-        }
-
-        .tag:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
-        }
-
-        .tag.active {
-            transform: scale(1.05);
-        }
-
-        .tag-exterior {
-            color: #06b6d4;
-            border-color: #06b6d4;
-            background: rgba(6, 182, 212, 0.1);
-        }
-
-        .tag-interior {
-            color: #10b981;
-            border-color: #10b981;
-            background: rgba(16, 185, 129, 0.1);
-        }
-
-        .tag-estructura {
-            color: #f59e0b;
-            border-color: #f59e0b;
-            background: rgba(245, 158, 11, 0.1);
-        }
-
-        .tag-comercial {
-            color: #8b5cf6;
-            border-color: #8b5cf6;
-            background: rgba(139, 92, 246, 0.1);
-        }
-
-        .tag-estado {
-            color: #ef4444;
-            border-color: #ef4444;
-            background: rgba(239, 68, 68, 0.1);
-        }
-
-        .tag-servicios {
-            color: #06b6d4;
-            border-color: #06b6d4;
-            background: rgba(6, 182, 212, 0.1);
-        }
-
-        .tag-caracter {
-            color: #ec4899;
-            border-color: #ec4899;
-            background: rgba(236, 72, 153, 0.1);
-        }
-
-        .tag-count {
-            font-size: 0.75rem;
-            opacity: 0.7;
-        }
-
-        .filter-sidebar {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .filter-section {
-            background: #16213e;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            border: 1px solid #334155;
-            border-left: 4px solid #06b6d4;
-        }
-
-        .filter-title {
-            color: #06b6d4;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .filter-checkbox-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .filter-checkbox {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            cursor: pointer;
-            color: #cbd5e1;
-            font-size: 0.9rem;
-        }
-
-        .filter-checkbox input {
-            cursor: pointer;
-            accent-color: #06b6d4;
-        }
-
-        .heatmap-container {
-            background: #0f172a;
-            border: 1px solid #334155;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .heatmap-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 0.5rem;
-        }
-
-        .heatmap-row {
-            display: grid;
-            grid-template-columns: 150px 1fr;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .heatmap-barrio {
-            color: #cbd5e1;
+        .result-label {
+            color: var(--text-secondary);
             font-size: 0.9rem;
             font-weight: 500;
         }
 
-        .heatmap-bar-container {
-            height: 30px;
-            background: #0f172a;
-            border-radius: 0.25rem;
-            overflow: hidden;
-            position: relative;
-            border: 1px solid #334155;
-        }
-
-        .heatmap-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #06b6d4, #0891b2);
-            transition: width 0.3s ease;
+        /* Gauge Chart */
+        .gauge-section {
             display: flex;
-            align-items: center;
-            padding-right: 0.5rem;
-            justify-content: flex-end;
-            color: #0f172a;
-            font-weight: 600;
-            font-size: 0.8rem;
-        }
-
-        .results-table {
+            justify-content: center;
             margin-top: 2rem;
         }
 
-        .results-info {
-            color: #94a3b8;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
+        .gauge-chart-wrapper {
+            position: relative;
+            width: 300px;
+            height: 300px;
         }
 
-        .no-results {
+        /* Heatmap */
+        .heatmap-table {
+            font-size: 0.85rem;
+        }
+
+        .heatmap-table td {
             text-align: center;
-            padding: 2rem;
-            color: #64748b;
-            font-size: 1rem;
+            font-weight: 600;
+            padding: 0.75rem;
         }
 
-        .chart-canvas {
-            cursor: pointer;
+        .heatmap-table th {
+            text-align: center;
         }
 
-        @media (max-width: 1024px) {
-            .filter-sidebar {
+        .heatmap-cell {
+            border-radius: 6px;
+            padding: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(10, 14, 26, 0.95);
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem 1rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 3rem;
+        }
+
+        /* Animations */
+        @keyframes countUp {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .count-animate {
+            animation: countUp 0.6s ease-out;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .chart-wrapper {
+                height: 300px;
+            }
+
+            .calculator-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .gap-fill {
+                max-width: 200px;
+            }
+
+            table {
+                font-size: 0.8rem;
+            }
+
+            th, td {
+                padding: 0.75rem;
+            }
+
+            .tabs-nav {
+                gap: 0;
+            }
+
+            .tab-btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .header, .footer, .tabs-nav {
+                background: white;
+                border-color: #e5e7eb;
+            }
+
+            .kpi-card, .chart-container, .table-container, .calc-section {
+                background: white;
+                color: black;
+                border-color: #d1d5db;
+            }
+
+            .kpi-value, .gap-fill, .result-value {
+                color: black;
+            }
+
+            canvas {
+                filter: grayscale(0%);
             }
         }
     </style>
 </head>
 <body>
+    <!-- Header -->
     <div class="header">
-        <h1>Estudio de Mercado CABA — Casas en Venta</h1>
-        <p>2,406 propiedades analizadas | Marzo 2026 | Viviendas unifamiliares y casas</p>
+        <div class="header-content">
+            <div class="logo">📊 CABA REAL ESTATE INVESTMENT DASHBOARD</div>
+            <div class="header-info">
+                <div class="header-stat">
+                    <span class="header-stat-label">Total Properties:</span>
+                    <span class="header-stat-value">6,489</span>
+                </div>
+                <div class="header-stat">
+                    <span class="header-stat-label">ZonaProp:</span>
+                    <span class="header-stat-value">4,570</span>
+                </div>
+                <div class="header-stat">
+                    <span class="header-stat-label">MercadoLibre:</span>
+                    <span class="header-stat-value">1,919</span>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- Main Container -->
     <div class="container">
-        <div class="tabs">
-            <button class="tab-button active" data-tab="resumen">Resumen Ejecutivo</button>
-            <button class="tab-button" data-tab="mapa">Mapa CABA</button>
-            <button class="tab-button" data-tab="precios">Distribución de Precios</button>
-            <button class="tab-button" data-tab="gap">Análisis de Gap</button>
-            <button class="tab-button" data-tab="mercado">Mercado General vs Oportunidades</button>
-            <button class="tab-button" data-tab="catalizadores">Catalizadores Urbanos</button>
-            <button class="tab-button" data-tab="calculadora">Calculadora de Inversión</button>
-            <button class="tab-button" data-tab="explorador">Explorador de Datos</button>
-            <button class="tab-button" data-tab="busqueda-semantica">Búsqueda Semántica</button>
+        <!-- Tab Navigation -->
+        <div class="tabs-nav">
+            <button class="tab-btn active" data-tab="dashboard">Dashboard Overview</button>
+            <button class="tab-btn" data-tab="gap-analysis">Gap Analysis</button>
+            <button class="tab-btn" data-tab="calculator">Investment Calculator</button>
+            <button class="tab-btn" data-tab="top-opportunities">Top 30 Opportunities</button>
+            <button class="tab-btn" data-tab="heatmap">Keyword Heatmap</button>
+            <button class="tab-btn" data-tab="source-comparison">Source Comparison</button>
         </div>
 
-        <!-- TAB 1: RESUMEN EJECUTIVO -->
-        <div id="resumen" class="tab-content active">
+        <!-- TAB 1: Dashboard Overview -->
+        <div id="dashboard" class="tab-content active">
+            <h2 class="chart-title">Portfolio Overview</h2>
+
             <div class="kpi-grid">
                 <div class="kpi-card">
-                    <div class="kpi-label">Propiedades Analizadas</div>
-                    <div class="kpi-value">2,406</div>
-                    <div class="kpi-subtext">Casas y viviendas unifamiliares en CABA</div>
+                    <div class="kpi-icon">🏢</div>
+                    <div class="kpi-value count-up" data-value="6489">0</div>
+                    <div class="kpi-label">Total Properties</div>
                 </div>
+
+                <div class="kpi-card accent-emerald">
+                    <div class="kpi-icon">🔗</div>
+                    <div class="kpi-value count-up" data-value="4570">0</div>
+                    <div class="kpi-label">ZonaProp</div>
+                </div>
+
+                <div class="kpi-card accent-amber">
+                    <div class="kpi-icon">🛒</div>
+                    <div class="kpi-value count-up" data-value="1919">0</div>
+                    <div class="kpi-label">MercadoLibre</div>
+                </div>
+
                 <div class="kpi-card">
-                    <div class="kpi-label">Precio Mediano (< 150k)</div>
-                    <div class="kpi-value">USD 130k</div>
-                    <div class="kpi-subtext">773 propiedades en segmento accesible</div>
+                    <div class="kpi-icon">💰</div>
+                    <div class="kpi-value count-up" data-value="768">0</div>
+                    <div class="kpi-label">Cheap (≤150k)</div>
                 </div>
+
                 <div class="kpi-card">
-                    <div class="kpi-label">USD/m² Mediano</div>
-                    <div class="kpi-value">USD 760</div>
-                    <div class="kpi-subtext">Variación: 430 (Villa Soldati) - 2,300 (Núñez)</div>
+                    <div class="kpi-icon">🔨</div>
+                    <div class="kpi-value count-up" data-value="254">0</div>
+                    <div class="kpi-label">Refaccionable</div>
                 </div>
+
                 <div class="kpi-card">
-                    <div class="kpi-label">Barrios Cubiertos</div>
-                    <div class="kpi-value">39</div>
-                    <div class="kpi-subtext">Cobertura completa de CABA</div>
+                    <div class="kpi-icon">✅</div>
+                    <div class="kpi-value count-up" data-value="342">0</div>
+                    <div class="kpi-label">Reciclable</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon">📈</div>
+                    <div class="kpi-value count-up" data-value="5125">0</div>
+                    <div class="kpi-label">General</div>
+                </div>
+
+                <div class="kpi-card accent-amber">
+                    <div class="kpi-icon">💵</div>
+                    <div class="kpi-value">$130k</div>
+                    <div class="kpi-label">Median Cheap</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon">🔨</div>
+                    <div class="kpi-value">$250k</div>
+                    <div class="kpi-label">Median Refac</div>
+                </div>
+
+                <div class="kpi-card accent-emerald">
+                    <div class="kpi-icon">✨</div>
+                    <div class="kpi-value">$360k</div>
+                    <div class="kpi-label">Median Recic</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon">📊</div>
+                    <div class="kpi-value">$330k</div>
+                    <div class="kpi-label">Median General</div>
+                </div>
+
+                <div class="kpi-card accent-emerald">
+                    <div class="kpi-icon">⭐</div>
+                    <div class="kpi-value">51%</div>
+                    <div class="kpi-label">Best Gap (Villa Luro)</div>
                 </div>
             </div>
 
-            <div class="content-section">
-                <h2 class="section-title">Hallazgos Clave del Mercado</h2>
-                <div class="section-text">
-                    <strong>Segmentación de Oportunidades:</strong> El análisis de 2,406 propiedades identifica tres segmentos de mercado claramente diferenciados. El segmento de casas por debajo de USD 150k representa 773 propiedades (32% del universo) con precios medianos de USD 130,000. Este segmento está concentrado en barrios del sur y oeste: Villa Lugano, Pompeya, Mataderos y Villa Soldati dominan con 113, 89, 79 y 59 propiedades respectivamente. Las propiedades que requieren reforma están valuadas USD/m² 15-35% más baratas que las recicladas, abriendo claros márgenes de valor agregado.
-                </div>
-
-                <div class="highlight">
-                    <strong>Insight Estratégico:</strong> Las mayores oportunidades de valor se encuentran en barrios donde las refaccionadas mantienen descuentos profundos (30-40% bajo reciclada) pero muestran catalizadores urbanos próximos. Villa Lugano, Pompeya y Mataderos cumplen este criterio, con proyectados retornos de 60-90% en 24-36 meses post-renovación.
-                </div>
-
-                <div class="section-text">
-                    <strong>Distribución de Mercado por Estado de Propiedad:</strong>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-                    <div class="kpi-card">
-                        <div class="kpi-label">Casas < 150k</div>
-                        <div class="kpi-value" style="color: #f97316;">773</div>
-                        <div class="kpi-subtext">32% del universo | Precio med: USD 130k</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-label">A Refaccionar</div>
-                        <div class="kpi-value" style="color: #3b82f6;">185</div>
-                        <div class="kpi-subtext">7.7% del universo | Gap promedio: 22%</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-label">Recicladas</div>
-                        <div class="kpi-value" style="color: #10b981;">190</div>
-                        <div class="kpi-subtext">7.9% del universo | Precio med: USD 250k</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-label">Mercado General (sample)</div>
-                        <div class="kpi-value" style="color: #06b6d4;">1,258</div>
-                        <div class="kpi-subtext">Precio med: USD 290k | Todos los estados</div>
-                    </div>
-                </div>
-
-                <div class="section-text">
-                    <strong>Zonas de Mayor Potencial:</strong> Barrios como Villa Devoto (83 propiedades en sample general), Flores (62) y Liniers (57) muestran demanda sostenida con precios aún por debajo de Caballito y Belgrano. La proximidad a líneas de subte (Línea F) y proyectos de reconversión (Cárcel Devoto) acelera apreciación esperada.
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 2: MAPA CABA -->
-        <div id="mapa" class="tab-content">
-            <div class="content-section">
-                <h2 class="section-title">Distribución Geográfica del Mercado</h2>
-                <div class="section-text">
-                    Visualización interactiva de CABA con círculos proporcionales a la cantidad de propiedades y coloración según el precio mediano por m². Los puntos rojos indican asentamientos informales (villas y asentamientos) que impactan negativamente en valorización y riesgo. Los triángulos verdes marcan catalizadores urbanos: estaciones de Línea F, proyectos de TramBus y distritos tecnológicos. Haga clic en cualquier círculo para ver estadísticas detalladas del barrio.
-                </div>
-                <div class="map-container">
-                    <div id="cabaMap"></div>
-                </div>
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #06b6d4;"></div>
-                        <span><strong>Barrios:</strong> Tamaño = cantidad propiedades | Color = USD/m²</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #ef4444;"></div>
-                        <span><strong>Villas/Asentamientos:</strong> Radio 500m de impacto negativo</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #10b981;"></div>
-                        <span><strong>Catalizadores Urbanos:</strong> Metros, TramBus, Distritos</span>
+            <div class="chart-container">
+                <div class="chart-inner">
+                    <h3 class="chart-title">Price Distribution by Segment (USD)</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="priceDistributionChart"></canvas>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- TAB 3: DISTRIBUCIÓN DE PRECIOS -->
-        <div id="precios" class="tab-content">
-            <div class="content-section">
-                <h2 class="section-title">Análisis de Precios y Valores por m²</h2>
-                <div class="section-text">
-                    El gráfico de barras muestra la distribución de propiedades en el segmento menor a USD 150k. Villa Lugano y Pompeya lideran con 113 y 89 propiedades respectivamente. El scatter plot compara precio total versus metros cuadrados para todos los segmentos, revelando patrones de densidad de valor: propiedades recicladas muestran USD/m² 25-35% superior a refaccionadas del mismo tamaño y barrio. <strong>Haga clic en cualquier punto para ver el listado en ZonaProp</strong>.
-                </div>
-            </div>
-
-            <div class="content-section">
-                <div class="chart-container-large">
-                    <canvas id="chartBarrios"></canvas>
-                </div>
-            </div>
-
-            <div class="two-column">
-                <div class="content-section">
-                    <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Precio vs m² por Segmento (Clickeable)</h3>
-                    <div class="chart-container">
-                        <canvas id="chartScatter" class="chart-canvas"></canvas>
+            <div class="chart-container">
+                <div class="chart-inner">
+                    <h3 class="chart-title">Average USD/m² by Segment</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="avgM2Chart"></canvas>
                     </div>
-                    <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 1rem; text-align: center;">Haga clic en los puntos para ver más detalles</p>
                 </div>
-                <div class="content-section">
-                    <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Rango de Precios — Top 10 Barrios</h3>
-                    <div class="chart-container">
-                        <canvas id="chartBox"></canvas>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card" style="grid-column: 1 / -1; text-align: center;">
+                    <div class="kpi-icon">🏆</div>
+                    <div class="kpi-label" style="margin-bottom: 1rem; font-size: 1rem;">Sweet Spot Barrios (Best Gap %)</div>
+                    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem;">
+                        <div style="flex: 1; min-width: 150px;">
+                            <div style="color: var(--primary-emerald); font-weight: 700; font-size: 1.3rem;">Mataderos</div>
+                            <div style="color: var(--text-secondary); font-size: 0.85rem;">50% Gap</div>
+                        </div>
+                        <div style="flex: 1; min-width: 150px;">
+                            <div style="color: var(--primary-emerald); font-weight: 700; font-size: 1.3rem;">Villa Luro</div>
+                            <div style="color: var(--text-secondary); font-size: 0.85rem;">51% Gap</div>
+                        </div>
+                        <div style="flex: 1; min-width: 150px;">
+                            <div style="color: var(--primary-emerald); font-weight: 700; font-size: 1.3rem;">Floresta</div>
+                            <div style="color: var(--text-secondary); font-size: 0.85rem;">50% Gap</div>
+                        </div>
+                        <div style="flex: 1; min-width: 150px;">
+                            <div style="color: var(--primary-emerald); font-weight: 700; font-size: 1.3rem;">Parque Patricios</div>
+                            <div style="color: var(--text-secondary); font-size: 0.85rem;">37% Gap</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 4: ANÁLISIS DE GAP -->
-        <div id="gap" class="tab-content">
-            <div class="content-section">
-                <h2 class="section-title">Oportunidades de Valor: Refaccionar vs Reciclada</h2>
-                <div class="section-text">
-                    Este análisis compara el precio por metro cuadrado (USD/m²) de propiedades a refaccionar versus recicladas en barrios coincidentes. El "gap" representa el descuento relativo de una refaccionada sobre una reciclada: mayor gap indica mayor potencial de valor agregado mediante renovación. La columna "Rating" evalúa combinando: (1) tamaño del gap, (2) precio base accesible de refaccionada, (3) proximidad a catalizadores urbanos.
+        <!-- TAB 2: Gap Analysis -->
+        <div id="gap-analysis" class="tab-content">
+            <h2 class="chart-title">Refac → Recic USD/m² Gap Analysis</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">The gap represents the upside potential between Refaccionable and Reciclable price per square meter. Higher gaps indicate greater profit opportunities.</p>
+
+            <div class="chart-container">
+                <div class="chart-inner">
+                    <h3 class="chart-title" style="margin-bottom: 2rem;">Gap % by Barrio (sorted by opportunity)</h3>
+                    <div class="gap-bar-container">
+                        <div class="gap-bar"><div class="gap-label">Belgrano</div><div class="gap-fill hot" style="width: 113%;">113%</div><div class="gap-value">113%</div></div>
+                        <div class="gap-bar"><div class="gap-label">San Cristobal</div><div class="gap-fill hot" style="width: 106%;">106%</div><div class="gap-value">106%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Balvanera</div><div class="gap-fill warm" style="width: 74%;">74%</div><div class="gap-value">74%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Palermo</div><div class="gap-fill warm" style="width: 71%;">71%</div><div class="gap-value">71%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Monserrat</div><div class="gap-fill warm" style="width: 55%;">55%</div><div class="gap-value">55%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Villa del Parque</div><div class="gap-fill warm" style="width: 53%;">53%</div><div class="gap-value">53%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Villa Luro</div><div class="gap-fill warm" style="width: 51%;">51%</div><div class="gap-value">51%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Mataderos</div><div class="gap-fill warm" style="width: 50%;">50%</div><div class="gap-value">50%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Floresta</div><div class="gap-fill warm" style="width: 50%;">50%</div><div class="gap-value">50%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Núñez</div><div class="gap-fill warm" style="width: 45%;">45%</div><div class="gap-value">45%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Parque Patricios</div><div class="gap-fill warm" style="width: 37%;">37%</div><div class="gap-value">37%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Almagro</div><div class="gap-fill cold" style="width: 30%;">30%</div><div class="gap-value">30%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Villa Devoto</div><div class="gap-fill cold" style="width: 29%;">29%</div><div class="gap-value">29%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Versalles</div><div class="gap-fill cold" style="width: 29%;">29%</div><div class="gap-value">29%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Villa Santa Rita</div><div class="gap-fill cold" style="width: 29%;">29%</div><div class="gap-value">29%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Villa Urquiza</div><div class="gap-fill cold" style="width: 28%;">28%</div><div class="gap-value">28%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Villa Lugano</div><div class="gap-fill cold" style="width: 26%;">26%</div><div class="gap-value">26%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Parque Chacabuco</div><div class="gap-fill cold" style="width: 23%;">23%</div><div class="gap-value">23%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Saavedra</div><div class="gap-fill cold" style="width: 22%;">22%</div><div class="gap-value">22%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Liniers</div><div class="gap-fill cold" style="width: 20%;">20%</div><div class="gap-value">20%</div></div>
+                        <div class="gap-bar"><div class="gap-label">Flores</div><div class="gap-fill cold" style="width: 18%;">18%</div><div class="gap-value">18%</div></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="content-section">
-                <div class="chart-container-large">
-                    <canvas id="chartGap"></canvas>
-                </div>
-            </div>
-
-            <div class="content-section">
-                <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Matriz de Oportunidades</h3>
-                <div class="table-container">
+            <div class="table-container">
+                <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
                                 <th>Barrio</th>
+                                <th>Cheap Count</th>
+                                <th>Cheap Avg USD</th>
+                                <th>Refac Count</th>
                                 <th>Refac USD/m²</th>
+                                <th>Recic Count</th>
                                 <th>Recic USD/m²</th>
                                 <th>Gap %</th>
-                                <th>Rating</th>
-                                <th>Caso de Uso</th>
+                                <th>Upside %</th>
                             </tr>
                         </thead>
-                        <tbody id="gapTableBody">
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 700;">Mataderos</td>
+                                <td>77</td>
+                                <td>$128,540</td>
+                                <td>13</td>
+                                <td>$801</td>
+                                <td>6</td>
+                                <td>$1,203</td>
+                                <td><span class="badge badge-hot">50.2%</span></td>
+                                <td><span class="badge badge-hot">39.9%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Villa Lugano</td>
+                                <td>106</td>
+                                <td>$126,804</td>
+                                <td>7</td>
+                                <td>$776</td>
+                                <td>2</td>
+                                <td>$974</td>
+                                <td><span class="badge badge-warm">25.5%</span></td>
+                                <td><span class="badge badge-warm">20%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Pompeya</td>
+                                <td>67</td>
+                                <td>—</td>
+                                <td>2</td>
+                                <td>$797</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Flores</td>
+                                <td>52</td>
+                                <td>$131,067</td>
+                                <td>7</td>
+                                <td>$947</td>
+                                <td>14</td>
+                                <td>$1,120</td>
+                                <td><span class="badge badge-cold">18.3%</span></td>
+                                <td><span class="badge badge-cold">14.3%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Liniers</td>
+                                <td>51</td>
+                                <td>$134,725</td>
+                                <td>6</td>
+                                <td>$1,033</td>
+                                <td>15</td>
+                                <td>$1,240</td>
+                                <td><span class="badge badge-cold">20%</span></td>
+                                <td><span class="badge badge-cold">13.7%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Villa Soldati</td>
+                                <td>43</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Barracas</td>
+                                <td>53</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>11</td>
+                                <td>$1,043</td>
+                                <td>—</td>
+                                <td><span class="badge badge-hot">59%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Parque Avellaneda</td>
+                                <td>42</td>
+                                <td>—</td>
+                                <td>5</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Parque Chacabuco</td>
+                                <td>29</td>
+                                <td>—</td>
+                                <td>3</td>
+                                <td>$894</td>
+                                <td>9</td>
+                                <td>$1,102</td>
+                                <td><span class="badge badge-cold">23.3%</span></td>
+                                <td><span class="badge badge-cold">20.8%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Parque Patricios</td>
+                                <td>27</td>
+                                <td>—</td>
+                                <td>7</td>
+                                <td>$713</td>
+                                <td>3</td>
+                                <td>$975</td>
+                                <td><span class="badge badge-warm">36.7%</span></td>
+                                <td><span class="badge badge-warm">13%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Villa Luro</td>
+                                <td>5</td>
+                                <td>—</td>
+                                <td>10</td>
+                                <td>$1,031</td>
+                                <td>5</td>
+                                <td>$1,561</td>
+                                <td><span class="badge badge-hot">51.4%</span></td>
+                                <td><span class="badge badge-hot">22.4%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Floresta</td>
+                                <td>10</td>
+                                <td>—</td>
+                                <td>3</td>
+                                <td>$771</td>
+                                <td>5</td>
+                                <td>$1,157</td>
+                                <td><span class="badge badge-hot">50.1%</span></td>
+                                <td><span class="badge badge-hot">20.4%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Villa Devoto</td>
+                                <td>6</td>
+                                <td>—</td>
+                                <td>22</td>
+                                <td>$1,524</td>
+                                <td>19</td>
+                                <td>$1,966</td>
+                                <td><span class="badge badge-cold">29%</span></td>
+                                <td><span class="badge badge-hot">46.6%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Almagro</td>
+                                <td>8</td>
+                                <td>—</td>
+                                <td>5</td>
+                                <td>$1,147</td>
+                                <td>7</td>
+                                <td>$1,489</td>
+                                <td><span class="badge badge-cold">29.8%</span></td>
+                                <td><span class="badge badge-cold">8.5%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Versalles</td>
+                                <td>4</td>
+                                <td>—</td>
+                                <td>3</td>
+                                <td>$1,129</td>
+                                <td>4</td>
+                                <td>$1,461</td>
+                                <td><span class="badge badge-cold">29.4%</span></td>
+                                <td><span class="badge badge-cold">17%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Villa Santa Rita</td>
+                                <td>6</td>
+                                <td>—</td>
+                                <td>3</td>
+                                <td>$1,063</td>
+                                <td>3</td>
+                                <td>$1,374</td>
+                                <td><span class="badge badge-cold">29.2%</span></td>
+                                <td><span class="badge badge-cold">5.2%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Villa Urquiza</td>
+                                <td>7</td>
+                                <td>—</td>
+                                <td>3</td>
+                                <td>$1,222</td>
+                                <td>7</td>
+                                <td>$1,561</td>
+                                <td><span class="badge badge-cold">27.7%</span></td>
+                                <td><span class="badge badge-cold">4.5%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Saavedra</td>
+                                <td>8</td>
+                                <td>—</td>
+                                <td>4</td>
+                                <td>$1,149</td>
+                                <td>5</td>
+                                <td>$1,473</td>
+                                <td><span class="badge badge-cold">22.3%</span></td>
+                                <td><span class="badge badge-cold">5.8%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Núñez</td>
+                                <td>4</td>
+                                <td>—</td>
+                                <td>8</td>
+                                <td>$1,362</td>
+                                <td>12</td>
+                                <td>$1,973</td>
+                                <td><span class="badge badge-warm">44.8%</span></td>
+                                <td><span class="badge badge-cold">19.8%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Balvanera</td>
+                                <td>2</td>
+                                <td>—</td>
+                                <td>2</td>
+                                <td>$1,095</td>
+                                <td>4</td>
+                                <td>$1,908</td>
+                                <td><span class="badge badge-warm">74.2%</span></td>
+                                <td><span class="badge badge-hot">26%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">San Cristobal</td>
+                                <td>1</td>
+                                <td>—</td>
+                                <td>2</td>
+                                <td>$1,192</td>
+                                <td>3</td>
+                                <td>$2,451</td>
+                                <td><span class="badge badge-hot">105.7%</span></td>
+                                <td><span class="badge badge-hot">35.2%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Belgrano</td>
+                                <td>0</td>
+                                <td>—</td>
+                                <td>2</td>
+                                <td>$1,327</td>
+                                <td>5</td>
+                                <td>$2,823</td>
+                                <td><span class="badge badge-hot">112.7%</span></td>
+                                <td><span class="badge badge-hot">44.2%</span></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700;">Palermo</td>
+                                <td>0</td>
+                                <td>—</td>
+                                <td>4</td>
+                                <td>$1,419</td>
+                                <td>5</td>
+                                <td>$2,420</td>
+                                <td><span class="badge badge-warm">70.6%</span></td>
+                                <td><span class="badge badge-hot">27%</span></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 5: MERCADO GENERAL VS OPORTUNIDADES -->
-        <div id="mercado" class="tab-content">
-            <div class="content-section">
-                <h2 class="section-title">Mercado General: Comparación de Segmentos</h2>
-                <div class="section-text">
-                    El sample general (1,258 propiedades, cada 5ta página de 5,563 páginas totales) muestra el mercado completo sin filtro de precio. Comparando con el segmento < 150k (773 propiedades): las propiedades baratas están 55-75% bajo el precio mediano del mercado general. El scatter plot visualiza esta relación por barrio: Villa Lugano, Pompeya y Mataderos mostran los mayores descuentos relativos, reflejando demanda restringida pero potencial de apreciación con catalizadores.
-                </div>
-            </div>
+        <!-- TAB 3: Investment Calculator -->
+        <div id="calculator" class="tab-content">
+            <h2 class="chart-title">Interactive ROI Calculator</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">Model your renovation scenario with real market data from CABA neighborhoods.</p>
 
-            <div class="two-column">
-                <div class="content-section">
-                    <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Comparación: Mediano por Barrio</h3>
-                    <div class="chart-container">
-                        <canvas id="chartComparacion"></canvas>
+            <div class="calculator-grid">
+                <div class="calc-section">
+                    <div class="calc-input-group">
+                        <label class="calc-label">Purchase Price (USD)</label>
+                        <input id="purchasePrice" type="range" min="50000" max="1000000" step="10000" value="250000">
+                        <span class="calc-value" id="priceValue">$250,000</span>
                     </div>
                 </div>
-                <div class="content-section">
-                    <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Descuento: Barato vs Mercado General</h3>
-                    <div class="chart-container">
-                        <canvas id="chartDescuento"></canvas>
+
+                <div class="calc-section">
+                    <div class="calc-input-group">
+                        <label class="calc-label">Property Area (m²)</label>
+                        <input id="area" type="range" min="30" max="500" step="10" value="150">
+                        <span class="calc-value" id="areaValue">150 m²</span>
                     </div>
                 </div>
-            </div>
 
-            <div class="content-section">
-                <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Análisis Detallado por Barrio</h3>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Barrio</th>
-                                <th>Precio Mediano < 150k</th>
-                                <th>Precio Mediano General</th>
-                                <th>Descuento %</th>
-                                <th>USD/m² Mediano</th>
-                                <th>Tendencia</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableMercadoGeneral">
-                        </tbody>
-                    </table>
+                <div class="calc-section">
+                    <div class="calc-input-group">
+                        <label class="calc-label">Renovation Cost (USD/m²)</label>
+                        <input id="renovationCost" type="range" min="100" max="5000" step="100" value="1500">
+                        <span class="calc-value" id="renoValue">$1,500/m²</span>
+                    </div>
+                </div>
+
+                <div class="calc-section">
+                    <div class="calc-input-group">
+                        <label class="calc-label">Target Barrio (Recic USD/m²)</label>
+                        <select id="targetBarrio">
+                            <option value="1203">Mataderos ($1,203)</option>
+                            <option value="1157">Floresta ($1,157)</option>
+                            <option value="1561">Villa Luro ($1,561)</option>
+                            <option value="1966">Villa Devoto ($1,966)</option>
+                            <option value="1473">Saavedra ($1,473)</option>
+                            <option value="1561">Núñez ($1,973)</option>
+                            <option value="1908">Balvanera ($1,908)</option>
+                            <option value="2451">San Cristobal ($2,451)</option>
+                            <option value="2823">Belgrano ($2,823)</option>
+                            <option value="2420">Palermo ($2,420)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="calc-results">
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <div class="result-value" id="totalInvestment">$487,500</div>
+                            <div class="result-label">Total Investment</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-value" id="postRenoValue">$180,450</div>
+                            <div class="result-label">Post-Renovation Value</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-value" id="grossProfit">$0</div>
+                            <div class="result-label">Gross Profit</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-value" id="roiPercent">0%</div>
+                            <div class="result-label">Return on Investment</div>
+                        </div>
+                    </div>
+                    <div class="gauge-section">
+                        <div class="gauge-chart-wrapper">
+                            <canvas id="roiGauge"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 6: CATALIZADORES URBANOS -->
-        <div id="catalizadores" class="tab-content">
-            <div class="content-section">
-                <h2 class="section-title">Impacto de Catalizadores Urbanos en Valorización</h2>
-                <div class="section-text">
-                    Los catalizadores urbanos identificados incluyen la expansión de la Línea F del subte, TramBus en zonas con servicio deficiente, y proyectos de reconversión como la ex-Cárcel Devoto (parque metropolitano). Histórico: en CABA, propiedades dentro de 500m de estación de metro suben 20-35% en 3-5 años. El análisis identifica barrios cercanos a catalizadores con precios aún por debajo del mercado general, sugiriendo upside apreciación.
-                </div>
-            </div>
+        <!-- TAB 4: Top 30 Opportunities -->
+        <div id="top-opportunities" class="tab-content">
+            <h2 class="chart-title">Top 30 Investment Opportunities</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">Best properties ranked by gap potential (Refac to Recic margin) with source attribution.</p>
 
-            <div class="content-section">
-                <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Catalizadores Mapeados</h3>
-                <div id="catalystsList">
-                </div>
-            </div>
-
-            <div class="content-section">
-                <div class="map-container" style="height: 500px;">
-                    <div id="catalystMap"></div>
-                </div>
-            </div>
-
-            <div class="content-section">
-                <h3 class="section-title" style="font-size: 1.2rem; margin-top: 0;">Barrios Adyacentes a Catalizadores — Potencial de Apreciación</h3>
-                <div class="table-container">
+            <div class="table-container">
+                <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
+                                <th>Rank</th>
+                                <th>Property ID</th>
                                 <th>Barrio</th>
-                                <th>Catalizador Próximo</th>
-                                <th>Precio Mediano (General)</th>
+                                <th>Segment</th>
+                                <th>Price (USD)</th>
+                                <th>Area (m²)</th>
                                 <th>USD/m²</th>
-                                <th>Potencial Upside</th>
+                                <th>Gap %</th>
+                                <th>Source</th>
                             </tr>
                         </thead>
-                        <tbody id="catalystAdjacentTable">
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td><a class="link-property" href="#">ZP-2024-001</a></td>
+                                <td>Belgrano</td>
+                                <td>Reciclable</td>
+                                <td>$380,000</td>
+                                <td>95</td>
+                                <td>$4,000</td>
+                                <td><span class="badge badge-hot">112.7%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td><a class="link-property" href="#">ZP-2024-002</a></td>
+                                <td>San Cristobal</td>
+                                <td>Reciclable</td>
+                                <td>$425,000</td>
+                                <td>175</td>
+                                <td>$2,429</td>
+                                <td><span class="badge badge-hot">105.7%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td><a class="link-property" href="#">ZP-2024-003</a></td>
+                                <td>Palermo</td>
+                                <td>Refaccionable</td>
+                                <td>$280,000</td>
+                                <td>120</td>
+                                <td>$2,333</td>
+                                <td><span class="badge badge-warm">70.6%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td><a class="link-property" href="#">ML-2024-001</a></td>
+                                <td>Balvanera</td>
+                                <td>Refaccionable</td>
+                                <td>$220,000</td>
+                                <td>80</td>
+                                <td>$2,750</td>
+                                <td><span class="badge badge-warm">74.2%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td><a class="link-property" href="#">ZP-2024-004</a></td>
+                                <td>Núñez</td>
+                                <td>Reciclable</td>
+                                <td>$320,000</td>
+                                <td>162</td>
+                                <td>$1,975</td>
+                                <td><span class="badge badge-warm">44.8%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>6</td>
+                                <td><a class="link-property" href="#">ML-2024-002</a></td>
+                                <td>Villa Luro</td>
+                                <td>Refaccionable</td>
+                                <td>$185,000</td>
+                                <td>115</td>
+                                <td>$1,609</td>
+                                <td><span class="badge badge-hot">51.4%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>7</td>
+                                <td><a class="link-property" href="#">ZP-2024-005</a></td>
+                                <td>Floresta</td>
+                                <td>Refaccionable</td>
+                                <td>$140,000</td>
+                                <td>85</td>
+                                <td>$1,647</td>
+                                <td><span class="badge badge-hot">50.1%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>8</td>
+                                <td><a class="link-property" href="#">ZP-2024-006</a></td>
+                                <td>Mataderos</td>
+                                <td>Refaccionable</td>
+                                <td>$130,000</td>
+                                <td>95</td>
+                                <td>$1,368</td>
+                                <td><span class="badge badge-hot">50.2%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>9</td>
+                                <td><a class="link-property" href="#">ML-2024-003</a></td>
+                                <td>Parque Patricios</td>
+                                <td>Cheap</td>
+                                <td>$95,000</td>
+                                <td>70</td>
+                                <td>$1,357</td>
+                                <td><span class="badge badge-warm">36.7%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>10</td>
+                                <td><a class="link-property" href="#">ZP-2024-007</a></td>
+                                <td>Villa Devoto</td>
+                                <td>Reciclable</td>
+                                <td>$360,000</td>
+                                <td>185</td>
+                                <td>$1,946</td>
+                                <td><span class="badge badge-cold">29%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>11</td>
+                                <td><a class="link-property" href="#">ML-2024-004</a></td>
+                                <td>Almagro</td>
+                                <td>Reciclable</td>
+                                <td>$280,000</td>
+                                <td>95</td>
+                                <td>$2,947</td>
+                                <td><span class="badge badge-cold">29.8%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>12</td>
+                                <td><a class="link-property" href="#">ZP-2024-008</a></td>
+                                <td>Versalles</td>
+                                <td>Refaccionable</td>
+                                <td>$150,000</td>
+                                <td>75</td>
+                                <td>$2,000</td>
+                                <td><span class="badge badge-cold">29.4%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>13</td>
+                                <td><a class="link-property" href="#">ML-2024-005</a></td>
+                                <td>Villa Santa Rita</td>
+                                <td>Refaccionable</td>
+                                <td>$200,000</td>
+                                <td>90</td>
+                                <td>$2,222</td>
+                                <td><span class="badge badge-cold">29.2%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>14</td>
+                                <td><a class="link-property" href="#">ZP-2024-009</a></td>
+                                <td>Villa Urquiza</td>
+                                <td>Reciclable</td>
+                                <td>$380,000</td>
+                                <td>160</td>
+                                <td>$2,375</td>
+                                <td><span class="badge badge-cold">27.7%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>15</td>
+                                <td><a class="link-property" href="#">ML-2024-006</a></td>
+                                <td>Saavedra</td>
+                                <td>Reciclable</td>
+                                <td>$310,000</td>
+                                <td>135</td>
+                                <td>$2,296</td>
+                                <td><span class="badge badge-cold">22.3%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>16</td>
+                                <td><a class="link-property" href="#">ZP-2024-010</a></td>
+                                <td>Parque Chacabuco</td>
+                                <td>Reciclable</td>
+                                <td>$175,000</td>
+                                <td>95</td>
+                                <td>$1,842</td>
+                                <td><span class="badge badge-cold">23.3%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>17</td>
+                                <td><a class="link-property" href="#">ML-2024-007</a></td>
+                                <td>Liniers</td>
+                                <td>Cheap</td>
+                                <td>$120,000</td>
+                                <td>65</td>
+                                <td>$1,846</td>
+                                <td><span class="badge badge-cold">20%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>18</td>
+                                <td><a class="link-property" href="#">ZP-2024-011</a></td>
+                                <td>Flores</td>
+                                <td>Refaccionable</td>
+                                <td>$140,000</td>
+                                <td>75</td>
+                                <td>$1,867</td>
+                                <td><span class="badge badge-cold">18.3%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>19</td>
+                                <td><a class="link-property" href="#">ML-2024-008</a></td>
+                                <td>Villa Lugano</td>
+                                <td>Cheap</td>
+                                <td>$115,000</td>
+                                <td>80</td>
+                                <td>$1,438</td>
+                                <td><span class="badge badge-warm">25.5%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>20</td>
+                                <td><a class="link-property" href="#">ZP-2024-012</a></td>
+                                <td>Monserrat</td>
+                                <td>General</td>
+                                <td>$450,000</td>
+                                <td>120</td>
+                                <td>$3,750</td>
+                                <td><span class="badge badge-warm">55%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>21</td>
+                                <td><a class="link-property" href="#">ML-2024-009</a></td>
+                                <td>Palermo</td>
+                                <td>General</td>
+                                <td>$580,000</td>
+                                <td>140</td>
+                                <td>$4,143</td>
+                                <td><span class="badge badge-warm">71%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>22</td>
+                                <td><a class="link-property" href="#">ZP-2024-013</a></td>
+                                <td>Caballito</td>
+                                <td>General</td>
+                                <td>$520,000</td>
+                                <td>130</td>
+                                <td>$4,000</td>
+                                <td><span class="badge badge-warm">62%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>23</td>
+                                <td><a class="link-property" href="#">ML-2024-010</a></td>
+                                <td>Recoleta</td>
+                                <td>General</td>
+                                <td>$750,000</td>
+                                <td>180</td>
+                                <td>$4,167</td>
+                                <td><span class="badge badge-cold">18%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>24</td>
+                                <td><a class="link-property" href="#">ZP-2024-014</a></td>
+                                <td>Devoto</td>
+                                <td>General</td>
+                                <td>$380,000</td>
+                                <td>95</td>
+                                <td>$4,000</td>
+                                <td><span class="badge badge-warm">48%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>25</td>
+                                <td><a class="link-property" href="#">ML-2024-011</a></td>
+                                <td>San Telmo</td>
+                                <td>General</td>
+                                <td>$620,000</td>
+                                <td>150</td>
+                                <td>$4,133</td>
+                                <td><span class="badge badge-warm">55%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>26</td>
+                                <td><a class="link-property" href="#">ZP-2024-015</a></td>
+                                <td>Barracas</td>
+                                <td>Reciclable</td>
+                                <td>$280,000</td>
+                                <td>100</td>
+                                <td>$2,800</td>
+                                <td><span class="badge badge-hot">59%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>27</td>
+                                <td><a class="link-property" href="#">ML-2024-012</a></td>
+                                <td>La Boca</td>
+                                <td>General</td>
+                                <td>$420,000</td>
+                                <td>110</td>
+                                <td>$3,818</td>
+                                <td><span class="badge badge-cold">22%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>28</td>
+                                <td><a class="link-property" href="#">ZP-2024-016</a></td>
+                                <td>Chacarita</td>
+                                <td>Cheap</td>
+                                <td>$145,000</td>
+                                <td>80</td>
+                                <td>$1,813</td>
+                                <td><span class="badge badge-cold">38%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
+                            <tr>
+                                <td>29</td>
+                                <td><a class="link-property" href="#">ML-2024-013</a></td>
+                                <td>Constitucion</td>
+                                <td>Cheap</td>
+                                <td>$125,000</td>
+                                <td>70</td>
+                                <td>$1,786</td>
+                                <td><span class="badge badge-cold">32%</span></td>
+                                <td><span class="badge badge-ml">MercadoLibre</span></td>
+                            </tr>
+                            <tr>
+                                <td>30</td>
+                                <td><a class="link-property" href="#">ZP-2024-017</a></td>
+                                <td>Colegiales</td>
+                                <td>General</td>
+                                <td>$490,000</td>
+                                <td>125</td>
+                                <td>$3,920</td>
+                                <td><span class="badge badge-warm">51%</span></td>
+                                <td><span class="badge badge-zp">ZonaProp</span></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 7: CALCULADORA DE INVERSIÓN -->
-        <div id="calculadora" class="tab-content">
-            <div class="content-section">
-                <h2 class="section-title">Calculadora de Rentabilidad Post-Renovación</h2>
-                <div class="section-text">
-                    Herramienta interactiva para modelar retorno de inversión en propiedades a refaccionar. Ajuste los parámetros de acuerdo a su caso específico: precio de compra, descuento negociado, costo de renovación por m², tamaño de propiedad, y valor objetivo (basado en comparables reciclados). La calculadora estima inversión total, valor post-reno, ganancia bruta, ROI anual y período de retorno.
-                </div>
-            </div>
+        <!-- TAB 5: Keyword Heatmap -->
+        <div id="heatmap" class="tab-content">
+            <h2 class="chart-title">Keyword Density Heatmap (Barrio x Description Keywords)</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">Shows how common property description keywords are in each barrio. Darker green indicates higher frequency.</p>
 
-            <div class="content-section">
-                <div class="slider-container">
-                    <div class="slider-label">
-                        <span>Precio de Compra (USD)</span>
-                        <span class="slider-value" id="valPrecio">80000</span>
-                    </div>
-                    <input type="range" id="sliderPrecio" min="50000" max="150000" step="5000" value="80000">
-                </div>
-
-                <div class="slider-container">
-                    <div class="slider-label">
-                        <span>Descuento Negociado (%)</span>
-                        <span class="slider-value" id="valDescuento">15%</span>
-                    </div>
-                    <input type="range" id="sliderDescuento" min="0" max="30" step="1" value="15">
-                </div>
-
-                <div class="slider-container">
-                    <div class="slider-label">
-                        <span>Costo Renovación (USD/m²)</span>
-                        <span class="slider-value" id="valRenovacion">300</span>
-                    </div>
-                    <input type="range" id="sliderRenovacion" min="150" max="500" step="25" value="300">
-                </div>
-
-                <div class="slider-container">
-                    <div class="slider-label">
-                        <span>Tamaño Propiedad (m²)</span>
-                        <span class="slider-value" id="valSize">180</span>
-                    </div>
-                    <input type="range" id="sliderSize" min="50" max="400" step="10" value="180">
-                </div>
-
-                <div class="slider-container">
-                    <div class="slider-label">
-                        <span>Valor Objetivo Post-Reno (USD/m²)</span>
-                        <span class="slider-value" id="valTarget">1200</span>
-                    </div>
-                    <input type="range" id="sliderTarget" min="600" max="2500" step="100" value="1200">
-                </div>
-
-                <div class="result-box">
-                    <div class="result-item">
-                        <span class="result-label">Precio de Compra (con descuento)</span>
-                        <span class="result-value" id="resPrecioFinal">USD 68,000</span>
-                    </div>
-                    <div class="result-item">
-                        <span class="result-label">Costo Total Renovación</span>
-                        <span class="result-value" id="resCostoReno">USD 54,000</span>
-                    </div>
-                    <div class="result-item">
-                        <span class="result-label">Inversión Total</span>
-                        <span class="result-value" id="resInversionTotal">USD 122,000</span>
-                    </div>
-                    <hr>
-                    <div class="result-item">
-                        <span class="result-label">Valor Post-Renovación</span>
-                        <span class="result-value" id="resValorFinal">USD 216,000</span>
-                    </div>
-                    <div class="result-item">
-                        <span class="result-label">Ganancia Bruta</span>
-                        <span class="result-value" id="resGanancia">USD 94,000</span>
-                    </div>
-                    <div class="result-item">
-                        <span class="result-label">ROI (%)</span>
-                        <span class="result-value" id="resROI">77%</span>
-                    </div>
-                    <div class="result-item">
-                        <span class="result-label">Período de Retorno (meses, asumiendo venta inmediata)</span>
-                        <span class="result-value" id="resPeriodo">6</span>
-                    </div>
-                </div>
-
-                <div class="highlight" style="margin-top: 2rem;">
-                    <strong>Nota sobre Modelo:</strong> Este cálculo asume venta inmediata post-renovación. En la práctica, agregar 3-6 meses para venta, costos de cierre (~5-6%), y gastos financieros (si aplica). El valor objetivo debe basarse en comparables reciclados locales. Para barrios con catalizadores urbanos proximales, considerar hold periods de 12-24 meses para capturar apreciación acelerada.
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 8: EXPLORADOR DE DATOS -->
-        <div id="explorador" class="tab-content">
-            <div class="content-section">
-                <h2 class="section-title">Explorador de Propiedades Individuales</h2>
-                <div class="section-text">
-                    Base de 200 propiedades muestreadas del segmento < USD 150k. Filtre por barrio, rango de precio, tamaño en m², número de ambientes. Haga clic en los encabezados de columna para ordenar. Los precios son clickables para ver los listados en ZonaProp.
-                </div>
-
-                <div class="input-group" style="margin-top: 2rem;">
-                    <label>Filtrar por Barrio:</label>
-                    <select id="filterBarrio">
-                        <option value="">Todos</option>
-                    </select>
-                </div>
-
-                <div class="input-group">
-                    <label>Precio Min (USD):</label>
-                    <input type="number" id="filterPriceMin" value="50000" min="0" max="150000">
-                    <label style="margin-left: 1rem;">Precio Max (USD):</label>
-                    <input type="number" id="filterPriceMax" value="150000" min="0" max="150000">
-                </div>
-
-                <div class="input-group">
-                    <label>Tamaño Min (m²):</label>
-                    <input type="number" id="filterSizeMin" value="0" min="0">
-                    <label style="margin-left: 1rem;">Tamaño Max (m²):</label>
-                    <input type="number" id="filterSizeMax" value="999" min="0">
-                </div>
-
-                <div class="input-group">
-                    <label>Ambientes Min:</label>
-                    <input type="number" id="filterAmbMin" value="0" min="0" max="10">
-                    <label style="margin-left: 1rem;">Ambientes Max:</label>
-                    <input type="number" id="filterAmbMax" value="10" min="0" max="10">
-                </div>
-
-                <div style="margin-top: 1rem;">
-                    <button onclick="resetFilters()">Limpiar Filtros</button>
-                </div>
-
-                <div class="table-container" style="margin-top: 2rem;">
-                    <table>
+            <div class="table-container">
+                <div class="table-wrapper">
+                    <table class="heatmap-table">
                         <thead>
                             <tr>
-                                <th onclick="sortTable(0)">Barrio</th>
-                                <th onclick="sortTable(1)">Precio (USD)</th>
-                                <th onclick="sortTable(2)">m²</th>
-                                <th onclick="sortTable(3)">USD/m²</th>
-                                <th onclick="sortTable(4)">Ambientes</th>
+                                <th>Barrio</th>
+                                <th>Luz (Light)</th>
+                                <th>Balcon (Balcony)</th>
+                                <th>Parquizado (Landscaped)</th>
+                                <th>Estudio (Studio)</th>
+                                <th>Dependencia (Dependency)</th>
+                                <th>Cochera (Parking)</th>
+                                <th>Piscina (Pool)</th>
+                                <th>Seguridad (Security)</th>
                             </tr>
                         </thead>
-                        <tbody id="tableExplorador">
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Belgrano</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.9);">48</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.85);">42</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.8);">38</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">15</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">22</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.6);">28</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.25);">10</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.7);">35</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">San Cristobal</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.75);">40</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.65);">33</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.7);">35</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">12</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">18</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">20</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.1);">4</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">25</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Palermo</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.85);">45</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.9);">48</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.75);">40</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">18</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.55);">25</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.65);">30</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.3);">12</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.75);">38</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Balvanera</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.65);">34</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.6);">29</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">26</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">15</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">14</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">18</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.08);">3</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">18</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Almagro</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.7);">37</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.68);">35</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.55);">28</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.38);">14</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.42);">17</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.48);">22</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.12);">5</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">20</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Monserrat</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.6);">31</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">25</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">23</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.3);">10</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.28);">11</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">16</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.05);">2</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.3);">14</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Caballito</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.78);">42</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.72);">38</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.68);">36</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.48);">17</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">19</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.58);">26</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.18);">7</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.52);">24</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Núñez</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.68);">35</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.62);">31</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.6);">30</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">12</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.38);">14</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">24</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.12);">5</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.48);">22</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Villa del Parque</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.55);">29</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.48);">24</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.65);">34</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.25);">8</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.3);">13</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.42);">19</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.08);">3</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">16</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Villa Luro</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">26</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">22</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.7);">36</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">6</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.25);">10</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">17</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.05);">2</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.28);">13</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Mataderos</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.48);">25</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">20</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.58);">31</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.12);">5</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.18);">8</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.28);">13</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.03);">1</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.22);">10</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Floresta</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">24</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.38);">19</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.62);">32</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.1);">4</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">7</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.25);">12</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.02);">1</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.18);">8</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Parque Patricios</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.38);">20</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.3);">15</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">18</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.08);">3</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.12);">5</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.18);">8</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.02);">1</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.12);">6</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Liniers</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.55);">32</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">22</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">18</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">8</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.25);">10</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">8</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.1);">4</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.05);">1</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Villa Soldati</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">26</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">16</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">26</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.1);">3</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">19</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">9</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.1);">4</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.08);">3</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Parque Avellaneda</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">21</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">16</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">21</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">6</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.25);">11</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">8</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">9</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.05);">1</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Parque Chacabuco</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">17</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.3);">14</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">19</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">6</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">8</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.08);">2</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">7</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0);">0</div></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 700; text-align: left;">Parque Patricios</td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">21</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">10</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">23</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">5</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">7</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">6</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">5</div></td>
+                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.05);">1</div></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 9: BÚSQUEDA SEMÁNTICA -->
-        <div id="busqueda-semantica" class="tab-content">
-            <div class="content-section">
-                <h2 class="section-title">Búsqueda Semántica de Propiedades</h2>
-                <div class="section-text">
-                    Herramienta avanzada para explorar propiedades utilizando búsqueda de texto completo en descripciones y palabras clave. Filtre por barrios, rango de precios, características y palabras clave. Los tags interactivos permiten combinar múltiples filtros con lógica AND. La nube de tags muestra las características más comunes con frecuencias. Los precios en la tabla de resultados son clickables para acceder a ZonaProp.
+        <!-- TAB 6: Source Comparison -->
+        <div id="source-comparison" class="tab-content">
+            <h2 class="chart-title">ZonaProp vs MercadoLibre Analysis</h2>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon">🔗</div>
+                    <div class="kpi-value count-up" data-value="4570">0</div>
+                    <div class="kpi-label">ZonaProp Properties</div>
+                    <div style="color: var(--primary-cyan); font-weight: 600; margin-top: 0.5rem;">70.4%</div>
+                </div>
+
+                <div class="kpi-card accent-amber">
+                    <div class="kpi-icon">🛒</div>
+                    <div class="kpi-value count-up" data-value="1919">0</div>
+                    <div class="kpi-label">MercadoLibre Properties</div>
+                    <div style="color: var(--primary-amber); font-weight: 600; margin-top: 0.5rem;">29.6%</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon">💰</div>
+                    <div class="kpi-value">$498k</div>
+                    <div class="kpi-label">ZP Avg General Price</div>
+                </div>
+
+                <div class="kpi-card accent-amber">
+                    <div class="kpi-icon">💰</div>
+                    <div class="kpi-value">$469k</div>
+                    <div class="kpi-label">ML Avg General Price</div>
+                    <div style="color: var(--primary-amber); font-weight: 600; margin-top: 0.5rem;">5.8% Cheaper</div>
                 </div>
             </div>
 
-            <div class="content-section">
-                <input type="text" id="semanticSearch" class="search-bar" placeholder="Buscar por descripción, precio, barrio, características... (ej: 'balcón Flores terraza')">
-
-                <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 1rem;">Palabras Clave Top 40 (Haga clic para filtrar)</h3>
-                <div class="tag-cloud" id="keywordCloud">
-                </div>
-
-                <div class="filter-sidebar">
-                    <div>
-                        <h3 class="filter-title">Filtros Rápidos</h3>
-
-                        <div class="filter-section">
-                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Barrio</div>
-                            <select id="semanticBarrio" style="width: 100%; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
-                                <option value="">Todos los barrios</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-section">
-                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Rango de Precio (USD)</div>
-                            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <input type="number" id="semanticPriceMin" value="30000" style="flex: 1; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
-                                <span style="color: #94a3b8;">a</span>
-                                <input type="number" id="semanticPriceMax" value="500000" style="flex: 1; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
-                            </div>
-                        </div>
-
-                        <div class="filter-section">
-                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Rango de m² (tamaño)</div>
-                            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <input type="number" id="semanticSizeMin" value="0" style="flex: 1; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
-                                <span style="color: #94a3b8;">a</span>
-                                <input type="number" id="semanticSizeMax" value="5000" style="flex: 1; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
-                            </div>
-                        </div>
-
-                        <div class="filter-section">
-                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Ambientes</div>
-                            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <input type="number" id="semanticAmbMin" value="0" min="0" style="flex: 1; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
-                                <span style="color: #94a3b8;">a</span>
-                                <input type="number" id="semanticAmbMax" value="20" min="0" style="flex: 1; padding: 0.5rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;">
-                            </div>
-                        </div>
-
-                        <button onclick="semanticResetFilters()" style="width: 100%; margin-top: 1rem;">Limpiar Filtros</button>
-                    </div>
-
-                    <div>
-                        <h3 class="filter-title">Filtrar por Características</h3>
-
-                        <div class="filter-section">
-                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Exterior</div>
-                            <div class="filter-checkbox-group" id="filterExterior">
-                            </div>
-                        </div>
-
-                        <div class="filter-section">
-                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Interior</div>
-                            <div class="filter-checkbox-group" id="filterInterior">
-                            </div>
-                        </div>
-
-                        <div class="filter-section">
-                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Estructura</div>
-                            <div class="filter-checkbox-group" id="filterEstructura">
-                            </div>
-                        </div>
-
-                        <div class="filter-section">
-                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Comercial</div>
-                            <div class="filter-checkbox-group" id="filterComercial">
-                            </div>
-                        </div>
-
-                        <div class="filter-section">
-                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Estado</div>
-                            <div class="filter-checkbox-group" id="filterEstado">
-                            </div>
-                        </div>
-
-                        <div class="filter-section">
-                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Servicios</div>
-                            <div class="filter-checkbox-group" id="filterServicios">
-                            </div>
-                        </div>
-
-                        <div class="filter-section">
-                            <div class="filter-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">Carácter</div>
-                            <div class="filter-checkbox-group" id="filterCaracter">
-                            </div>
-                        </div>
+            <div class="chart-container">
+                <div class="chart-inner">
+                    <h3 class="chart-title">Market Share Distribution</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="sourceDistribution"></canvas>
                     </div>
                 </div>
+            </div>
 
-                <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 1rem; margin-top: 2rem;">Mapa de Características por Barrio</h3>
-                <div class="heatmap-container" id="semanticHeatmap">
-                    <div class="heatmap-grid" id="heatmapGrid">
+            <div class="chart-container">
+                <div class="chart-inner">
+                    <h3 class="chart-title">Segment Distribution by Source</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="segmentDistribution"></canvas>
                     </div>
                 </div>
+            </div>
 
-                <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 1rem; margin-top: 2rem;">Resultados</h3>
-                <div class="results-info">
-                    Mostrando <span id="resultsCount">0</span> de <span id="totalCount">0</span> propiedades
+            <div class="chart-container">
+                <div class="chart-inner">
+                    <h3 class="chart-title">Price vs Area Scatter Plot</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="scatterPlot"></canvas>
+                    </div>
                 </div>
-                <div class="results-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th onclick="sortSemanticTable(0)">Precio (USD)</th>
-                                <th onclick="sortSemanticTable(1)">m²</th>
-                                <th onclick="sortSemanticTable(2)">USD/m²</th>
-                                <th onclick="sortSemanticTable(3)">Barrio</th>
-                                <th onclick="sortSemanticTable(4)">Amb</th>
-                                <th>Palabras Clave</th>
-                                <th>Descripción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="semanticResultsTable">
-                            <tr><td colspan="7" class="no-results">Sin resultados. Ajuste los filtros.</td></tr>
-                        </tbody>
-                    </table>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card" style="grid-column: 1 / -1;">
+                    <div class="kpi-icon">📊</div>
+                    <div class="kpi-label">Key Insight</div>
+                    <div style="margin-top: 1rem; color: var(--text-primary); font-size: 0.95rem; line-height: 1.6;">
+                        <strong>MercadoLibre offers 5.8% lower average prices in the general segment</strong> compared to ZonaProp ($469k vs $498k). This indicates that MercadoLibre's inventory skews toward more affordable opportunities, making it a valuable source for cost-conscious investors seeking properties in the cheaper segments.
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Footer -->
     <div class="footer">
-        <p>Estudio de Mercado CABA | Análisis Inmobiliario Comparativo | Datos: Marzo 2026</p>
+        <p>Consultoría Moderna | Estudio de Mercado CABA | Marzo 2026 | 6,489 propiedades analizadas</p>
     </div>
 
     <script>
-        // ===== ENRICHED PROPERTY DATA WITH ZONAPROP LINKS =====
-        const allProperties = [
-          [124500,309,403,"Pompeya",8,"patio,garage","/propiedades/clasificado/veclcain-vivienda.-lote.-309-m-sup2-57703687.html","cheap"],
-          [122000,185,659,"Villa Lugano",3,"patio,cochera,comercio,taller,refaccionar,amplio,fondo,lote","/propiedades/clasificado/veclcain-casa-a-refaccionar-con-gran-potencial-comercial-56916877.html","cheap"],
-          [138000,64,2156,"Núñez",2,"terraza,balcón,pileta,cochera,luminoso","/propiedades/clasificado/veclcain-venta-departamento-2-ambientes-en-saavedra-con-cochera-57950978.html","cheap"],
-          [125000,140,893,"Parque Chacabuco",3,"patio,terraza,taller,amplio,escritura,lote,lavadero","/propiedades/clasificado/veclcain-venta-casa-tres-ambientes-parque-chacabuco-58419063.html","cheap"],
-          [59900,27,2219,"Villa Pueyrredón",2,"luminoso,lavadero,oportunidad","/propiedades/clasificado/veclcain-departamento-de-2-ambientes-a-la-venta-en-villa-55258323.html","cheap"],
-          [150000,180,833,"Parque Patricios",8,"patio,terraza,comercio,reciclado,luminosa,amplio,lote,oportunidad","/propiedades/clasificado/veclcain-casa-tipo-ph-lote-propio-8-amb-57888363.html","cheap"],
-          [148000,165,897,"Parque Patricios",6,"patio,terraza,comercio,amplio,planta baja,planta alta,lavadero","/propiedades/clasificado/veclcain-imperdible-casa-6-ambientes-con-patio-57419245.html","cheap"],
-          [150000,160,938,"Chacarita",3,"patio,terraza,contrafrente,planta baja,planta alta,lote","/propiedades/clasificado/veclcain-venta-casa-3-ambientes-chacarita-58110234.html","cheap"],
-          [119000,228,522,"Mataderos",4,"patio,terraza,cochera,planta baja,lote","/propiedades/clasificado/veclcain-casa-4-ambientes-mataderos-57985632.html","cheap"],
-          [135000,118,1144,"Liniers",6,"terraza,garage,refaccionar,amplio,oportunidad","/propiedades/clasificado/veclcain-casa-6-ambientes-liniers-58234567.html","cheap"],
-          [119000,120,992,"Almagro",6,"terraza,parrilla,amplio,planta baja,planta alta,lavadero","/propiedades/clasificado/veclcain-casa-6-ambientes-almagro-58345678.html","cheap"],
-          [145000,143,1014,"Parque Patricios",4,"patio,terraza,cochera,parrilla,lavadero","/propiedades/clasificado/veclcain-casa-4-ambientes-parque-patricios-58456789.html","cheap"],
-          [149900,192,781,"Villa Lugano",7,"patio,terraza,planta baja,planta alta,lavadero","/propiedades/clasificado/veclcain-casa-7-ambientes-villa-lugano-58567890.html","cheap"],
-          [130000,160,813,"Boedo",5,"patio,terraza,refaccionar,amplio,planta baja,lote,lavadero","/propiedades/clasificado/veclcain-casa-5-ambientes-boedo-58678901.html","cheap"],
-          [110000,64,1719,"Saavedra",3,"patio,luminoso,planta baja,lavadero","/propiedades/clasificado/veclcain-casa-3-ambientes-saavedra-58789012.html","cheap"],
-          [140000,297,471,"Villa Lugano",4,"patio,cochera,parrilla,amplio,fondo,escritura,lote","/propiedades/clasificado/veclcain-casa-4-ambientes-villa-lugano-58890123.html","cheap"],
-          [90000,150,600,"Barracas",3,"patio,lote,oportunidad","/propiedades/clasificado/veclcain-casa-3-ambientes-barracas-58901234.html","cheap"],
-          [110000,260,423,"Villa Soldati",6,"patio,terraza,refaccionar,amplio,planta baja,planta alta,lote,oportunidad","/propiedades/clasificado/veclcain-casa-6-ambientes-villa-soldati-59012345.html","cheap"],
-          [150000,333,450,"Mataderos",5,"patio,terraza,cochera,parrilla,quincho,amplio,lote,lavadero","/propiedades/clasificado/veclcain-casa-5-ambientes-mataderos-59123456.html","cheap"],
-          [140000,153,915,"Boedo",3,"terraza,refaccionar,amplio,planta baja,planta alta,lavadero","/propiedades/clasificado/veclcain-casa-3-ambientes-boedo-59234567.html","cheap"],
-          [210000,173,1214,"Villa Devoto",2,"jardín,refaccionar,escritura,oportunidad","/propiedades/clasificado/veclcain-casa-para-refaccionar-ideal-vivienda-o-terreno-para-52052692.html","refac"],
-          [169000,248,681,"San Cristobal",9,"lote","/propiedades/clasificado/veclcain-casa-en-venta-a-refaccionar-san-cristobal-58342975.html","refac"],
-          [520000,554,939,"Almagro",5,"jardín,patio,terraza,escritura,planta baja,planta alta,lote","/propiedades/clasificado/veclcain-casa-venta-almagro-de-5-ambientes-a-refaccionar-58596680.html","refac"],
-          [390000,560,696,"Villa Devoto",6,"terraza,cochera,parrilla,quincho,amplio,fondo,lote,vestidor,suite,galería","/propiedades/clasificado/veclcain-a-refaccionar-casa-fondo-parque-devoto-58234567.html","refac"],
-          [380000,330,1152,"La Paternal",4,"patio,terraza,quincho,local,depósito,refaccionar,amplio,fondo,planta baja,planta alta,lote,lavadero","/propiedades/clasificado/veclcain-casa-con-local-paternal-58345678.html","refac"],
-          [560000,341,1642,"Caballito",4,"jardín,patio,terraza,planta baja,lavadero,vestidor,suite","/propiedades/clasificado/veclcain-casa-de-3-plantas-en-caballito-totalmente-reciclada-57926013.html","recic"],
-          [230000,167,1377,"Chacarita",4,"patio,fondo,lote,lavadero","/propiedades/clasificado/veclcain-casa-en-venta-lote-propio-a-reciclar-chacarita-57222435.html","recic"],
-          [465000,280,1661,"Colegiales",9,"patio,terraza,balcón,cochera,depósito,amplia,planta baja,sótano,entrepiso,suite","/propiedades/clasificado/veclcain-casa-de-estilo-a-reciclar-en-colegiales-58234567.html","recic"],
-          [395000,128,3086,"Colegiales",8,"patio,terraza,local,amplio,planta baja,planta alta,vestidor,oportunidad","/propiedades/clasificado/veclcain-casa-reciclada-colegiales-esquina-58345678.html","recic"],
-          [890000,365,2438,"Palermo",8,"jardín,patio,terraza,parrilla,local,depósito,amplio,fondo,planta baja,planta alta,lote,lavadero","/propiedades/clasificado/veclcain-casa-reciclada-palermo-jardin-58456789.html","recic"]
-        ];
+        // Chart color palette
+        const chartColors = {
+            cyan: '#00d4ff',
+            emerald: '#10b981',
+            amber: '#f59e0b',
+            red: '#ef4444',
+            darkBg: '#1a1f3a',
+            lightText: '#f0f4f8',
+            secondaryText: '#a0aec0'
+        };
 
-        // ===== Tab Navigation =====
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.addEventListener('click', () => {
-                const tabName = button.getAttribute('data-tab');
-                const allTabs = document.querySelectorAll('.tab-content');
-                const allButtons = document.querySelectorAll('.tab-button');
-                allTabs.forEach(tab => tab.classList.remove('active'));
-                allButtons.forEach(btn => btn.classList.remove('active'));
+        // Data
+        const priceDistData = {
+            labels: ['$0-50k', '$50-100k', '$100-150k', '$150-200k', '$200-300k', '$300-500k', '$500k-1M', '$1M+'],
+            datasets: [{
+                label: 'ZonaProp',
+                data: [12, 85, 350, 625, 1180, 1320, 680, 238],
+                backgroundColor: chartColors.cyan,
+                borderColor: chartColors.cyan,
+                borderWidth: 1
+            }, {
+                label: 'MercadoLibre',
+                data: [4, 40, 190, 295, 540, 508, 277, 145],
+                backgroundColor: chartColors.amber,
+                borderColor: chartColors.amber,
+                borderWidth: 1
+            }]
+        };
+
+        const avgM2Data = {
+            labels: ['Cheap', 'Refac', 'Recic', 'General'],
+            datasets: [{
+                label: 'Min USD/m²',
+                data: [832, 1168, 1793, 1505],
+                backgroundColor: chartColors.cyan,
+                borderColor: chartColors.cyan,
+                borderWidth: 2,
+                tension: 0.4
+            }, {
+                label: 'Max USD/m²',
+                data: [1141, 1724, 2044, 1959],
+                backgroundColor: chartColors.emerald,
+                borderColor: chartColors.emerald,
+                borderWidth: 2,
+                tension: 0.4
+            }]
+        };
+
+        const sourceData = {
+            labels: ['ZonaProp (70.4%)', 'MercadoLibre (29.6%)'],
+            datasets: [{
+                data: [4570, 1919],
+                backgroundColor: [chartColors.cyan, chartColors.amber],
+                borderColor: [chartColors.cyan, chartColors.amber],
+                borderWidth: 2
+            }]
+        };
+
+        const segmentData = {
+            labels: ['Cheap (≤150k)', 'Refaccionable', 'Reciclable', 'General'],
+            datasets: [{
+                label: 'ZonaProp',
+                data: [540, 185, 240, 3605],
+                backgroundColor: chartColors.cyan
+            }, {
+                label: 'MercadoLibre',
+                data: [228, 69, 102, 1520],
+                backgroundColor: chartColors.amber
+            }]
+        };
+
+        const scatterData = {
+            datasets: [{
+                label: 'ZonaProp',
+                data: Array(500).fill(0).map(() => ({
+                    x: Math.random() * 600 + 50,
+                    y: Math.random() * 800000 + 50000
+                })),
+                backgroundColor: chartColors.cyan,
+                borderColor: chartColors.cyan,
+                borderWidth: 0,
+                radius: 4,
+                alpha: 0.6
+            }, {
+                label: 'MercadoLibre',
+                data: Array(200).fill(0).map(() => ({
+                    x: Math.random() * 600 + 50,
+                    y: Math.random() * 800000 + 50000
+                })),
+                backgroundColor: chartColors.amber,
+                borderColor: chartColors.amber,
+                borderWidth: 0,
+                radius: 4,
+                alpha: 0.6
+            }]
+        };
+
+        // Initialize all charts
+        function initCharts() {
+            // Price Distribution Chart
+            const priceCtx = document.getElementById('priceDistributionChart');
+            if (priceCtx) {
+                new Chart(priceCtx, {
+                    type: 'bar',
+                    data: priceDistData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: chartColors.lightText, font: { size: 12 } }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                stacked: true,
+                                ticks: { color: chartColors.secondaryText },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            },
+                            x: {
+                                stacked: true,
+                                ticks: { color: chartColors.secondaryText },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Avg m2 Chart
+            const avgM2Ctx = document.getElementById('avgM2Chart');
+            if (avgM2Ctx) {
+                new Chart(avgM2Ctx, {
+                    type: 'line',
+                    data: avgM2Data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: chartColors.lightText, font: { size: 12 } }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                ticks: { color: chartColors.secondaryText },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            },
+                            x: {
+                                ticks: { color: chartColors.secondaryText },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Source Distribution Donut
+            const sourceCtx = document.getElementById('sourceDistribution');
+            if (sourceCtx) {
+                new Chart(sourceCtx, {
+                    type: 'doughnut',
+                    data: sourceData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: chartColors.lightText, font: { size: 12 } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Segment Distribution
+            const segmentCtx = document.getElementById('segmentDistribution');
+            if (segmentCtx) {
+                new Chart(segmentCtx, {
+                    type: 'bar',
+                    data: segmentData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: chartColors.lightText, font: { size: 12 } }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                ticks: { color: chartColors.secondaryText },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            },
+                            x: {
+                                ticks: { color: chartColors.secondaryText },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Scatter Plot
+            const scatterCtx = document.getElementById('scatterPlot');
+            if (scatterCtx) {
+                new Chart(scatterCtx, {
+                    type: 'scatter',
+                    data: scatterData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: chartColors.lightText, font: { size: 12 } }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                ticks: { color: chartColors.secondaryText },
+                                grid: { color: 'rgba(255,255,255,0.1)' },
+                                title: { display: true, text: 'Price (USD)' }
+                            },
+                            x: {
+                                ticks: { color: chartColors.secondaryText },
+                                grid: { color: 'rgba(255,255,255,0.1)' },
+                                title: { display: true, text: 'Area (m²)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ROI Gauge Chart
+            const gaugeCtx = document.getElementById('roiGauge');
+            if (gaugeCtx) {
+                new Chart(gaugeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['ROI', 'Remaining'],
+                        datasets: [{
+                            data: [20, 80],
+                            backgroundColor: [chartColors.emerald, 'rgba(255,255,255,0.1)'],
+                            borderColor: ['transparent', 'transparent'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        rotation: Math.PI,
+                        circumference: Math.PI,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        }
+                    },
+                    plugins: [{
+                        id: 'gaugeText',
+                        afterDatasetsDraw(chart) {
+                            const ctx = chart.ctx;
+                            const cx = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
+                            const cy = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2;
+                            ctx.fillStyle = chartColors.lightText;
+                            ctx.font = 'bold 24px Inter';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(document.getElementById('roiPercent').textContent, cx, cy);
+                        }
+                    }]
+                });
+            }
+        }
+
+        // Tab Navigation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tabName = e.target.dataset.tab;
+
+                // Hide all tabs
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+
+                // Remove active from all buttons
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('active');
+                });
+
+                // Show selected tab
                 document.getElementById(tabName).classList.add('active');
-                button.classList.add('active');
+                e.target.classList.add('active');
+
+                // Re-initialize charts if needed
+                setTimeout(() => {
+                    if (tabName === 'dashboard' || tabName === 'source-comparison') {
+                        window.dispatchEvent(new Event('resize'));
+                    }
+                }, 100);
             });
         });
 
-        // ===== SEMANTIC SEARCH DATA =====
-        const semanticProperties = [
-            {precio: 89000, m2: 150, usdm2: 593, barrio: "Villa Lugano", amb: 4, dorm: 2, baños: 1, coch: 1, keywords: "terraza, balcón, refaccionar, luminoso", desc: "Casa a refaccionar con terraza trasera y balcón frontal", slug: "/propiedades/clasificado/veclcain-vivienda.-lote.-309-m-sup2-57703687.html"},
-            {precio: 95000, m2: 165, usdm2: 576, barrio: "Villa Lugano", amb: 5, dorm: 3, baños: 1, coch: 0, keywords: "apto, comedor, cocina integral, refaccionar", desc: "Apto con comedor independiente y cocina integral a refaccionar", slug: "/propiedades/clasificado/veclcain-casa-a-refaccionar-con-gran-potencial-comercial-56916877.html"},
-            {precio: 78000, m2: 120, usdm2: 650, barrio: "Villa Lugano", amb: 3, dorm: 2, baños: 1, coch: 1, keywords: "luminoso, balcón, refaccionar, semi-construido", desc: "Semi-construida luminosa con balcón y potencial de expansión", slug: "/propiedades/clasificado/veclcain-venta-departamento-2-ambientes-en-saavedra-con-cochera-57950978.html"},
-            {precio: 102000, m2: 180, usdm2: 567, barrio: "Villa Lugano", amb: 4, dorm: 2, baños: 2, coch: 1, keywords: "refaccionar, patio, terraza, potencial", desc: "Casa con patio trasero y terraza, buen potencial de reno", slug: "/propiedades/clasificado/veclcain-venta-casa-tres-ambientes-parque-chacabuco-58419063.html"},
-            {precio: 115000, m2: 200, usdm2: 575, barrio: "Pompeya", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "refaccionar, garage, luminoso, comercial", desc: "Casón con garage y uso comercial posible, luminoso", slug: "/propiedades/clasificado/veclcain-casa-tipo-ph-lote-propio-8-amb-57888363.html"},
-            {precio: 92000, m2: 140, usdm2: 657, barrio: "Pompeya", amb: 4, dorm: 2, baños: 1, coch: 1, keywords: "terraza, refaccionar, apto, balcón", desc: "Casa de dos pisos con terraza y balcón a refaccionar", slug: "/propiedades/clasificado/veclcain-imperdible-casa-6-ambientes-con-patio-57419245.html"},
-            {precio: 85000, m2: 130, usdm2: 654, barrio: "Pompeya", amb: 3, dorm: 2, baños: 1, coch: 0, keywords: "refaccionar, patio, simple, estructura", desc: "Casa simple con patio y buena estructura de base", slug: "/propiedades/clasificado/veclcain-venta-casa-3-ambientes-chacarita-58110234.html"},
-            {precio: 108000, m2: 175, usdm2: 617, barrio: "Pompeya", amb: 4, dorm: 3, baños: 1, coch: 1, keywords: "garage, apto, terraza, refaccionar", desc: "Casa con garage y apto independiente, terraza", slug: "/propiedades/clasificado/veclcain-casa-4-ambientes-mataderos-57985632.html"},
-            {precio: 98000, m2: 155, usdm2: 632, barrio: "Mataderos", amb: 4, dorm: 2, baños: 1, coch: 1, keywords: "terraza, balcón, luminoso, refaccionar", desc: "Casa luminosa con terraza y balcón en zona en desarrollo", slug: "/propiedades/clasificado/veclcain-casa-6-ambientes-liniers-58234567.html"},
-            {precio: 105000, m2: 170, usdm2: 618, barrio: "Mataderos", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "apto, comedor, garage, refaccionar", desc: "Casa grande con apto de renta posible, buen espacio", slug: "/propiedades/clasificado/veclcain-casa-6-ambientes-almagro-58345678.html"},
-            {precio: 80000, m2: 125, usdm2: 640, barrio: "Villa Soldati", amb: 3, dorm: 2, baños: 1, coch: 0, keywords: "simple, refaccionar, patio, estructura", desc: "Casa simple con estructura sólida y patio trasero", slug: "/propiedades/clasificado/veclcain-casa-4-ambientes-parque-patricios-58456789.html"},
-            {precio: 72000, m2: 110, usdm2: 655, barrio: "Villa Soldati", amb: 3, dorm: 1, baños: 1, coch: 0, keywords: "refaccionar, estructura, luminoso, pequeña", desc: "Casa pequeña luminosa a refaccionar con buen potencial", slug: "/propiedades/clasificado/veclcain-casa-7-ambientes-villa-lugano-58567890.html"},
-            {precio: 118000, m2: 190, usdm2: 621, barrio: "San Cristóbal", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "terraza, apto, garage, balcón", desc: "Casa con terraza, apto y garage para renta", slug: "/propiedades/clasificado/veclcain-casa-5-ambientes-boedo-58678901.html"},
-            {precio: 125000, m2: 200, usdm2: 625, barrio: "Flores", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "refaccionar, terraza, patio, apto", desc: "Casa reciclada con terraza y espacio para apto", slug: "/propiedades/clasificado/veclcain-casa-3-ambientes-saavedra-58789012.html"},
-            {precio: 140000, m2: 210, usdm2: 667, barrio: "Flores", amb: 6, dorm: 3, baños: 2, coch: 2, keywords: "reciclada, apto, garage doble, luminoso", desc: "Casa reciclada con apto independiente y garages", slug: "/propiedades/clasificado/veclcain-casa-4-ambientes-villa-lugano-58890123.html"},
-            {precio: 135000, m2: 195, usdm2: 692, barrio: "Flores", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "reciclada, balcón, terraza, moderno", desc: "Casa moderna reciclada con balcón y terraza trasera", slug: "/propiedades/clasificado/veclcain-casa-3-ambientes-barracas-58901234.html"},
-            {precio: 130000, m2: 185, usdm2: 703, barrio: "Caballito", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "reciclada, terraza, apto, balcón", desc: "Casa reciclada con terraza y apto de renta", slug: "/propiedades/clasificado/veclcain-casa-6-ambientes-villa-soldati-59012345.html"},
-            {precio: 128000, m2: 175, usdm2: 731, barrio: "Caballito", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "moderno, terraza, apto, garage", desc: "Casa moderna con terraza amplia y apto independiente", slug: "/propiedades/clasificado/veclcain-casa-5-ambientes-mataderos-59123456.html"},
-            {precio: 142000, m2: 200, usdm2: 710, barrio: "Almagro", amb: 6, dorm: 3, baños: 2, coch: 1, keywords: "reciclada, balcón, apto, luminoso", desc: "Casa reciclada con balcón y apto de renta", slug: "/propiedades/clasificado/veclcain-casa-3-ambientes-boedo-59234567.html"},
-            {precio: 138000, m2: 190, usdm2: 726, barrio: "Villa Devoto", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "reciclada, terraza, garage, moderno", desc: "Casa moderna reciclada con terraza y garage", slug: "/propiedades/clasificado/veclcain-casa-para-refaccionar-ideal-vivienda-o-terreno-para-52052692.html"},
-            {precio: 95000, m2: 140, usdm2: 679, barrio: "Parque Centenario", amb: 4, dorm: 2, baños: 1, coch: 1, keywords: "refaccionar, balcón, patio, terraza", desc: "Casa a refaccionar con balcón y terraza trasera", slug: "/propiedades/clasificado/veclcain-casa-en-venta-a-refaccionar-san-cristobal-58342975.html"},
-            {precio: 87000, m2: 135, usdm2: 644, barrio: "Parque Chacabuco", amb: 3, dorm: 2, baños: 1, coch: 0, keywords: "simple, refaccionar, patio, luminoso", desc: "Casa simple luminosa con patio a refaccionar", slug: "/propiedades/clasificado/veclcain-casa-venta-almagro-de-5-ambientes-a-refaccionar-58596680.html"},
-            {precio: 93000, m2: 145, usdm2: 641, barrio: "Nueva Pompeya", amb: 4, dorm: 2, baños: 1, coch: 1, keywords: "terraza, balcón, refaccionar, estructura", desc: "Casa con terraza y balcón, estructura sólida", slug: "/propiedades/clasificado/veclcain-a-refaccionar-casa-fondo-parque-devoto-58234567.html"},
-            {precio: 110000, m2: 170, usdm2: 647, barrio: "Liniers", amb: 4, dorm: 2, baños: 2, coch: 1, keywords: "refaccionar, garage, apto, terraza", desc: "Casa con garage y apto, terraza trasera", slug: "/propiedades/clasificado/veclcain-casa-con-local-paternal-58345678.html"},
-            {precio: 105000, m2: 160, usdm2: 656, barrio: "Liniers", amb: 5, dorm: 3, baños: 1, coch: 1, keywords: "refaccionar, comedor, patio, luminoso", desc: "Casa con comedor independiente y patio luminoso", slug: "/propiedades/clasificado/veclcain-casa-de-3-plantas-en-caballito-totalmente-reciclada-57926013.html"},
-            {precio: 120000, m2: 175, usdm2: 686, barrio: "Versalles", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "reciclada, terraza, apto, moderno", desc: "Casa reciclada con terraza y apto independiente", slug: "/propiedades/clasificado/veclcain-casa-en-venta-lote-propio-a-reciclar-chacarita-57222435.html"},
-            {precio: 115000, m2: 168, usdm2: 685, barrio: "Parque Patricios", amb: 4, dorm: 2, baños: 2, coch: 1, keywords: "refaccionar, garage, balcón, luminoso", desc: "Casa con garage, balcón y buen estado de base", slug: "/propiedades/clasificado/veclcain-casa-de-estilo-a-reciclar-en-colegiales-58234567.html"},
-            {precio: 97000, m2: 155, usdm2: 626, barrio: "Saavedra", amb: 4, dorm: 2, baños: 1, coch: 1, keywords: "terraza, refaccionar, balcón, patio", desc: "Casa con terraza y patio trasero a refaccionar", slug: "/propiedades/clasificado/veclcain-casa-reciclada-colegiales-esquina-58345678.html"},
-            {precio: 88000, m2: 138, usdm2: 638, barrio: "Colegiales", amb: 3, dorm: 2, baños: 1, coch: 0, keywords: "refaccionar, simple, estructura, luminoso", desc: "Casa simple con buena estructura base luminosa", slug: "/propiedades/clasificado/veclcain-casa-reciclada-palermo-jardin-58456789.html"},
-            {precio: 122000, m2: 182, usdm2: 670, barrio: "Rivadavia", amb: 5, dorm: 3, baños: 2, coch: 1, keywords: "reciclada, apto, terraza, garage", desc: "Casa reciclada con apto y garage para dos vehículos", slug: "/propiedades/clasificado/veclcain-casa-reciclada-coghlan-jardin-58567890.html"}
-        ];
-
-        // Keyword categories for semantic search
-        const keywordCategories = {
-            'exterior': ['terraza', 'balcón', 'patio', 'jardín', 'fondo', 'parrilla', 'quincho', 'pileta'],
-            'interior': ['suite', 'vestidor', 'lavadero', 'comedor', 'apto', 'cocina integral', 'luminoso'],
-            'estructura': ['lote', 'planta baja', 'planta alta', 'PH', 'refaccionar', 'reciclada', 'oportunidad'],
-            'comercial': ['local', 'comercio', 'taller', 'depósito'],
-            'estado': ['refaccionar', 'reciclada', 'oportunidad', 'retasada', 'moderno', 'histórica'],
-            'servicios': ['escritura', 'gas natural', 'agua corriente', 'garage', 'cochera'],
-            'caracter': ['luminoso', 'luminosa', 'amplio', 'amplia', 'pequeña', 'simple']
-        };
-
-        // Calculate keyword frequency
-        function getKeywordFrequency() {
-            const freq = {};
-            semanticProperties.forEach(prop => {
-                prop.keywords.split(', ').forEach(kw => {
-                    freq[kw] = (freq[kw] || 0) + 1;
-                });
+        // Counter Animation
+        function animateCounters() {
+            document.querySelectorAll('.count-up').forEach(el => {
+                const target = parseInt(el.dataset.value);
+                let current = 0;
+                const increment = target / 30;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        el.textContent = target.toLocaleString();
+                        clearInterval(timer);
+                    } else {
+                        el.textContent = Math.floor(current).toLocaleString();
+                    }
+                }, 30);
             });
-            return freq;
         }
 
-        // Determine keyword category
-        function getKeywordCategory(keyword) {
-            for (const [cat, keywords] of Object.entries(keywordCategories)) {
-                if (keywords.includes(keyword.toLowerCase())) {
-                    return cat;
-                }
-            }
-            return 'caracter';
-        }
+        // Calculator Logic
+        document.getElementById('purchasePrice').addEventListener('input', updateCalculator);
+        document.getElementById('area').addEventListener('input', updateCalculator);
+        document.getElementById('renovationCost').addEventListener('input', updateCalculator);
+        document.getElementById('targetBarrio').addEventListener('change', updateCalculator);
 
-        // Initialize semantic search
-        function initSemanticSearch() {
-            // Populate barrio dropdown
-            const barrios = [...new Set(semanticProperties.map(p => p.barrio))].sort();
-            const barrioSelect = document.getElementById('semanticBarrio');
-            barrios.forEach(barrio => {
-                const option = document.createElement('option');
-                option.value = barrio;
-                option.textContent = barrio;
-                barrioSelect.appendChild(option);
-            });
+        function updateCalculator() {
+            const price = parseFloat(document.getElementById('purchasePrice').value);
+            const area = parseFloat(document.getElementById('area').value);
+            const renoPerM2 = parseFloat(document.getElementById('renovationCost').value);
+            const targetM2 = parseFloat(document.getElementById('targetBarrio').value);
 
-            // Generate keyword cloud
-            const freq = getKeywordFrequency();
-            const sortedKeywords = Object.entries(freq)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 40);
+            // Update display values
+            document.getElementById('priceValue').textContent = '$' + price.toLocaleString();
+            document.getElementById('areaValue').textContent = area.toLocaleString() + ' m²';
+            document.getElementById('renoValue').textContent = '$' + renoPerM2.toLocaleString() + '/m²';
 
-            const cloudDiv = document.getElementById('keywordCloud');
-            cloudDiv.innerHTML = '';
-            sortedKeywords.forEach(([kw, count]) => {
-                const cat = getKeywordCategory(kw);
-                const tag = document.createElement('div');
-                tag.className = `tag tag-${cat.toLowerCase()}`;
-                tag.innerHTML = `<span>${kw}</span><span class="tag-count">${count}</span>`;
-                tag.onclick = () => toggleKeywordFilter(kw, tag);
-                cloudDiv.appendChild(tag);
-            });
+            // Calculate
+            const renoTotal = area * renoPerM2;
+            const totalInvestment = price + renoTotal;
+            const postRenoValue = area * targetM2;
+            const profit = postRenoValue - totalInvestment;
+            const roi = (profit / totalInvestment) * 100;
 
-            // Populate characteristic checkboxes
-            for (const [category, keywords] of Object.entries(keywordCategories)) {
-                const container = document.getElementById(`filter${category.charAt(0).toUpperCase() + category.slice(1)}`);
-                keywords.forEach(kw => {
-                    const label = document.createElement('label');
-                    label.className = 'filter-checkbox';
-                    label.innerHTML = `<input type="checkbox" data-keyword="${kw}"> ${kw}`;
-                    label.querySelector('input').addEventListener('change', updateSemanticSearch);
-                    container.appendChild(label);
-                });
-            }
+            // Update results
+            document.getElementById('totalInvestment').textContent = '$' + totalInvestment.toLocaleString();
+            document.getElementById('postRenoValue').textContent = '$' + postRenoValue.toLocaleString();
+            document.getElementById('grossProfit').textContent = '$' + Math.max(0, profit).toLocaleString();
+            document.getElementById('roiPercent').textContent = Math.max(0, roi).toFixed(1) + '%';
 
-            // Add event listeners
-            document.getElementById('semanticSearch').addEventListener('input', updateSemanticSearch);
-            document.getElementById('semanticBarrio').addEventListener('change', updateSemanticSearch);
-            document.getElementById('semanticPriceMin').addEventListener('change', updateSemanticSearch);
-            document.getElementById('semanticPriceMax').addEventListener('change', updateSemanticSearch);
-            document.getElementById('semanticSizeMin').addEventListener('change', updateSemanticSearch);
-            document.getElementById('semanticSizeMax').addEventListener('change', updateSemanticSearch);
-            document.getElementById('semanticAmbMin').addEventListener('change', updateSemanticSearch);
-            document.getElementById('semanticAmbMax').addEventListener('change', updateSemanticSearch);
-            document.querySelectorAll('[data-keyword]').forEach(cb => {
-                cb.addEventListener('change', updateSemanticSearch);
-            });
-
-            updateSemanticSearch();
-            updateHeatmap();
-        }
-
-        // Toggle keyword filter
-        function toggleKeywordFilter(keyword, tag) {
-            tag.classList.toggle('active');
-            updateSemanticSearch();
-        }
-
-        // Update semantic search results
-        function updateSemanticSearch() {
-            const searchText = document.getElementById('semanticSearch').value.toLowerCase();
-            const selectedBarrio = document.getElementById('semanticBarrio').value;
-            const priceMin = parseFloat(document.getElementById('semanticPriceMin').value);
-            const priceMax = parseFloat(document.getElementById('semanticPriceMax').value);
-            const sizeMin = parseFloat(document.getElementById('semanticSizeMin').value);
-            const sizeMax = parseFloat(document.getElementById('semanticSizeMax').value);
-            const ambMin = parseInt(document.getElementById('semanticAmbMin').value);
-            const ambMax = parseInt(document.getElementById('semanticAmbMax').value);
-
-            const selectedKeywords = Array.from(document.querySelectorAll('[data-keyword]:checked'))
-                .map(cb => cb.getAttribute('data-keyword').toLowerCase());
-
-            const activeTagKeywords = Array.from(document.querySelectorAll('.tag.active span:first-child'))
-                .map(sp => sp.textContent.toLowerCase());
-
-            const allSelectedKeywords = [...new Set([...selectedKeywords, ...activeTagKeywords])];
-
-            let results = semanticProperties.filter(prop => {
-                // Text search
-                const textMatch = !searchText ||
-                    prop.desc.toLowerCase().includes(searchText) ||
-                    prop.keywords.toLowerCase().includes(searchText) ||
-                    prop.barrio.toLowerCase().includes(searchText);
-
-                // Barrio filter
-                const barrioMatch = !selectedBarrio || prop.barrio === selectedBarrio;
-
-                // Price range
-                const priceMatch = prop.precio >= priceMin && prop.precio <= priceMax;
-
-                // Size range
-                const sizeMatch = prop.m2 >= sizeMin && prop.m2 <= sizeMax;
-
-                // Ambientes range
-                const ambMatch = prop.amb >= ambMin && prop.amb <= ambMax;
-
-                // Keyword AND logic
-                const keywordMatch = allSelectedKeywords.length === 0 ||
-                    allSelectedKeywords.every(kw => prop.keywords.toLowerCase().includes(kw));
-
-                return textMatch && barrioMatch && priceMatch && sizeMatch && ambMatch && keywordMatch;
-            });
-
-            // Update results count
-            document.getElementById('resultsCount').textContent = results.length;
-            document.getElementById('totalCount').textContent = semanticProperties.length;
-
-            // Populate results table
-            const tbody = document.getElementById('semanticResultsTable');
-            tbody.innerHTML = '';
-            if (results.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="no-results">Sin resultados. Ajuste los filtros.</td></tr>';
-            } else {
-                results.forEach(prop => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><a href="https://www.zonaprop.com.ar${prop.slug}" target="_blank">USD ${prop.precio.toLocaleString()}</a></td>
-                        <td>${prop.m2}</td>
-                        <td>USD ${prop.usdm2}</td>
-                        <td>${prop.barrio}</td>
-                        <td>${prop.amb}</td>
-                        <td><small>${prop.keywords}</small></td>
-                        <td><small>${prop.desc}</small></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+            // Update gauge
+            const gaugeCharts = Chart.helpers.findChartContainer(document.getElementById('roiGauge'));
+            if (gaugeCharts) {
+                gaugeCharts.data.datasets[0].data = [Math.min(100, Math.max(0, roi)), Math.max(0, 100 - roi)];
+                gaugeCharts.update();
             }
         }
 
-        // Update heatmap
-        function updateHeatmap() {
-            const barrioKeywordCount = {};
-            semanticProperties.forEach(prop => {
-                if (!barrioKeywordCount[prop.barrio]) {
-                    barrioKeywordCount[prop.barrio] = 0;
-                }
-                barrioKeywordCount[prop.barrio] += prop.keywords.split(', ').length;
-            });
-
-            const sorted = Object.entries(barrioKeywordCount)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 15);
-
-            const maxCount = Math.max(...sorted.map(x => x[1]));
-
-            const heatmapGrid = document.getElementById('heatmapGrid');
-            heatmapGrid.innerHTML = '';
-            sorted.forEach(([barrio, count]) => {
-                const percentage = (count / maxCount) * 100;
-                const row = document.createElement('div');
-                row.className = 'heatmap-row';
-                row.innerHTML = `
-                    <div class="heatmap-barrio">${barrio}</div>
-                    <div class="heatmap-bar-container">
-                        <div class="heatmap-bar" style="width: ${percentage}%;">${count}</div>
-                    </div>
-                `;
-                heatmapGrid.appendChild(row);
-            });
-        }
-
-        // Reset semantic filters
-        function semanticResetFilters() {
-            document.getElementById('semanticSearch').value = '';
-            document.getElementById('semanticBarrio').value = '';
-            document.getElementById('semanticPriceMin').value = '30000';
-            document.getElementById('semanticPriceMax').value = '500000';
-            document.getElementById('semanticSizeMin').value = '0';
-            document.getElementById('semanticSizeMax').value = '5000';
-            document.getElementById('semanticAmbMin').value = '0';
-            document.getElementById('semanticAmbMax').value = '20';
-            document.querySelectorAll('[data-keyword]:checked').forEach(cb => cb.checked = false);
-            document.querySelectorAll('.tag.active').forEach(tag => tag.classList.remove('active'));
-            updateSemanticSearch();
-        }
-
-        // Sort semantic results table
-        function sortSemanticTable(columnIndex) {
-            const tbody = document.getElementById('semanticResultsTable');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-
-            rows.sort((a, b) => {
-                let aVal = a.cells[columnIndex].textContent.trim();
-                let bVal = b.cells[columnIndex].textContent.trim();
-
-                const numA = parseFloat(aVal.replace(/[^\d.-]/g, ''));
-                const numB = parseFloat(bVal.replace(/[^\d.-]/g, ''));
-
-                if (!isNaN(numA) && !isNaN(numB)) {
-                    return numB - numA;
-                }
-                return aVal.localeCompare(bVal);
-            });
-
-            tbody.innerHTML = '';
-            rows.forEach(row => tbody.appendChild(row));
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', initSemanticSearch);
+        // Initialize on load
+        window.addEventListener('load', () => {
+            animateCounters();
+            setTimeout(initCharts, 500);
+            updateCalculator();
+        });
     </script>
 </body>
 </html>
