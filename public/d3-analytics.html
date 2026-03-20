@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CABA Real Estate — D3 Analytics</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a1f3a;
+      --border: #1e293b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #00d4ff;
+      --green: #4ade80;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --orange: #f97316;
+      --purple: #a78bfa;
+      --sur: #f472b6;
+      --oeste: #fb923c;
+      --centro: #60a5fa;
+      --norte: #4ade80;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; padding: 40px 24px; }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid var(--accent);
+    }
+
+    header h1 { font-size: 2.2rem; color: var(--accent); font-weight: 700; }
+    header p { color: var(--text-muted); margin-top: 8px; }
+
+    .section {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 32px;
+      border: 1px solid var(--border);
+    }
+
+    .section h2 {
+      font-size: 1.4rem;
+      color: var(--accent);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .section .subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+
+    .tooltip {
+      position: absolute;
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 100;
+      max-width: 280px;
+    }
+
+    .tooltip .tt-title { font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+    .tooltip .tt-row { color: var(--text-muted); }
+    .tooltip .tt-value { color: var(--text); font-weight: 500; }
+
+    .legend {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .gap-label {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+    }
+
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .calc-grid { grid-template-columns: 1fr; }
+    }
+
+    .calc-inputs label {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      margin-top: 16px;
+    }
+
+    .calc-inputs label:first-child { margin-top: 0; }
+
+    .calc-inputs input, .calc-inputs select {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    .calc-inputs input:focus, .calc-inputs select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .calc-results {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .calc-results h3 {
+      color: var(--accent);
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-row:last-child { border-bottom: none; }
+
+    .result-label { color: var(--text-muted); font-size: 0.9rem; }
+    .result-value { font-weight: 600; font-family: 'Courier New', monospace; }
+    .result-value.positive { color: var(--green); }
+    .result-value.warning { color: var(--yellow); }
+    .result-value.danger { color: var(--red); }
+    .result-value.accent { color: var(--accent); }
+
+    .result-divider {
+      height: 1px;
+      background: var(--accent);
+      margin: 12px 0;
+      opacity: 0.3;
+    }
+
+    .viability-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+
+    .viability-go { background: rgba(74,222,128,0.15); color: var(--green); }
+    .viability-caution { background: rgba(234,179,8,0.15); color: var(--yellow); }
+    .viability-stop { background: rgba(239,68,68,0.15); color: var(--red); }
+
+    svg text { font-family: 'Inter', sans-serif; }
+
+    .chart-container svg { width: 100%; height: auto; }
+
+    .nav-back {
+      display: inline-block;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      opacity: 0.8;
+    }
+
+    .nav-back:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="nav-back">&#8592; Back to Dashboard</a>
+
+    <header>
+      <h1>D3 Analytics</h1>
+      <p>Visualizaciones interactivas — CABA Market Study (6,489 casas)</p>
+    </header>
+
+    <!-- SECTION 1: Planetary Chart -->
+    <div class="section">
+      <h2>Mapa Planetario de Barrios</h2>
+      <p class="subtitle">Cada burbuja es un barrio. Tamano = cantidad de casas. Color = zona. Posicion Y = USD/m2 mediana. Hover para detalles.</p>
+      <div class="legend" id="planet-legend"></div>
+      <div class="chart-container" id="planetary-chart"></div>
+    </div>
+
+    <!-- SECTION 2: Gap Chart -->
+    <div class="section">
+      <h2>%Gap por Estado de Conservacion</h2>
+      <p class="subtitle">USD/m2 mediana por estado y rango de precio. Las flechas muestran el % ganable entre A Refaccionar y Reciclado.</p>
+      <div class="chart-container" id="gap-chart"></div>
+    </div>
+
+    <!-- SECTION 3: Investment Calculator -->
+    <div class="section">
+      <h2>Calculadora de Inversion Maxima</h2>
+      <p class="subtitle">Basado en el gap entre estados, calcula cuanto maximo invertir en materia prima + mano de obra, con margen de seguridad.</p>
+      <div class="calc-grid">
+        <div class="calc-inputs">
+          <label>Rango de precio de compra</label>
+          <select id="calc-range">
+            <option value="150-200k">150-200k USD</option>
+            <option value="200-300k" selected>200-300k USD</option>
+            <option value="300k+">300k+ USD</option>
+          </select>
+
+          <label>Precio de compra (USD)</label>
+          <input type="number" id="calc-price" value="180000" step="5000">
+
+          <label>Metros cuadrados totales</label>
+          <input type="number" id="calc-m2" value="200" step="10">
+
+          <label>Factor de seguridad (%)</label>
+          <input type="range" id="calc-safety" min="20" max="60" value="33" step="1">
+          <span id="safety-display" style="color: var(--text-muted); font-size: 0.85rem;">33% — se reserva como margen</span>
+
+          <label>Split materia prima / mano de obra</label>
+          <input type="range" id="calc-split" min="40" max="80" value="60" step="5">
+          <span id="split-display" style="color: var(--text-muted); font-size: 0.85rem;">60% materia prima / 40% mano de obra</span>
+        </div>
+        <div class="calc-results" id="calc-output">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    const zoneColors = {
+      sur: '#f472b6',
+      oeste: '#fb923c',
+      centro: '#60a5fa',
+      norte: '#4ade80'
+    };
+
+    const zoneLabels = {
+      sur: 'Sur',
+      oeste: 'Oeste',
+      centro: 'Centro',
+      norte: 'Norte'
+    };
+
+    const neighborhoodZones = {
+      'Agronomia': 'centro', 'Almagro': 'centro', 'Balvanera': 'centro',
+      'Barracas': 'sur', 'Belgrano': 'norte', 'Belgrano R': 'norte',
+      'Boedo': 'centro', 'Caballito': 'centro', 'Chacarita': 'centro',
+      'Coghlan': 'norte', 'Colegiales': 'norte', 'Constitucion': 'centro',
+      'Flores': 'oeste', 'Floresta': 'oeste', 'La Boca': 'sur',
+      'Liniers': 'oeste', 'Mataderos': 'oeste', 'Monserrat': 'centro',
+      'Monte Castro': 'oeste', 'Nunez': 'norte', 'Palermo': 'norte',
+      'Parque Avellaneda': 'oeste', 'Parque Chacabuco': 'centro',
+      'Parque Patricios': 'sur', 'Paternal': 'centro', 'Pompeya': 'sur',
+      'Saavedra': 'norte', 'San Cristobal': 'centro', 'San Nicolas': 'centro',
+      'San Telmo': 'centro', 'Velez Sarsfield': 'oeste', 'Versalles': 'oeste',
+      'Villa Crespo': 'centro', 'Villa del Parque': 'oeste',
+      'Villa Devoto': 'oeste', 'Villa Lugano': 'sur', 'Villa Luro': 'oeste',
+      'Villa Ortuzar': 'centro', 'Villa Pueyrredon': 'centro',
+      'Villa Real': 'oeste', 'Villa Riachuelo': 'sur', 'Villa Soldati': 'sur',
+      'Villa Urquiza': 'norte'
+    };
+
+    const barrios = [
+      {name:"Villa Devoto",n:442,avg_price:517912,avg_usd_m2:2415,median_usd_m2:1630,avg_area:300},
+      {name:"Villa Lugano",n:306,avg_price:215163,avg_usd_m2:1132,median_usd_m2:889,avg_area:243},
+      {name:"Flores",n:305,avg_price:306832,avg_usd_m2:1296,median_usd_m2:1206,avg_area:255},
+      {name:"Liniers",n:302,avg_price:269542,avg_usd_m2:2452,median_usd_m2:1218,avg_area:222},
+      {name:"Mataderos",n:284,avg_price:251767,avg_usd_m2:4423,median_usd_m2:1058,avg_area:230},
+      {name:"Villa Urquiza",n:208,avg_price:400524,avg_usd_m2:7766,median_usd_m2:1692,avg_area:248},
+      {name:"Saavedra",n:188,avg_price:365675,avg_usd_m2:1761,median_usd_m2:1686,avg_area:228},
+      {name:"Parque Chacabuco",n:182,avg_price:277014,avg_usd_m2:4133,median_usd_m2:1198,avg_area:237},
+      {name:"Villa Pueyrredon",n:181,avg_price:341957,avg_usd_m2:1590,median_usd_m2:1432,avg_area:240},
+      {name:"Barracas",n:175,avg_price:255686,avg_usd_m2:3895,median_usd_m2:1000,avg_area:251},
+      {name:"Belgrano",n:157,avg_price:1578442,avg_usd_m2:3272,median_usd_m2:2789,avg_area:493},
+      {name:"Caballito",n:155,avg_price:487950,avg_usd_m2:1862,median_usd_m2:1658,avg_area:303},
+      {name:"Floresta",n:149,avg_price:289920,avg_usd_m2:1263,median_usd_m2:1189,avg_area:254},
+      {name:"Parque Avellaneda",n:145,avg_price:218469,avg_usd_m2:1026,median_usd_m2:932,avg_area:246},
+      {name:"Monte Castro",n:144,avg_price:276318,avg_usd_m2:1390,median_usd_m2:1250,avg_area:231},
+      {name:"Boedo",n:143,avg_price:273779,avg_usd_m2:1272,median_usd_m2:1128,avg_area:241},
+      {name:"Villa Luro",n:140,avg_price:307065,avg_usd_m2:1315,median_usd_m2:1251,avg_area:254},
+      {name:"Villa del Parque",n:133,avg_price:371467,avg_usd_m2:3323,median_usd_m2:1394,avg_area:276},
+      {name:"Belgrano R",n:116,avg_price:1831853,avg_usd_m2:3595,median_usd_m2:2586,avg_area:537},
+      {name:"Pompeya",n:113,avg_price:170003,avg_usd_m2:698,median_usd_m2:650,avg_area:258},
+      {name:"Nunez",n:103,avg_price:613891,avg_usd_m2:2490,median_usd_m2:2172,avg_area:288},
+      {name:"Almagro",n:100,avg_price:397644,avg_usd_m2:1427,median_usd_m2:1399,avg_area:299},
+      {name:"Versalles",n:99,avg_price:272255,avg_usd_m2:1229,median_usd_m2:1098,avg_area:244},
+      {name:"Palermo",n:89,avg_price:1099722,avg_usd_m2:8626,median_usd_m2:2438,avg_area:359},
+      {name:"Parque Patricios",n:88,avg_price:227153,avg_usd_m2:984,median_usd_m2:904,avg_area:249}
+    ].map(d => ({ ...d, zona: neighborhoodZones[d.name] || 'centro' }));
+
+    const gapMatrix = [
+      {range:"150-200k", refac:876, recic:1090, general:1038},
+      {range:"200-300k", refac:1184, recic:1360, general:1242},
+      {range:"300k+", refac:1377, recic:1750, general:1689}
+    ];
+
+    const tooltip = d3.select('#tooltip');
+
+    function drawPlanetaryChart() {
+      const container = document.getElementById('planetary-chart');
+      const width = container.clientWidth;
+      const height = Math.max(520, width * 0.5);
+      const margin = {top: 30, right: 30, bottom: 50, left: 70};
+
+      const legendEl = document.getElementById('planet-legend');
+      legendEl.innerHTML = Object.entries(zoneLabels).map(function(entry) {
+        return '<div class="legend-item"><div class="legend-dot" style="background:' + zoneColors[entry[0]] + '"></div>' + entry[1] + '</div>';
+      }).join('') + '<div class="legend-item" style="margin-left:16px; font-size:0.8rem; opacity:0.6;">Tamano = N casas</div>';
+
+      const svg = d3.select('#planetary-chart')
+        .append('svg')
+        .attr('viewBox', '0 0 ' + width + ' ' + height)
+        .attr('preserveAspectRatio', 'xMidYMid meet');
+
+      const x = d3.scaleLinear()
+        .domain([0, d3.max(barrios, function(d) { return d.avg_price; }) * 1.05])
+        .range([margin.left, width - margin.right]);
+
+      const y = d3.scaleLinear()
+        .domain([0, d3.max(barrios, function(d) { return d.median_usd_m2; }) * 1.1])
+        .range([height - margin.bottom, margin.top]);
+
+      const r = d3.scaleSqrt()
+        .domain([0, d3.max(barrios, function(d) { return d.n; })])
+        .range([6, 42]);
+
+      svg.append('g')
+        .selectAll('line')
+        .data(y.ticks(6))
+        .join('line')
+        .attr('x1', margin.left).attr('x2', width - margin.right)
+        .attr('y1', function(d) { return y(d); }).attr('y2', function(d) { return y(d); })
+        .attr('stroke', '#1e293b').attr('stroke-dasharray', '3,3');
+
+      svg.append('g')
+        .attr('transform', 'translate(0,' + (height - margin.bottom) + ')')
+        .call(d3.axisBottom(x).ticks(6).tickFormat(function(d) { return d >= 1000000 ? (d/1000000) + 'M' : (d/1000) + 'k'; }))
+        .call(function(g) { g.select('.domain').attr('stroke', '#334155'); })
+        .call(function(g) { g.selectAll('.tick text').attr('fill', '#94a3b8').attr('font-size', '11px'); })
+        .call(function(g) { g.selectAll('.tick line').attr('stroke', '#334155'); });
+
+      svg.append('g')
+        .attr('transform', 'translate(' + margin.left + ',0)')
+        .call(d3.axisLeft(y).ticks(6).tickFormat(function(d) { return '$' + d.toLocaleString(); }))
+        .call(function(g) { g.select('.domain').attr('stroke', '#334155'); })
+        .call(function(g) { g.selectAll('.tick text').attr('fill', '#94a3b8').attr('font-size', '11px'); })
+        .call(function(g) { g.selectAll('.tick line').attr('stroke', '#334155'); });
+
+      svg.append('text').attr('x', width/2).attr('y', height - 6)
+        .attr('text-anchor', 'middle').attr('fill', '#64748b').attr('font-size', '12px')
+        .text('Precio promedio (USD)');
+
+      svg.append('text').attr('transform', 'rotate(-90)')
+        .attr('x', -height/2).attr('y', 16)
+        .attr('text-anchor', 'middle').attr('fill', '#64748b').attr('font-size', '12px')
+        .text('Mediana USD/m2');
+
+      var nodes = barrios.map(function(d) {
+        return Object.assign({}, d, {
+          x: x(d.avg_price),
+          y: y(d.median_usd_m2),
+          radius: r(d.n)
+        });
+      });
+
+      var simulation = d3.forceSimulation(nodes)
+        .force('x', d3.forceX(function(d) { return x(d.avg_price); }).strength(0.8))
+        .force('y', d3.forceY(function(d) { return y(d.median_usd_m2); }).strength(0.8))
+        .force('collide', d3.forceCollide(function(d) { return d.radius + 2; }).strength(0.7))
+        .stop();
+
+      for (var i = 0; i < 120; i++) simulation.tick();
+
+      svg.append('g')
+        .selectAll('circle')
+        .data(nodes)
+        .join('circle')
+        .attr('cx', function(d) { return d.x; })
+        .attr('cy', function(d) { return d.y; })
+        .attr('r', function(d) { return d.radius; })
+        .attr('fill', function(d) { return zoneColors[d.zona] || '#60a5fa'; })
+        .attr('fill-opacity', 0.25)
+        .attr('stroke', function(d) { return zoneColors[d.zona] || '#60a5fa'; })
+        .attr('stroke-width', 1.5)
+        .attr('cursor', 'pointer')
+        .on('mouseover', function(event, d) {
+          d3.select(this).attr('fill-opacity', 0.5).attr('stroke-width', 3);
+          tooltip.style('opacity', 1)
+            .html('<div class="tt-title">' + d.name + '</div>' +
+              '<div class="tt-row">Zona: <span class="tt-value" style="color:' + zoneColors[d.zona] + '">' + zoneLabels[d.zona] + '</span></div>' +
+              '<div class="tt-row">Casas: <span class="tt-value">' + d.n + '</span></div>' +
+              '<div class="tt-row">Precio promedio: <span class="tt-value">USD ' + d.avg_price.toLocaleString() + '</span></div>' +
+              '<div class="tt-row">Mediana USD/m2: <span class="tt-value">$' + d.median_usd_m2.toLocaleString() + '</span></div>' +
+              '<div class="tt-row">Area promedio: <span class="tt-value">' + d.avg_area + ' m2</span></div>')
+            .style('left', (event.pageX + 16) + 'px')
+            .style('top', (event.pageY - 10) + 'px');
+        })
+        .on('mousemove', function(event) {
+          tooltip.style('left', (event.pageX + 16) + 'px').style('top', (event.pageY - 10) + 'px');
+        })
+        .on('mouseout', function() {
+          d3.select(this).attr('fill-opacity', 0.25).attr('stroke-width', 1.5);
+          tooltip.style('opacity', 0);
+        });
+
+      svg.append('g')
+        .selectAll('text')
+        .data(nodes.filter(function(d) { return d.n >= 120; }))
+        .join('text')
+        .attr('x', function(d) { return d.x; })
+        .attr('y', function(d) { return d.y + 4; })
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#fff')
+        .attr('font-size', '10px')
+        .attr('font-weight', '500')
+        .attr('pointer-events', 'none')
+        .text(function(d) { return d.name.replace('Villa ', 'V.').replace('Parque ', 'P.'); });
+    }
+
+    function drawGapChart() {
+      var container = document.getElementById('gap-chart');
+      var width = container.clientWidth;
+      var height = 420;
+      var margin = {top: 40, right: 40, bottom: 60, left: 70};
+
+      var svg = d3.select('#gap-chart')
+        .append('svg')
+        .attr('viewBox', '0 0 ' + width + ' ' + height)
+        .attr('preserveAspectRatio', 'xMidYMid meet');
+
+      var ranges = gapMatrix.map(function(d) { return d.range; });
+      var segments = ['refac', 'recic'];
+      var segmentLabels = {refac: 'A Refaccionar', recic: 'Reciclado'};
+      var segmentColors = {refac: '#f97316', recic: '#4ade80'};
+
+      var x0 = d3.scaleBand().domain(ranges).range([margin.left, width - margin.right]).padding(0.3);
+      var x1 = d3.scaleBand().domain(segments).range([0, x0.bandwidth()]).padding(0.1);
+      var yScale = d3.scaleLinear()
+        .domain([0, d3.max(gapMatrix, function(d) { return Math.max(d.refac, d.recic); }) * 1.25])
+        .range([height - margin.bottom, margin.top]);
+
+      svg.append('g')
+        .selectAll('line')
+        .data(yScale.ticks(5))
+        .join('line')
+        .attr('x1', margin.left).attr('x2', width - margin.right)
+        .attr('y1', function(d) { return yScale(d); }).attr('y2', function(d) { return yScale(d); })
+        .attr('stroke', '#1e293b').attr('stroke-dasharray', '3,3');
+
+      svg.append('g')
+        .attr('transform', 'translate(0,' + (height - margin.bottom) + ')')
+        .call(d3.axisBottom(x0))
+        .call(function(g) { g.select('.domain').attr('stroke', '#334155'); })
+        .call(function(g) { g.selectAll('.tick text').attr('fill', '#94a3b8').attr('font-size', '12px'); });
+
+      svg.append('g')
+        .attr('transform', 'translate(' + margin.left + ',0)')
+        .call(d3.axisLeft(yScale).ticks(5).tickFormat(function(d) { return '$' + d; }))
+        .call(function(g) { g.select('.domain').attr('stroke', '#334155'); })
+        .call(function(g) { g.selectAll('.tick text').attr('fill', '#94a3b8').attr('font-size', '11px'); });
+
+      svg.append('text').attr('transform', 'rotate(-90)')
+        .attr('x', -height/2).attr('y', 16)
+        .attr('text-anchor', 'middle').attr('fill', '#64748b').attr('font-size', '12px')
+        .text('Mediana USD/m2');
+
+      svg.append('g').attr('transform', 'translate(' + (margin.left + 10) + ', ' + (margin.top - 25) + ')')
+        .selectAll('g')
+        .data(segments)
+        .join('g')
+        .attr('transform', function(d, i) { return 'translate(' + (i * 160) + ', 0)'; })
+        .call(function(g) {
+          g.append('rect').attr('width', 14).attr('height', 14).attr('rx', 3)
+            .attr('fill', function(d) { return segmentColors[d]; }).attr('opacity', 0.8);
+          g.append('text').attr('x', 20).attr('y', 11).attr('fill', '#94a3b8')
+            .attr('font-size', '12px').text(function(d) { return segmentLabels[d]; });
+        });
+
+      svg.append('defs').append('marker')
+        .attr('id', 'arrowhead').attr('viewBox', '0 0 10 10')
+        .attr('refX', 9).attr('refY', 5)
+        .attr('markerWidth', 6).attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path').attr('d', 'M 0 0 L 10 5 L 0 10 z').attr('fill', '#00d4ff');
+
+      gapMatrix.forEach(function(row) {
+        segments.forEach(function(seg) {
+          svg.append('rect')
+            .attr('x', x0(row.range) + x1(seg))
+            .attr('y', yScale(row[seg]))
+            .attr('width', x1.bandwidth())
+            .attr('height', yScale(0) - yScale(row[seg]))
+            .attr('fill', segmentColors[seg])
+            .attr('rx', 4)
+            .attr('opacity', 0.75);
+
+          svg.append('text')
+            .attr('x', x0(row.range) + x1(seg) + x1.bandwidth() / 2)
+            .attr('y', yScale(row[seg]) - 6)
+            .attr('text-anchor', 'middle')
+            .attr('fill', segmentColors[seg])
+            .attr('font-size', '11px')
+            .attr('font-weight', '600')
+            .text('$' + row[seg]);
+        });
+
+        var gap = ((row.recic - row.refac) / row.refac * 100).toFixed(0);
+        var midX = x0(row.range) + x0.bandwidth() / 2;
+        var topY = yScale(row.recic) - 28;
+
+        var refacBarCenter = x0(row.range) + x1('refac') + x1.bandwidth() / 2;
+        var recicBarCenter = x0(row.range) + x1('recic') + x1.bandwidth() / 2;
+
+        svg.append('line')
+          .attr('x1', refacBarCenter).attr('x2', recicBarCenter)
+          .attr('y1', yScale(row.refac) - 18).attr('y2', yScale(row.recic) - 18)
+          .attr('stroke', '#00d4ff').attr('stroke-width', 2)
+          .attr('marker-end', 'url(#arrowhead)');
+
+        svg.append('rect')
+          .attr('x', midX - 28).attr('y', topY - 12)
+          .attr('width', 56).attr('height', 22)
+          .attr('rx', 11).attr('fill', 'rgba(0,212,255,0.15)')
+          .attr('stroke', '#00d4ff').attr('stroke-width', 1);
+
+        svg.append('text')
+          .attr('x', midX).attr('y', topY + 3)
+          .attr('text-anchor', 'middle')
+          .attr('fill', '#00d4ff')
+          .attr('font-size', '12px')
+          .attr('font-weight', '700')
+          .text('+' + gap + '%');
+      });
+
+      svg.append('text').attr('x', width/2).attr('y', height - 10)
+        .attr('text-anchor', 'middle').attr('fill', '#64748b').attr('font-size', '12px')
+        .text('Rango de precio de compra');
+    }
+
+    function updateCalculator() {
+      var range = document.getElementById('calc-range').value;
+      var price = parseFloat(document.getElementById('calc-price').value) || 0;
+      var m2 = parseFloat(document.getElementById('calc-m2').value) || 1;
+      var safetyPct = parseInt(document.getElementById('calc-safety').value) / 100;
+      var splitPct = parseInt(document.getElementById('calc-split').value) / 100;
+
+      document.getElementById('safety-display').textContent =
+        Math.round(safetyPct*100) + '% — se reserva como margen';
+      document.getElementById('split-display').textContent =
+        Math.round(splitPct*100) + '% materia prima / ' + Math.round((1-splitPct)*100) + '% mano de obra';
+
+      var row = gapMatrix.find(function(r) { return r.range === range; });
+      if (!row) return;
+
+      var gapPct = (row.recic - row.refac) / row.refac;
+      var usdM2Compra = price / m2;
+      var postRenoValueM2 = row.recic;
+      var postRenoTotal = postRenoValueM2 * m2;
+      var gapBruto = postRenoTotal - price;
+      var budgetUsable = gapBruto * (1 - safetyPct);
+      var margenSeguridad = gapBruto * safetyPct;
+      var materiaPrima = budgetUsable * splitPct;
+      var manoObra = budgetUsable * (1 - splitPct);
+      var maxRenoM2 = budgetUsable / m2;
+      var roi = ((postRenoTotal - price - budgetUsable) / price * 100);
+
+      var viability, viabilityClass;
+      if (roi >= 15) { viability = 'GO — Inversion viable'; viabilityClass = 'viability-go'; }
+      else if (roi >= 5) { viability = 'CAUTION — Margen ajustado'; viabilityClass = 'viability-caution'; }
+      else { viability = 'STOP — No viable a este precio'; viabilityClass = 'viability-stop'; }
+
+      var fmt = function(n) { return 'USD ' + Math.round(n).toLocaleString(); };
+
+      document.getElementById('calc-output').innerHTML =
+        '<h3>Resultado de Inversion</h3>' +
+        '<div class="result-row"><span class="result-label">Gap Refac → Recic (' + range + ')</span><span class="result-value accent">+' + (gapPct * 100).toFixed(0) + '%</span></div>' +
+        '<div class="result-row"><span class="result-label">USD/m2 compra</span><span class="result-value">' + fmt(usdM2Compra) + '/m2</span></div>' +
+        '<div class="result-row"><span class="result-label">Valor post-reno estimado</span><span class="result-value positive">' + fmt(postRenoTotal) + '</span></div>' +
+        '<div class="result-row"><span class="result-label">Gap bruto</span><span class="result-value positive">' + fmt(gapBruto) + '</span></div>' +
+        '<div class="result-divider"></div>' +
+        '<div class="result-row"><span class="result-label">Margen de seguridad (' + Math.round(safetyPct*100) + '%)</span><span class="result-value warning">' + fmt(margenSeguridad) + '</span></div>' +
+        '<div class="result-row"><span class="result-label">Budget usable para reno</span><span class="result-value accent">' + fmt(budgetUsable) + '</span></div>' +
+        '<div class="result-row"><span class="result-label">&nbsp;&nbsp;→ Materia prima (' + Math.round(splitPct*100) + '%)</span><span class="result-value">' + fmt(materiaPrima) + '</span></div>' +
+        '<div class="result-row"><span class="result-label">&nbsp;&nbsp;→ Mano de obra (' + Math.round((1-splitPct)*100) + '%)</span><span class="result-value">' + fmt(manoObra) + '</span></div>' +
+        '<div class="result-row"><span class="result-label">Max reno USD/m2</span><span class="result-value accent">' + fmt(maxRenoM2) + '/m2</span></div>' +
+        '<div class="result-divider"></div>' +
+        '<div class="result-row"><span class="result-label">Ganancia neta estimada</span><span class="result-value ' + (roi >= 15 ? 'positive' : roi >= 5 ? 'warning' : 'danger') + '">' + fmt(margenSeguridad) + ' (' + roi.toFixed(1) + '% ROI)</span></div>' +
+        '<div style="text-align:center"><span class="viability-badge ' + viabilityClass + '">' + viability + '</span></div>';
+    }
+
+    drawPlanetaryChart();
+    drawGapChart();
+    updateCalculator();
+
+    ['calc-range', 'calc-price', 'calc-m2', 'calc-safety', 'calc-split'].forEach(function(id) {
+      document.getElementById(id).addEventListener('input', updateCalculator);
+    });
+
+    window.addEventListener('resize', function() {
+      document.getElementById('planetary-chart').innerHTML = '';
+      document.getElementById('gap-chart').innerHTML = '';
+      document.getElementById('planet-legend').innerHTML = '';
+      drawPlanetaryChart();
+      drawGapChart();
+    });
+  </script>
+</body>
+</html>
