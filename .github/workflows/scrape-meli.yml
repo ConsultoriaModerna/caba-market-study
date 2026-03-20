@@ -1,0 +1,44 @@
+name: Weekly ML Scrape
+
+on:
+  schedule:
+    # Lunes 09:00 UTC (06:00 BsAs)
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      max_pages:
+        description: 'Max pages to scrape (50 results each)'
+        required: false
+        default: '20'
+
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  ML_APP_ID: ${{ secrets.ML_APP_ID }}
+  ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install @supabase/supabase-js
+
+      - name: Refresh ML Token
+        run: node scripts/refresh-ml-token.mjs
+
+      - name: Run Scraper
+        run: node scripts/scrape-meli.mjs ${{ github.event.inputs.max_pages || '20' }}
+
+      - name: Trigger Price Drop Detection
+        run: |
+          curl -s -X POST "${SUPABASE_URL}/functions/v1/detect-price-drops" \
+            -H 'Content-Type: application/json' \
+            -d '{}' || echo 'Detection trigger sent (async)'
