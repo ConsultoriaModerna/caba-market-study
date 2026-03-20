@@ -1,2247 +1,830 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CABA Real Estate Investment Dashboard | 6,489 Properties Analyzed</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-dark: #0a0e1a;
-            --bg-card: #1a1f3a;
-            --bg-light: #242d4d;
-            --primary-cyan: #00d4ff;
-            --primary-emerald: #10b981;
-            --primary-amber: #f59e0b;
-            --primary-red: #ef4444;
-            --text-primary: #f0f4f8;
-            --text-secondary: #a0aec0;
-            --border-color: #2d3748;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-        }
-
-        html, body {
-            height: 100%;
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1f3a 100%);
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-
-        body {
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Header */
-        .header {
-            background: rgba(10, 14, 26, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border-color);
-            padding: 2rem 1rem;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
-        }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-emerald));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .header-info {
-            display: flex;
-            gap: 1.5rem;
-            font-size: 0.9rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .header-stat {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .header-stat-label {
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .header-stat-value {
-            font-weight: 700;
-            color: var(--primary-cyan);
-        }
-
-        /* Main Container */
-        .container {
-            flex: 1;
-            max-width: 1400px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-
-        /* Tab Navigation */
-        .tabs-nav {
-            display: flex;
-            gap: 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-            overflow-x: auto;
-            padding-bottom: 0;
-            margin-bottom: 2rem;
-        }
-
-        .tab-btn {
-            padding: 1rem 1.5rem;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.95rem;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            position: relative;
-        }
-
-        .tab-btn:hover {
-            color: var(--primary-cyan);
-            border-bottom-color: var(--primary-cyan);
-        }
-
-        .tab-btn.active {
-            color: var(--primary-cyan);
-            border-bottom-color: var(--primary-cyan);
-        }
-
-        /* Tab Content */
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* KPI Cards */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .kpi-card {
-            background: linear-gradient(135deg, var(--bg-card), var(--bg-light));
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .kpi-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--primary-cyan);
-            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
-        }
-
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at top right, rgba(0, 212, 255, 0.1), transparent);
-            pointer-events: none;
-        }
-
-        .kpi-icon {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            display: inline-block;
-        }
-
-        .kpi-value {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-emerald));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .kpi-label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .kpi-card.accent-emerald .kpi-value {
-            background: linear-gradient(135deg, var(--primary-emerald), var(--primary-cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .kpi-card.accent-amber .kpi-value {
-            background: linear-gradient(135deg, var(--primary-amber), var(--primary-red));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* Charts */
-        .chart-container {
-            background: linear-gradient(135deg, var(--bg-card), var(--bg-light));
-            padding: 2rem;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .chart-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at top right, rgba(0, 212, 255, 0.08), transparent);
-            pointer-events: none;
-        }
-
-        .chart-inner {
-            position: relative;
-            z-index: 1;
-        }
-
-        .chart-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            color: var(--text-primary);
-        }
-
-        .chart-wrapper {
-            position: relative;
-            height: 400px;
-            margin-bottom: 1rem;
-        }
-
-        /* Table Styles */
-        .table-container {
-            background: linear-gradient(135deg, var(--bg-card), var(--bg-light));
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            margin-bottom: 2rem;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        th {
-            background: rgba(0, 212, 255, 0.1);
-            padding: 1rem;
-            text-align: left;
-            font-weight: 700;
-            color: var(--primary-cyan);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-primary);
-        }
-
-        tr:hover {
-            background: rgba(0, 212, 255, 0.05);
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .badge-zp {
-            background: rgba(0, 212, 255, 0.2);
-            color: var(--primary-cyan);
-        }
-
-        .badge-ml {
-            background: rgba(245, 158, 11, 0.2);
-            color: var(--primary-amber);
-        }
-
-        .badge-hot {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--primary-emerald);
-        }
-
-        .badge-warm {
-            background: rgba(245, 158, 11, 0.2);
-            color: var(--primary-amber);
-        }
-
-        .badge-cold {
-            background: rgba(107, 114, 128, 0.2);
-            color: var(--text-secondary);
-        }
-
-        .link-property {
-            color: var(--primary-cyan);
-            text-decoration: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .link-property:hover {
-            text-decoration: underline;
-            color: var(--primary-emerald);
-        }
-
-        /* Gap Analysis Specific */
-        .gap-bar-container {
-            margin-bottom: 2rem;
-        }
-
-        .gap-bar {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding: 0.75rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .gap-bar:hover {
-            background: rgba(0, 212, 255, 0.08);
-        }
-
-        .gap-label {
-            min-width: 120px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .gap-fill {
-            height: 35px;
-            border-radius: 6px;
-            position: relative;
-            overflow: hidden;
-            flex: 1;
-            max-width: 400px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 1rem;
-            color: white;
-            font-weight: 600;
-            font-size: 0.9rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .gap-fill.hot {
-            background: linear-gradient(90deg, var(--primary-emerald), #059669);
-        }
-
-        .gap-fill.warm {
-            background: linear-gradient(90deg, var(--primary-amber), #d97706);
-        }
-
-        .gap-fill.cold {
-            background: linear-gradient(90deg, #6b7280, #4b5563);
-        }
-
-        .gap-value {
-            font-weight: 700;
-            color: var(--text-secondary);
-            min-width: 60px;
-            text-align: right;
-        }
-
-        /* Calculator */
-        .calculator-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .calc-section {
-            background: linear-gradient(135deg, var(--bg-card), var(--bg-light));
-            padding: 2rem;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-        }
-
-        .calc-input-group {
-            margin-bottom: 2rem;
-        }
-
-        .calc-label {
-            display: block;
-            margin-bottom: 0.75rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 0.95rem;
-        }
-
-        .calc-value {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--primary-cyan);
-        }
-
-        input[type="range"] {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: linear-gradient(90deg, var(--primary-cyan), var(--primary-emerald));
-            outline: none;
-            -webkit-appearance: none;
-            cursor: pointer;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: var(--primary-cyan);
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: var(--primary-cyan);
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
-        }
-
-        select {
-            width: 100%;
-            padding: 0.75rem;
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-family: 'Inter', sans-serif;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        select:hover {
-            border-color: var(--primary-cyan);
-        }
-
-        select:focus {
-            outline: none;
-            border-color: var(--primary-cyan);
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
-        }
-
-        .calc-results {
-            grid-column: 1 / -1;
-        }
-
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .result-card {
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(16, 185, 129, 0.1));
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            text-align: center;
-        }
-
-        .result-value {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-emerald));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .result-label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        /* Gauge Chart */
-        .gauge-section {
-            display: flex;
-            justify-content: center;
-            margin-top: 2rem;
-        }
-
-        .gauge-chart-wrapper {
-            position: relative;
-            width: 300px;
-            height: 300px;
-        }
-
-        /* Heatmap */
-        .heatmap-table {
-            font-size: 0.85rem;
-        }
-
-        .heatmap-table td {
-            text-align: center;
-            font-weight: 600;
-            padding: 0.75rem;
-        }
-
-        .heatmap-table th {
-            text-align: center;
-        }
-
-        .heatmap-cell {
-            border-radius: 6px;
-            padding: 0.75rem;
-            transition: all 0.2s ease;
-        }
-
-        .heatmap-cell:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
-        }
-
-        /* Footer */
-        .footer {
-            background: rgba(10, 14, 26, 0.95);
-            border-top: 1px solid var(--border-color);
-            padding: 1.5rem 1rem;
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            margin-top: 3rem;
-        }
-
-        /* Animations */
-        @keyframes countUp {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .count-animate {
-            animation: countUp 0.6s ease-out;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .container {
-                padding: 1rem;
-            }
-
-            .kpi-grid {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            }
-
-            .chart-wrapper {
-                height: 300px;
-            }
-
-            .calculator-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .gap-fill {
-                max-width: 200px;
-            }
-
-            table {
-                font-size: 0.8rem;
-            }
-
-            th, td {
-                padding: 0.75rem;
-            }
-
-            .tabs-nav {
-                gap: 0;
-            }
-
-            .tab-btn {
-                padding: 0.75rem 1rem;
-                font-size: 0.85rem;
-            }
-        }
-
-        /* Print Styles */
-        @media print {
-            body {
-                background: white;
-            }
-
-            .header, .footer, .tabs-nav {
-                background: white;
-                border-color: #e5e7eb;
-            }
-
-            .kpi-card, .chart-container, .table-container, .calc-section {
-                background: white;
-                color: black;
-                border-color: #d1d5db;
-            }
-
-            .kpi-value, .gap-fill, .result-value {
-                color: black;
-            }
-
-            canvas {
-                filter: grayscale(0%);
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CABA Market Study - Marzo 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0a0e1a;
+      color: #ffffff;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      border-bottom: 2px solid #00d4ff;
+      padding-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+      color: #00d4ff;
+      font-weight: 700;
+    }
+
+    header p {
+      font-size: 1rem;
+      color: #94a3b8;
+    }
+
+    /* Tab Navigation */
+    .tab-navigation {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+      border-bottom: 1px solid #1a1f3a;
+    }
+
+    .tab-button {
+      padding: 12px 24px;
+      background: transparent;
+      color: #94a3b8;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .tab-button:hover {
+      color: #00d4ff;
+    }
+
+    .tab-button.active {
+      color: #00d4ff;
+      border-bottom-color: #00d4ff;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Table Header Bar */
+    .table-header-bar {
+      background: #1a1f3a;
+      padding: 16px;
+      border-radius: 8px 8px 0 0;
+      margin-bottom: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 16px;
+      border-bottom: 1px solid #0f1328;
+    }
+
+    .table-header-bar-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .table-header-bar-item label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .table-header-bar-item value {
+      font-size: 1.25rem;
+      color: #00d4ff;
+      font-weight: 700;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #0f1328;
+      border-radius: 0 0 8px 8px;
+      overflow: hidden;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    th {
+      background-color: #00d4ff;
+      color: #0a0e1a;
+      padding: 14px 12px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      border: 1px solid #0088bb;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #1a1f3a;
+      transition: background-color 0.2s ease;
+    }
+
+    tbody tr:nth-child(odd) {
+      background-color: #1a1f3a;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #0f1328;
+    }
+
+    tbody tr:hover {
+      background-color: #252d4a;
+    }
+
+    /* Yellow constraint highlight */
+    tbody tr.constraint {
+      background-color: rgba(245, 158, 11, 0.15) !important;
+      border-left: 3px solid #f59e0b;
+    }
+
+    tbody tr.constraint:hover {
+      background-color: rgba(245, 158, 11, 0.25) !important;
+    }
+
+    td {
+      padding: 12px;
+      font-size: 0.9rem;
+      border: 1px solid #1a1f3a;
+    }
+
+    /* Barrio Link */
+    a.barrio-link {
+      color: #00d4ff;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    a.barrio-link:hover {
+      text-decoration: underline;
+      color: #00ffff;
+    }
+
+    /* Numbers */
+    .num {
+      text-align: right;
+      font-family: 'Courier New', monospace;
+      font-weight: 500;
+    }
+
+    /* Deviation percentage with color gradient */
+    .desv-pct {
+      text-align: right;
+      font-weight: 600;
+      font-family: 'Courier New', monospace;
+    }
+
+    .desv-pct.green { color: #10b981; }
+    .desv-pct.gray { color: #94a3b8; }
+    .desv-pct.orange { color: #f97316; }
+    .desv-pct.red { color: #ef4444; }
+
+    /* Keywords - colored tags */
+    .keywords {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .keyword-tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .keyword-tag.exterior { background-color: rgba(6, 182, 212, 0.2); color: #06b6d4; }
+    .keyword-tag.interior { background-color: rgba(168, 85, 247, 0.2); color: #a855f7; }
+    .keyword-tag.estado { background-color: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .keyword-tag.legal { background-color: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .keyword-tag.comercial { background-color: rgba(251, 146, 60, 0.2); color: #fb923c; }
+
+    /* Source badges */
+    .source-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .source-badge.zp { background-color: rgba(6, 182, 212, 0.2); color: #06b6d4; }
+    .source-badge.ml { background-color: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+
+    /* Constraints */
+    .constraint-icon {
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    /* Footnotes */
+    .footnotes {
+      margin-top: 40px;
+      padding: 20px;
+      background-color: #1a1f3a;
+      border-left: 3px solid #00d4ff;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      line-height: 1.8;
+    }
+
+    .footnotes strong {
+      color: #00d4ff;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid #1a1f3a;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    footer p {
+      margin: 8px 0;
+    }
+
+    /* Print friendly */
+    @media print {
+      body {
+        background-color: #ffffff;
+        color: #000000;
+      }
+
+      .tab-navigation {
+        display: none;
+      }
+
+      thead {
+        background-color: #e0e7ff;
+        color: #000000;
+      }
+
+      th {
+        background-color: #e0e7ff !important;
+        color: #000000 !important;
+      }
+
+      tbody tr:nth-child(odd),
+      tbody tr:nth-child(even) {
+        background-color: #ffffff;
+        color: #000000;
+      }
+
+      tbody tr.constraint {
+        background-color: #fff8e1 !important;
+      }
+
+      a.barrio-link {
+        color: #0066cc;
+      }
+
+      .tab-content {
+        display: block !important;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      table {
+        font-size: 0.8rem;
+      }
+
+      th, td {
+        padding: 8px;
+      }
+
+      .table-header-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <div class="header-content">
-            <div class="logo">📊 CABA REAL ESTATE INVESTMENT DASHBOARD</div>
-            <div class="header-info">
-                <div class="header-stat">
-                    <span class="header-stat-label">Total Properties:</span>
-                    <span class="header-stat-value">6,489</span>
-                </div>
-                <div class="header-stat">
-                    <span class="header-stat-label">ZonaProp:</span>
-                    <span class="header-stat-value">4,570</span>
-                </div>
-                <div class="header-stat">
-                    <span class="header-stat-label">MercadoLibre:</span>
-                    <span class="header-stat-value">1,919</span>
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <header>
+      <h1>CABA Market Study</h1>
+      <p>Análisis de Casas con Jardín | Marzo 2026</p>
+    </header>
+
+    <div class="tab-navigation">
+      <button class="tab-button active" onclick="switchTab('cat-a')">Categoría A</button>
+      <button class="tab-button" onclick="switchTab('cat-b')">Categoría B</button>
     </div>
 
-    <!-- Main Container -->
-    <div class="container">
-        <!-- Tab Navigation -->
-        <div class="tabs-nav">
-            <button class="tab-btn active" data-tab="dashboard">Dashboard Overview</button>
-            <button class="tab-btn" data-tab="gap-analysis">Gap Analysis</button>
-            <button class="tab-btn" data-tab="calculator">Investment Calculator</button>
-            <button class="tab-btn" data-tab="top-opportunities">Top 30 Opportunities</button>
-            <button class="tab-btn" data-tab="heatmap">Keyword Heatmap</button>
-            <button class="tab-btn" data-tab="source-comparison">Source Comparison</button>
+    <!-- CATEGORY A -->
+    <div id="cat-a" class="tab-content active">
+      <div class="table-header-bar">
+        <div class="table-header-bar-item">
+          <label>Categoría</label>
+          <value>CAT A</value>
         </div>
-
-        <!-- TAB 1: Dashboard Overview -->
-        <div id="dashboard" class="tab-content active">
-            <h2 class="chart-title">Portfolio Overview</h2>
-
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-icon">🏢</div>
-                    <div class="kpi-value count-up" data-value="6489">0</div>
-                    <div class="kpi-label">Total Properties</div>
-                </div>
-
-                <div class="kpi-card accent-emerald">
-                    <div class="kpi-icon">🔗</div>
-                    <div class="kpi-value count-up" data-value="4570">0</div>
-                    <div class="kpi-label">ZonaProp</div>
-                </div>
-
-                <div class="kpi-card accent-amber">
-                    <div class="kpi-icon">🛒</div>
-                    <div class="kpi-value count-up" data-value="1919">0</div>
-                    <div class="kpi-label">MercadoLibre</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-icon">💰</div>
-                    <div class="kpi-value count-up" data-value="768">0</div>
-                    <div class="kpi-label">Cheap (≤150k)</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-icon">🔨</div>
-                    <div class="kpi-value count-up" data-value="254">0</div>
-                    <div class="kpi-label">Refaccionable</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-icon">✅</div>
-                    <div class="kpi-value count-up" data-value="342">0</div>
-                    <div class="kpi-label">Reciclable</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-icon">📈</div>
-                    <div class="kpi-value count-up" data-value="5125">0</div>
-                    <div class="kpi-label">General</div>
-                </div>
-
-                <div class="kpi-card accent-amber">
-                    <div class="kpi-icon">💵</div>
-                    <div class="kpi-value">$130k</div>
-                    <div class="kpi-label">Median Cheap</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-icon">🔨</div>
-                    <div class="kpi-value">$250k</div>
-                    <div class="kpi-label">Median Refac</div>
-                </div>
-
-                <div class="kpi-card accent-emerald">
-                    <div class="kpi-icon">✨</div>
-                    <div class="kpi-value">$360k</div>
-                    <div class="kpi-label">Median Recic</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-icon">📊</div>
-                    <div class="kpi-value">$330k</div>
-                    <div class="kpi-label">Median General</div>
-                </div>
-
-                <div class="kpi-card accent-emerald">
-                    <div class="kpi-icon">⭐</div>
-                    <div class="kpi-value">51%</div>
-                    <div class="kpi-label">Best Gap (Villa Luro)</div>
-                </div>
-            </div>
-
-            <div class="chart-container">
-                <div class="chart-inner">
-                    <h3 class="chart-title">Price Distribution by Segment (USD)</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="priceDistributionChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chart-container">
-                <div class="chart-inner">
-                    <h3 class="chart-title">Average USD/m² by Segment</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="avgM2Chart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="kpi-grid">
-                <div class="kpi-card" style="grid-column: 1 / -1; text-align: center;">
-                    <div class="kpi-icon">🏆</div>
-                    <div class="kpi-label" style="margin-bottom: 1rem; font-size: 1rem;">Sweet Spot Barrios (Best Gap %)</div>
-                    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem;">
-                        <div style="flex: 1; min-width: 150px;">
-                            <div style="color: var(--primary-emerald); font-weight: 700; font-size: 1.3rem;">Mataderos</div>
-                            <div style="color: var(--text-secondary); font-size: 0.85rem;">50% Gap</div>
-                        </div>
-                        <div style="flex: 1; min-width: 150px;">
-                            <div style="color: var(--primary-emerald); font-weight: 700; font-size: 1.3rem;">Villa Luro</div>
-                            <div style="color: var(--text-secondary); font-size: 0.85rem;">51% Gap</div>
-                        </div>
-                        <div style="flex: 1; min-width: 150px;">
-                            <div style="color: var(--primary-emerald); font-weight: 700; font-size: 1.3rem;">Floresta</div>
-                            <div style="color: var(--text-secondary); font-size: 0.85rem;">50% Gap</div>
-                        </div>
-                        <div style="flex: 1; min-width: 150px;">
-                            <div style="color: var(--primary-emerald); font-weight: 700; font-size: 1.3rem;">Parque Patricios</div>
-                            <div style="color: var(--text-secondary); font-size: 0.85rem;">37% Gap</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="table-header-bar-item">
+          <label>N Casas</label>
+          <value>91</value>
         </div>
-
-        <!-- TAB 2: Gap Analysis -->
-        <div id="gap-analysis" class="tab-content">
-            <h2 class="chart-title">Refac → Recic USD/m² Gap Analysis</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">The gap represents the upside potential between Refaccionable and Reciclable price per square meter. Higher gaps indicate greater profit opportunities.</p>
-
-            <div class="chart-container">
-                <div class="chart-inner">
-                    <h3 class="chart-title" style="margin-bottom: 2rem;">Gap % by Barrio (sorted by opportunity)</h3>
-                    <div class="gap-bar-container">
-                        <div class="gap-bar"><div class="gap-label">Belgrano</div><div class="gap-fill hot" style="width: 113%;">113%</div><div class="gap-value">113%</div></div>
-                        <div class="gap-bar"><div class="gap-label">San Cristobal</div><div class="gap-fill hot" style="width: 106%;">106%</div><div class="gap-value">106%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Balvanera</div><div class="gap-fill warm" style="width: 74%;">74%</div><div class="gap-value">74%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Palermo</div><div class="gap-fill warm" style="width: 71%;">71%</div><div class="gap-value">71%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Monserrat</div><div class="gap-fill warm" style="width: 55%;">55%</div><div class="gap-value">55%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Villa del Parque</div><div class="gap-fill warm" style="width: 53%;">53%</div><div class="gap-value">53%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Villa Luro</div><div class="gap-fill warm" style="width: 51%;">51%</div><div class="gap-value">51%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Mataderos</div><div class="gap-fill warm" style="width: 50%;">50%</div><div class="gap-value">50%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Floresta</div><div class="gap-fill warm" style="width: 50%;">50%</div><div class="gap-value">50%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Núñez</div><div class="gap-fill warm" style="width: 45%;">45%</div><div class="gap-value">45%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Parque Patricios</div><div class="gap-fill warm" style="width: 37%;">37%</div><div class="gap-value">37%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Almagro</div><div class="gap-fill cold" style="width: 30%;">30%</div><div class="gap-value">30%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Villa Devoto</div><div class="gap-fill cold" style="width: 29%;">29%</div><div class="gap-value">29%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Versalles</div><div class="gap-fill cold" style="width: 29%;">29%</div><div class="gap-value">29%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Villa Santa Rita</div><div class="gap-fill cold" style="width: 29%;">29%</div><div class="gap-value">29%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Villa Urquiza</div><div class="gap-fill cold" style="width: 28%;">28%</div><div class="gap-value">28%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Villa Lugano</div><div class="gap-fill cold" style="width: 26%;">26%</div><div class="gap-value">26%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Parque Chacabuco</div><div class="gap-fill cold" style="width: 23%;">23%</div><div class="gap-value">23%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Saavedra</div><div class="gap-fill cold" style="width: 22%;">22%</div><div class="gap-value">22%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Liniers</div><div class="gap-fill cold" style="width: 20%;">20%</div><div class="gap-value">20%</div></div>
-                        <div class="gap-bar"><div class="gap-label">Flores</div><div class="gap-fill cold" style="width: 18%;">18%</div><div class="gap-value">18%</div></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="table-container">
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Barrio</th>
-                                <th>Cheap Count</th>
-                                <th>Cheap Avg USD</th>
-                                <th>Refac Count</th>
-                                <th>Refac USD/m²</th>
-                                <th>Recic Count</th>
-                                <th>Recic USD/m²</th>
-                                <th>Gap %</th>
-                                <th>Upside %</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="font-weight: 700;">Mataderos</td>
-                                <td>77</td>
-                                <td>$128,540</td>
-                                <td>13</td>
-                                <td>$801</td>
-                                <td>6</td>
-                                <td>$1,203</td>
-                                <td><span class="badge badge-hot">50.2%</span></td>
-                                <td><span class="badge badge-hot">39.9%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Villa Lugano</td>
-                                <td>106</td>
-                                <td>$126,804</td>
-                                <td>7</td>
-                                <td>$776</td>
-                                <td>2</td>
-                                <td>$974</td>
-                                <td><span class="badge badge-warm">25.5%</span></td>
-                                <td><span class="badge badge-warm">20%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Pompeya</td>
-                                <td>67</td>
-                                <td>—</td>
-                                <td>2</td>
-                                <td>$797</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Flores</td>
-                                <td>52</td>
-                                <td>$131,067</td>
-                                <td>7</td>
-                                <td>$947</td>
-                                <td>14</td>
-                                <td>$1,120</td>
-                                <td><span class="badge badge-cold">18.3%</span></td>
-                                <td><span class="badge badge-cold">14.3%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Liniers</td>
-                                <td>51</td>
-                                <td>$134,725</td>
-                                <td>6</td>
-                                <td>$1,033</td>
-                                <td>15</td>
-                                <td>$1,240</td>
-                                <td><span class="badge badge-cold">20%</span></td>
-                                <td><span class="badge badge-cold">13.7%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Villa Soldati</td>
-                                <td>43</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Barracas</td>
-                                <td>53</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>11</td>
-                                <td>$1,043</td>
-                                <td>—</td>
-                                <td><span class="badge badge-hot">59%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Parque Avellaneda</td>
-                                <td>42</td>
-                                <td>—</td>
-                                <td>5</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Parque Chacabuco</td>
-                                <td>29</td>
-                                <td>—</td>
-                                <td>3</td>
-                                <td>$894</td>
-                                <td>9</td>
-                                <td>$1,102</td>
-                                <td><span class="badge badge-cold">23.3%</span></td>
-                                <td><span class="badge badge-cold">20.8%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Parque Patricios</td>
-                                <td>27</td>
-                                <td>—</td>
-                                <td>7</td>
-                                <td>$713</td>
-                                <td>3</td>
-                                <td>$975</td>
-                                <td><span class="badge badge-warm">36.7%</span></td>
-                                <td><span class="badge badge-warm">13%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Villa Luro</td>
-                                <td>5</td>
-                                <td>—</td>
-                                <td>10</td>
-                                <td>$1,031</td>
-                                <td>5</td>
-                                <td>$1,561</td>
-                                <td><span class="badge badge-hot">51.4%</span></td>
-                                <td><span class="badge badge-hot">22.4%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Floresta</td>
-                                <td>10</td>
-                                <td>—</td>
-                                <td>3</td>
-                                <td>$771</td>
-                                <td>5</td>
-                                <td>$1,157</td>
-                                <td><span class="badge badge-hot">50.1%</span></td>
-                                <td><span class="badge badge-hot">20.4%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Villa Devoto</td>
-                                <td>6</td>
-                                <td>—</td>
-                                <td>22</td>
-                                <td>$1,524</td>
-                                <td>19</td>
-                                <td>$1,966</td>
-                                <td><span class="badge badge-cold">29%</span></td>
-                                <td><span class="badge badge-hot">46.6%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Almagro</td>
-                                <td>8</td>
-                                <td>—</td>
-                                <td>5</td>
-                                <td>$1,147</td>
-                                <td>7</td>
-                                <td>$1,489</td>
-                                <td><span class="badge badge-cold">29.8%</span></td>
-                                <td><span class="badge badge-cold">8.5%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Versalles</td>
-                                <td>4</td>
-                                <td>—</td>
-                                <td>3</td>
-                                <td>$1,129</td>
-                                <td>4</td>
-                                <td>$1,461</td>
-                                <td><span class="badge badge-cold">29.4%</span></td>
-                                <td><span class="badge badge-cold">17%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Villa Santa Rita</td>
-                                <td>6</td>
-                                <td>—</td>
-                                <td>3</td>
-                                <td>$1,063</td>
-                                <td>3</td>
-                                <td>$1,374</td>
-                                <td><span class="badge badge-cold">29.2%</span></td>
-                                <td><span class="badge badge-cold">5.2%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Villa Urquiza</td>
-                                <td>7</td>
-                                <td>—</td>
-                                <td>3</td>
-                                <td>$1,222</td>
-                                <td>7</td>
-                                <td>$1,561</td>
-                                <td><span class="badge badge-cold">27.7%</span></td>
-                                <td><span class="badge badge-cold">4.5%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Saavedra</td>
-                                <td>8</td>
-                                <td>—</td>
-                                <td>4</td>
-                                <td>$1,149</td>
-                                <td>5</td>
-                                <td>$1,473</td>
-                                <td><span class="badge badge-cold">22.3%</span></td>
-                                <td><span class="badge badge-cold">5.8%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Núñez</td>
-                                <td>4</td>
-                                <td>—</td>
-                                <td>8</td>
-                                <td>$1,362</td>
-                                <td>12</td>
-                                <td>$1,973</td>
-                                <td><span class="badge badge-warm">44.8%</span></td>
-                                <td><span class="badge badge-cold">19.8%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Balvanera</td>
-                                <td>2</td>
-                                <td>—</td>
-                                <td>2</td>
-                                <td>$1,095</td>
-                                <td>4</td>
-                                <td>$1,908</td>
-                                <td><span class="badge badge-warm">74.2%</span></td>
-                                <td><span class="badge badge-hot">26%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">San Cristobal</td>
-                                <td>1</td>
-                                <td>—</td>
-                                <td>2</td>
-                                <td>$1,192</td>
-                                <td>3</td>
-                                <td>$2,451</td>
-                                <td><span class="badge badge-hot">105.7%</span></td>
-                                <td><span class="badge badge-hot">35.2%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Belgrano</td>
-                                <td>0</td>
-                                <td>—</td>
-                                <td>2</td>
-                                <td>$1,327</td>
-                                <td>5</td>
-                                <td>$2,823</td>
-                                <td><span class="badge badge-hot">112.7%</span></td>
-                                <td><span class="badge badge-hot">44.2%</span></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700;">Palermo</td>
-                                <td>0</td>
-                                <td>—</td>
-                                <td>4</td>
-                                <td>$1,419</td>
-                                <td>5</td>
-                                <td>$2,420</td>
-                                <td><span class="badge badge-warm">70.6%</span></td>
-                                <td><span class="badge badge-hot">27%</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="table-header-bar-item">
+          <label>Media USD/m²</label>
+          <value>630</value>
         </div>
-
-        <!-- TAB 3: Investment Calculator -->
-        <div id="calculator" class="tab-content">
-            <h2 class="chart-title">Interactive ROI Calculator</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">Model your renovation scenario with real market data from CABA neighborhoods.</p>
-
-            <div class="calculator-grid">
-                <div class="calc-section">
-                    <div class="calc-input-group">
-                        <label class="calc-label">Purchase Price (USD)</label>
-                        <input id="purchasePrice" type="range" min="50000" max="1000000" step="10000" value="250000">
-                        <span class="calc-value" id="priceValue">$250,000</span>
-                    </div>
-                </div>
-
-                <div class="calc-section">
-                    <div class="calc-input-group">
-                        <label class="calc-label">Property Area (m²)</label>
-                        <input id="area" type="range" min="30" max="500" step="10" value="150">
-                        <span class="calc-value" id="areaValue">150 m²</span>
-                    </div>
-                </div>
-
-                <div class="calc-section">
-                    <div class="calc-input-group">
-                        <label class="calc-label">Renovation Cost (USD/m²)</label>
-                        <input id="renovationCost" type="range" min="100" max="5000" step="100" value="1500">
-                        <span class="calc-value" id="renoValue">$1,500/m²</span>
-                    </div>
-                </div>
-
-                <div class="calc-section">
-                    <div class="calc-input-group">
-                        <label class="calc-label">Target Barrio (Recic USD/m²)</label>
-                        <select id="targetBarrio">
-                            <option value="1203">Mataderos ($1,203)</option>
-                            <option value="1157">Floresta ($1,157)</option>
-                            <option value="1561">Villa Luro ($1,561)</option>
-                            <option value="1966">Villa Devoto ($1,966)</option>
-                            <option value="1473">Saavedra ($1,473)</option>
-                            <option value="1561">Núñez ($1,973)</option>
-                            <option value="1908">Balvanera ($1,908)</option>
-                            <option value="2451">San Cristobal ($2,451)</option>
-                            <option value="2823">Belgrano ($2,823)</option>
-                            <option value="2420">Palermo ($2,420)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="calc-results">
-                    <div class="results-grid">
-                        <div class="result-card">
-                            <div class="result-value" id="totalInvestment">$487,500</div>
-                            <div class="result-label">Total Investment</div>
-                        </div>
-                        <div class="result-card">
-                            <div class="result-value" id="postRenoValue">$180,450</div>
-                            <div class="result-label">Post-Renovation Value</div>
-                        </div>
-                        <div class="result-card">
-                            <div class="result-value" id="grossProfit">$0</div>
-                            <div class="result-label">Gross Profit</div>
-                        </div>
-                        <div class="result-card">
-                            <div class="result-value" id="roiPercent">0%</div>
-                            <div class="result-label">Return on Investment</div>
-                        </div>
-                    </div>
-                    <div class="gauge-section">
-                        <div class="gauge-chart-wrapper">
-                            <canvas id="roiGauge"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="table-header-bar-item">
+          <label>Mediana USD/m²</label>
+          <value>624</value>
         </div>
+      </div>
 
-        <!-- TAB 4: Top 30 Opportunities -->
-        <div id="top-opportunities" class="tab-content">
-            <h2 class="chart-title">Top 30 Investment Opportunities</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">Best properties ranked by gap potential (Refac to Recic margin) with source attribution.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Barrio</th>
+            <th>USD</th>
+            <th>EUR</th>
+            <th>m² tot</th>
+            <th>m² cub*</th>
+            <th>USD/m² tot</th>
+            <th>USD/m² cub</th>
+            <th>EUR/m² tot</th>
+            <th>EUR/m² cub</th>
+            <th>Amb</th>
+            <th>Desv Cat%</th>
+            <th>Keywords</th>
+            <th>Fuente</th>
+            <th>Constraints</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="constraint">
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-venta-56921049.html" target="_blank" class="barrio-link">Parque Patricios</a></td>
+            <td class="num">115,000</td>
+            <td class="num">105,800</td>
+            <td class="num">360</td>
+            <td class="num">234</td>
+            <td class="num">319</td>
+            <td class="num">491</td>
+            <td class="num">293</td>
+            <td class="num">452</td>
+            <td class="num">—</td>
+            <td class="desv-pct green">-49.4%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">jardín</span><span class="keyword-tag exterior">patio</span><span class="keyword-tag exterior">terraza</span><span class="keyword-tag exterior">cochera</span><span class="keyword-tag exterior">parrilla</span><span class="keyword-tag exterior">quincho</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">⚠️ vía de tren</td>
+          </tr>
 
-            <div class="table-container">
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Property ID</th>
-                                <th>Barrio</th>
-                                <th>Segment</th>
-                                <th>Price (USD)</th>
-                                <th>Area (m²)</th>
-                                <th>USD/m²</th>
-                                <th>Gap %</th>
-                                <th>Source</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td><a class="link-property" href="#">ZP-2024-001</a></td>
-                                <td>Belgrano</td>
-                                <td>Reciclable</td>
-                                <td>$380,000</td>
-                                <td>95</td>
-                                <td>$4,000</td>
-                                <td><span class="badge badge-hot">112.7%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td><a class="link-property" href="#">ZP-2024-002</a></td>
-                                <td>San Cristobal</td>
-                                <td>Reciclable</td>
-                                <td>$425,000</td>
-                                <td>175</td>
-                                <td>$2,429</td>
-                                <td><span class="badge badge-hot">105.7%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>3</td>
-                                <td><a class="link-property" href="#">ZP-2024-003</a></td>
-                                <td>Palermo</td>
-                                <td>Refaccionable</td>
-                                <td>$280,000</td>
-                                <td>120</td>
-                                <td>$2,333</td>
-                                <td><span class="badge badge-warm">70.6%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>4</td>
-                                <td><a class="link-property" href="#">ML-2024-001</a></td>
-                                <td>Balvanera</td>
-                                <td>Refaccionable</td>
-                                <td>$220,000</td>
-                                <td>80</td>
-                                <td>$2,750</td>
-                                <td><span class="badge badge-warm">74.2%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>5</td>
-                                <td><a class="link-property" href="#">ZP-2024-004</a></td>
-                                <td>Núñez</td>
-                                <td>Reciclable</td>
-                                <td>$320,000</td>
-                                <td>162</td>
-                                <td>$1,975</td>
-                                <td><span class="badge badge-warm">44.8%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>6</td>
-                                <td><a class="link-property" href="#">ML-2024-002</a></td>
-                                <td>Villa Luro</td>
-                                <td>Refaccionable</td>
-                                <td>$185,000</td>
-                                <td>115</td>
-                                <td>$1,609</td>
-                                <td><span class="badge badge-hot">51.4%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>7</td>
-                                <td><a class="link-property" href="#">ZP-2024-005</a></td>
-                                <td>Floresta</td>
-                                <td>Refaccionable</td>
-                                <td>$140,000</td>
-                                <td>85</td>
-                                <td>$1,647</td>
-                                <td><span class="badge badge-hot">50.1%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>8</td>
-                                <td><a class="link-property" href="#">ZP-2024-006</a></td>
-                                <td>Mataderos</td>
-                                <td>Refaccionable</td>
-                                <td>$130,000</td>
-                                <td>95</td>
-                                <td>$1,368</td>
-                                <td><span class="badge badge-hot">50.2%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>9</td>
-                                <td><a class="link-property" href="#">ML-2024-003</a></td>
-                                <td>Parque Patricios</td>
-                                <td>Cheap</td>
-                                <td>$95,000</td>
-                                <td>70</td>
-                                <td>$1,357</td>
-                                <td><span class="badge badge-warm">36.7%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>10</td>
-                                <td><a class="link-property" href="#">ZP-2024-007</a></td>
-                                <td>Villa Devoto</td>
-                                <td>Reciclable</td>
-                                <td>$360,000</td>
-                                <td>185</td>
-                                <td>$1,946</td>
-                                <td><span class="badge badge-cold">29%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>11</td>
-                                <td><a class="link-property" href="#">ML-2024-004</a></td>
-                                <td>Almagro</td>
-                                <td>Reciclable</td>
-                                <td>$280,000</td>
-                                <td>95</td>
-                                <td>$2,947</td>
-                                <td><span class="badge badge-cold">29.8%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>12</td>
-                                <td><a class="link-property" href="#">ZP-2024-008</a></td>
-                                <td>Versalles</td>
-                                <td>Refaccionable</td>
-                                <td>$150,000</td>
-                                <td>75</td>
-                                <td>$2,000</td>
-                                <td><span class="badge badge-cold">29.4%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>13</td>
-                                <td><a class="link-property" href="#">ML-2024-005</a></td>
-                                <td>Villa Santa Rita</td>
-                                <td>Refaccionable</td>
-                                <td>$200,000</td>
-                                <td>90</td>
-                                <td>$2,222</td>
-                                <td><span class="badge badge-cold">29.2%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>14</td>
-                                <td><a class="link-property" href="#">ZP-2024-009</a></td>
-                                <td>Villa Urquiza</td>
-                                <td>Reciclable</td>
-                                <td>$380,000</td>
-                                <td>160</td>
-                                <td>$2,375</td>
-                                <td><span class="badge badge-cold">27.7%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>15</td>
-                                <td><a class="link-property" href="#">ML-2024-006</a></td>
-                                <td>Saavedra</td>
-                                <td>Reciclable</td>
-                                <td>$310,000</td>
-                                <td>135</td>
-                                <td>$2,296</td>
-                                <td><span class="badge badge-cold">22.3%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>16</td>
-                                <td><a class="link-property" href="#">ZP-2024-010</a></td>
-                                <td>Parque Chacabuco</td>
-                                <td>Reciclable</td>
-                                <td>$175,000</td>
-                                <td>95</td>
-                                <td>$1,842</td>
-                                <td><span class="badge badge-cold">23.3%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>17</td>
-                                <td><a class="link-property" href="#">ML-2024-007</a></td>
-                                <td>Liniers</td>
-                                <td>Cheap</td>
-                                <td>$120,000</td>
-                                <td>65</td>
-                                <td>$1,846</td>
-                                <td><span class="badge badge-cold">20%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>18</td>
-                                <td><a class="link-property" href="#">ZP-2024-011</a></td>
-                                <td>Flores</td>
-                                <td>Refaccionable</td>
-                                <td>$140,000</td>
-                                <td>75</td>
-                                <td>$1,867</td>
-                                <td><span class="badge badge-cold">18.3%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>19</td>
-                                <td><a class="link-property" href="#">ML-2024-008</a></td>
-                                <td>Villa Lugano</td>
-                                <td>Cheap</td>
-                                <td>$115,000</td>
-                                <td>80</td>
-                                <td>$1,438</td>
-                                <td><span class="badge badge-warm">25.5%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>20</td>
-                                <td><a class="link-property" href="#">ZP-2024-012</a></td>
-                                <td>Monserrat</td>
-                                <td>General</td>
-                                <td>$450,000</td>
-                                <td>120</td>
-                                <td>$3,750</td>
-                                <td><span class="badge badge-warm">55%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>21</td>
-                                <td><a class="link-property" href="#">ML-2024-009</a></td>
-                                <td>Palermo</td>
-                                <td>General</td>
-                                <td>$580,000</td>
-                                <td>140</td>
-                                <td>$4,143</td>
-                                <td><span class="badge badge-warm">71%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>22</td>
-                                <td><a class="link-property" href="#">ZP-2024-013</a></td>
-                                <td>Caballito</td>
-                                <td>General</td>
-                                <td>$520,000</td>
-                                <td>130</td>
-                                <td>$4,000</td>
-                                <td><span class="badge badge-warm">62%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>23</td>
-                                <td><a class="link-property" href="#">ML-2024-010</a></td>
-                                <td>Recoleta</td>
-                                <td>General</td>
-                                <td>$750,000</td>
-                                <td>180</td>
-                                <td>$4,167</td>
-                                <td><span class="badge badge-cold">18%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>24</td>
-                                <td><a class="link-property" href="#">ZP-2024-014</a></td>
-                                <td>Devoto</td>
-                                <td>General</td>
-                                <td>$380,000</td>
-                                <td>95</td>
-                                <td>$4,000</td>
-                                <td><span class="badge badge-warm">48%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>25</td>
-                                <td><a class="link-property" href="#">ML-2024-011</a></td>
-                                <td>San Telmo</td>
-                                <td>General</td>
-                                <td>$620,000</td>
-                                <td>150</td>
-                                <td>$4,133</td>
-                                <td><span class="badge badge-warm">55%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>26</td>
-                                <td><a class="link-property" href="#">ZP-2024-015</a></td>
-                                <td>Barracas</td>
-                                <td>Reciclable</td>
-                                <td>$280,000</td>
-                                <td>100</td>
-                                <td>$2,800</td>
-                                <td><span class="badge badge-hot">59%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>27</td>
-                                <td><a class="link-property" href="#">ML-2024-012</a></td>
-                                <td>La Boca</td>
-                                <td>General</td>
-                                <td>$420,000</td>
-                                <td>110</td>
-                                <td>$3,818</td>
-                                <td><span class="badge badge-cold">22%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>28</td>
-                                <td><a class="link-property" href="#">ZP-2024-016</a></td>
-                                <td>Chacarita</td>
-                                <td>Cheap</td>
-                                <td>$145,000</td>
-                                <td>80</td>
-                                <td>$1,813</td>
-                                <td><span class="badge badge-cold">38%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                            <tr>
-                                <td>29</td>
-                                <td><a class="link-property" href="#">ML-2024-013</a></td>
-                                <td>Constitucion</td>
-                                <td>Cheap</td>
-                                <td>$125,000</td>
-                                <td>70</td>
-                                <td>$1,786</td>
-                                <td><span class="badge badge-cold">32%</span></td>
-                                <td><span class="badge badge-ml">MercadoLibre</span></td>
-                            </tr>
-                            <tr>
-                                <td>30</td>
-                                <td><a class="link-property" href="#">ZP-2024-017</a></td>
-                                <td>Colegiales</td>
-                                <td>General</td>
-                                <td>$490,000</td>
-                                <td>125</td>
-                                <td>$3,920</td>
-                                <td><span class="badge badge-warm">51%</span></td>
-                                <td><span class="badge badge-zp">ZonaProp</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-madariaga-calle-3-bis-entre-2-y-4-57266375.html" target="_blank" class="barrio-link">San Nicolás</a></td>
+            <td class="num">119,000</td>
+            <td class="num">109,480</td>
+            <td class="num">340</td>
+            <td class="num">221</td>
+            <td class="num">350</td>
+            <td class="num">538</td>
+            <td class="num">322</td>
+            <td class="num">495</td>
+            <td class="num">5</td>
+            <td class="desv-pct green">-44.4%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">jardín</span><span class="keyword-tag exterior">cochera</span><span class="keyword-tag interior">luminosa</span><span class="keyword-tag interior">suite</span><span class="keyword-tag legal">lote</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
 
-        <!-- TAB 5: Keyword Heatmap -->
-        <div id="heatmap" class="tab-content">
-            <h2 class="chart-title">Keyword Density Heatmap (Barrio x Description Keywords)</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">Shows how common property description keywords are in each barrio. Darker green indicates higher frequency.</p>
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-se-vende-casa-multifamiliar-lote-8-66-x-52-m-villa-48318048.html" target="_blank" class="barrio-link">Villa Lugano</a></td>
+            <td class="num">170,000</td>
+            <td class="num">156,400</td>
+            <td class="num">452</td>
+            <td class="num">294</td>
+            <td class="num">376</td>
+            <td class="num">578</td>
+            <td class="num">346</td>
+            <td class="num">532</td>
+            <td class="num">6</td>
+            <td class="desv-pct green">-40.3%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">jardín</span><span class="keyword-tag exterior">patio</span><span class="keyword-tag exterior">quincho</span><span class="keyword-tag comercial">taller</span><span class="keyword-tag interior">suite</span><span class="keyword-tag legal">lote</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
 
-            <div class="table-container">
-                <div class="table-wrapper">
-                    <table class="heatmap-table">
-                        <thead>
-                            <tr>
-                                <th>Barrio</th>
-                                <th>Luz (Light)</th>
-                                <th>Balcon (Balcony)</th>
-                                <th>Parquizado (Landscaped)</th>
-                                <th>Estudio (Studio)</th>
-                                <th>Dependencia (Dependency)</th>
-                                <th>Cochera (Parking)</th>
-                                <th>Piscina (Pool)</th>
-                                <th>Seguridad (Security)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Belgrano</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.9);">48</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.85);">42</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.8);">38</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">15</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">22</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.6);">28</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.25);">10</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.7);">35</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">San Cristobal</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.75);">40</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.65);">33</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.7);">35</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">12</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">18</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">20</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.1);">4</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">25</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Palermo</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.85);">45</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.9);">48</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.75);">40</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">18</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.55);">25</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.65);">30</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.3);">12</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.75);">38</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Balvanera</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.65);">34</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.6);">29</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">26</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">15</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">14</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">18</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.08);">3</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">18</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Almagro</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.7);">37</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.68);">35</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.55);">28</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.38);">14</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.42);">17</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.48);">22</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.12);">5</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">20</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Monserrat</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.6);">31</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">25</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">23</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.3);">10</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.28);">11</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">16</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.05);">2</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.3);">14</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Caballito</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.78);">42</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.72);">38</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.68);">36</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.48);">17</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">19</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.58);">26</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.18);">7</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.52);">24</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Núñez</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.68);">35</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.62);">31</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.6);">30</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">12</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.38);">14</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">24</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.12);">5</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.48);">22</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Villa del Parque</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.55);">29</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.48);">24</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.65);">34</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.25);">8</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.3);">13</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.42);">19</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.08);">3</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">16</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Villa Luro</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.5);">26</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">22</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.7);">36</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">6</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.25);">10</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">17</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.05);">2</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.28);">13</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Mataderos</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.48);">25</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">20</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.58);">31</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.12);">5</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.18);">8</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.28);">13</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.03);">1</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.22);">10</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Floresta</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">24</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.38);">19</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.62);">32</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.1);">4</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">7</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.25);">12</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.02);">1</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.18);">8</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Parque Patricios</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.38);">20</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.3);">15</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">18</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.08);">3</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.12);">5</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.18);">8</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.02);">1</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.12);">6</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Liniers</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.55);">32</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">22</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">18</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">8</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.25);">10</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">8</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.1);">4</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.05);">1</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Villa Soldati</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">26</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">16</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">26</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.1);">3</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">19</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">9</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.1);">4</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.08);">3</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Parque Avellaneda</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">21</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">16</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">21</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">6</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.25);">11</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">8</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">9</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.05);">1</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Parque Chacabuco</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">17</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.3);">14</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.35);">19</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">6</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">8</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.08);">2</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">7</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0);">0</div></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 700; text-align: left;">Parque Patricios</td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.4);">21</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">10</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.45);">23</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">5</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.2);">7</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">6</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.15);">5</div></td>
-                                <td><div class="heatmap-cell" style="background: rgba(16, 185, 129, 0.05);">1</div></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-venta-casa-4-amb-patio-3-cocheras-jardin-soldati-58623778.html" target="_blank" class="barrio-link">Villa Soldati</a></td>
+            <td class="num">120,000</td>
+            <td class="num">110,400</td>
+            <td class="num">303</td>
+            <td class="num">197</td>
+            <td class="num">396</td>
+            <td class="num">609</td>
+            <td class="num">364</td>
+            <td class="num">560</td>
+            <td class="num">4</td>
+            <td class="desv-pct green">-37.1%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">jardín</span><span class="keyword-tag exterior">patio</span><span class="keyword-tag exterior">cochera</span><span class="keyword-tag exterior">quincho</span><span class="keyword-tag legal">escritura</span><span class="keyword-tag interior">vestidor</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
 
-        <!-- TAB 6: Source Comparison -->
-        <div id="source-comparison" class="tab-content">
-            <h2 class="chart-title">ZonaProp vs MercadoLibre Analysis</h2>
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-venta-casa-4-dorm.-lote-propio-villa-lugano-58591284.html" target="_blank" class="barrio-link">Villa Lugano</a></td>
+            <td class="num">199,000</td>
+            <td class="num">183,080</td>
+            <td class="num">497</td>
+            <td class="num">323</td>
+            <td class="num">400</td>
+            <td class="num">616</td>
+            <td class="num">368</td>
+            <td class="num">567</td>
+            <td class="num">6</td>
+            <td class="desv-pct green">-36.5%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">jardín</span><span class="keyword-tag exterior">patio</span><span class="keyword-tag exterior">cochera</span><span class="keyword-tag exterior">quincho</span><span class="keyword-tag interior">luminoso</span><span class="keyword-tag legal">escritura</span><span class="keyword-tag legal">lote</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
 
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-icon">🔗</div>
-                    <div class="kpi-value count-up" data-value="4570">0</div>
-                    <div class="kpi-label">ZonaProp Properties</div>
-                    <div style="color: var(--primary-cyan); font-weight: 600; margin-top: 0.5rem;">70.4%</div>
-                </div>
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-venta-casa-3-ambientes-en-villa-lugano-58043051.html" target="_blank" class="barrio-link">Villa Lugano</a></td>
+            <td class="num">150,000</td>
+            <td class="num">138,000</td>
+            <td class="num">370</td>
+            <td class="num">241</td>
+            <td class="num">405</td>
+            <td class="num">622</td>
+            <td class="num">373</td>
+            <td class="num">573</td>
+            <td class="num">4</td>
+            <td class="desv-pct green">-35.7%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">jardín</span><span class="keyword-tag exterior">terraza</span><span class="keyword-tag exterior">cochera</span><span class="keyword-tag exterior">quincho</span><span class="keyword-tag exterior">fondo</span><span class="keyword-tag legal">lote</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
 
-                <div class="kpi-card accent-amber">
-                    <div class="kpi-icon">🛒</div>
-                    <div class="kpi-value count-up" data-value="1919">0</div>
-                    <div class="kpi-label">MercadoLibre Properties</div>
-                    <div style="color: var(--primary-amber); font-weight: 600; margin-top: 0.5rem;">29.6%</div>
-                </div>
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-venta-6-ambientes-lote-propio-pompeya-57674981.html" target="_blank" class="barrio-link">Pompeya</a></td>
+            <td class="num">145,000</td>
+            <td class="num">133,400</td>
+            <td class="num">350</td>
+            <td class="num">228</td>
+            <td class="num">414</td>
+            <td class="num">636</td>
+            <td class="num">381</td>
+            <td class="num">585</td>
+            <td class="num">6</td>
+            <td class="desv-pct green">-34.3%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">jardín</span><span class="keyword-tag exterior">patio</span><span class="keyword-tag exterior">terraza</span><span class="keyword-tag exterior">cochera</span><span class="keyword-tag exterior">parrilla</span><span class="keyword-tag estado">refaccionar</span><span class="keyword-tag interior">suite</span><span class="keyword-tag legal">lote</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
 
-                <div class="kpi-card">
-                    <div class="kpi-icon">💰</div>
-                    <div class="kpi-value">$498k</div>
-                    <div class="kpi-label">ZP Avg General Price</div>
-                </div>
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-4amb-lote-propio-8-66x30-m-patio-terraza-57886863.html" target="_blank" class="barrio-link">Barracas</a></td>
+            <td class="num">109,000</td>
+            <td class="num">100,280</td>
+            <td class="num">260</td>
+            <td class="num">169</td>
+            <td class="num">419</td>
+            <td class="num">645</td>
+            <td class="num">385</td>
+            <td class="num">593</td>
+            <td class="num">4</td>
+            <td class="desv-pct green">-33.5%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">jardín</span><span class="keyword-tag exterior">patio</span><span class="keyword-tag exterior">cochera</span><span class="keyword-tag comercial">local</span><span class="keyword-tag exterior">fondo</span><span class="keyword-tag legal">lote</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
 
-                <div class="kpi-card accent-amber">
-                    <div class="kpi-icon">💰</div>
-                    <div class="kpi-value">$469k</div>
-                    <div class="kpi-label">ML Avg General Price</div>
-                    <div style="color: var(--primary-amber); font-weight: 600; margin-top: 0.5rem;">5.8% Cheaper</div>
-                </div>
-            </div>
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-5-amb-en-venta-con-patio-y-garage-v.-lugano-58623644.html" target="_blank" class="barrio-link">Villa Lugano</a></td>
+            <td class="num">200,000</td>
+            <td class="num">184,000</td>
+            <td class="num">464</td>
+            <td class="num">302</td>
+            <td class="num">431</td>
+            <td class="num">662</td>
+            <td class="num">397</td>
+            <td class="num">609</td>
+            <td class="num">5</td>
+            <td class="desv-pct green">-31.6%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">jardín</span><span class="keyword-tag exterior">garage</span><span class="keyword-tag interior">luminoso</span><span class="keyword-tag legal">escritura</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
 
-            <div class="chart-container">
-                <div class="chart-inner">
-                    <h3 class="chart-title">Market Share Distribution</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="sourceDistribution"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chart-container">
-                <div class="chart-inner">
-                    <h3 class="chart-title">Segment Distribution by Source</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="segmentDistribution"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chart-container">
-                <div class="chart-inner">
-                    <h3 class="chart-title">Price vs Area Scatter Plot</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="scatterPlot"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="kpi-grid">
-                <div class="kpi-card" style="grid-column: 1 / -1;">
-                    <div class="kpi-icon">📊</div>
-                    <div class="kpi-label">Key Insight</div>
-                    <div style="margin-top: 1rem; color: var(--text-primary); font-size: 0.95rem; line-height: 1.6;">
-                        <strong>MercadoLibre offers 5.8% lower average prices in the general segment</strong> compared to ZonaProp ($469k vs $498k). This indicates that MercadoLibre's inventory skews toward more affordable opportunities, making it a valuable source for cost-conscious investors seeking properties in the cheaper segments.
-                    </div>
-                </div>
-            </div>
-        </div>
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-vende-casa-de-4-ambientes-sobre-itaqui-55187028.html" target="_blank" class="barrio-link">Pompeya</a></td>
+            <td class="num">200,000</td>
+            <td class="num">184,000</td>
+            <td class="num">461</td>
+            <td class="num">300</td>
+            <td class="num">434</td>
+            <td class="num">667</td>
+            <td class="num">399</td>
+            <td class="num">613</td>
+            <td class="num">4</td>
+            <td class="desv-pct green">-31.1%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">jardín</span><span class="keyword-tag exterior">quincho</span><span class="keyword-tag exterior">fondo</span><span class="keyword-tag legal">lote</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <!-- Footer -->
-    <div class="footer">
-        <p>Consultoría Moderna | Estudio de Mercado CABA | Marzo 2026 | 6,489 propiedades analizadas</p>
+    <!-- CATEGORY B -->
+    <div id="cat-b" class="tab-content">
+      <div class="table-header-bar">
+        <div class="table-header-bar-item">
+          <label>Categoría</label>
+          <value>CAT B</value>
+        </div>
+        <div class="table-header-bar-item">
+          <label>N Casas</label>
+          <value>360</value>
+        </div>
+        <div class="table-header-bar-item">
+          <label>Media USD/m²</label>
+          <value>648</value>
+        </div>
+        <div class="table-header-bar-item">
+          <label>Mediana USD/m²</label>
+          <value>638</value>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Barrio</th>
+            <th>USD</th>
+            <th>EUR</th>
+            <th>m² tot</th>
+            <th>m² cub*</th>
+            <th>USD/m² tot</th>
+            <th>USD/m² cub</th>
+            <th>EUR/m² tot</th>
+            <th>EUR/m² cub</th>
+            <th>Amb</th>
+            <th>Desv Cat%</th>
+            <th>Keywords</th>
+            <th>Fuente</th>
+            <th>Constraints</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-en-la-boca-estilo-inquilinato-58524285.html" target="_blank" class="barrio-link">La Boca</a></td>
+            <td class="num">69,000</td>
+            <td class="num">63,480</td>
+            <td class="num">441</td>
+            <td class="num">287</td>
+            <td class="num">156</td>
+            <td class="num">240</td>
+            <td class="num">144</td>
+            <td class="num">221</td>
+            <td class="num">6</td>
+            <td class="desv-pct green">-75.9%</td>
+            <td><div class="keywords"><span class="keyword-tag estado">—</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
+
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-oportunidad-de-negocio-a-m-estacion-constitucion-53875607.html" target="_blank" class="barrio-link">Constitución</a></td>
+            <td class="num">90,000</td>
+            <td class="num">82,800</td>
+            <td class="num">350</td>
+            <td class="num">228</td>
+            <td class="num">257</td>
+            <td class="num">395</td>
+            <td class="num">236</td>
+            <td class="num">363</td>
+            <td class="num">—</td>
+            <td class="desv-pct green">-60.3%</td>
+            <td><div class="keywords"><span class="keyword-tag comercial">local</span><span class="keyword-tag legal">lote</span><span class="keyword-tag estado">oportunidad</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
+
+          <tr class="constraint">
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-multifamiliar-6-amb.-c-local-patios-terraza-52810216.html" target="_blank" class="barrio-link">Parque Patricios</a></td>
+            <td class="num">150,000</td>
+            <td class="num">138,000</td>
+            <td class="num">531</td>
+            <td class="num">345</td>
+            <td class="num">282</td>
+            <td class="num">435</td>
+            <td class="num">259</td>
+            <td class="num">400</td>
+            <td class="num">6</td>
+            <td class="desv-pct green">-56.5%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">patio</span><span class="keyword-tag exterior">terraza</span><span class="keyword-tag exterior">cochera</span><span class="keyword-tag exterior">parrilla</span><span class="keyword-tag exterior">quincho</span><span class="keyword-tag comercial">local</span><span class="keyword-tag legal">lote</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">⚠️ vía de tren</td>
+          </tr>
+
+          <tr class="constraint">
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-venta-56921049.html" target="_blank" class="barrio-link">Parque Patricios</a></td>
+            <td class="num">115,000</td>
+            <td class="num">105,800</td>
+            <td class="num">360</td>
+            <td class="num">234</td>
+            <td class="num">319</td>
+            <td class="num">491</td>
+            <td class="num">293</td>
+            <td class="num">452</td>
+            <td class="num">—</td>
+            <td class="desv-pct green">-50.8%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">jardín</span><span class="keyword-tag exterior">patio</span><span class="keyword-tag exterior">terraza</span><span class="keyword-tag exterior">cochera</span><span class="keyword-tag exterior">parrilla</span><span class="keyword-tag exterior">quincho</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">⚠️ vía de tren</td>
+          </tr>
+
+          <tr>
+            <td><a href="https://casa.mercadolibre.com.ar/MLA-3060393220-casa-en-venta-en-pompeya-_JM" target="_blank" class="barrio-link">Pompeya</a></td>
+            <td class="num">145,000</td>
+            <td class="num">133,400</td>
+            <td class="num">447</td>
+            <td class="num">291</td>
+            <td class="num">324</td>
+            <td class="num">498</td>
+            <td class="num">298</td>
+            <td class="num">458</td>
+            <td class="num">7</td>
+            <td class="desv-pct green">-50.0%</td>
+            <td><div class="keywords"><span class="keyword-tag estado">—</span></div></td>
+            <td><span class="source-badge ml">ML</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
+
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-venta-58561155.html" target="_blank" class="barrio-link">Barracas</a></td>
+            <td class="num">85,000</td>
+            <td class="num">78,200</td>
+            <td class="num">260</td>
+            <td class="num">169</td>
+            <td class="num">327</td>
+            <td class="num">503</td>
+            <td class="num">301</td>
+            <td class="num">463</td>
+            <td class="num">5</td>
+            <td class="desv-pct green">-49.5%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">terraza</span><span class="keyword-tag exterior">cochera</span><span class="keyword-tag exterior">fondo</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
+
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-venta-casa-4-amb-terraza-garaje-pompeya-58411856.html" target="_blank" class="barrio-link">Pompeya</a></td>
+            <td class="num">85,000</td>
+            <td class="num">78,200</td>
+            <td class="num">250</td>
+            <td class="num">163</td>
+            <td class="num">340</td>
+            <td class="num">521</td>
+            <td class="num">313</td>
+            <td class="num">480</td>
+            <td class="num">4</td>
+            <td class="desv-pct green">-47.5%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">patio</span><span class="keyword-tag exterior">terraza</span><span class="keyword-tag exterior">parrilla</span><span class="keyword-tag legal">escritura</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
+
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-4-ambientes.-mom-al-2900-51937545.html" target="_blank" class="barrio-link">Pompeya</a></td>
+            <td class="num">120,000</td>
+            <td class="num">110,400</td>
+            <td class="num">344</td>
+            <td class="num">224</td>
+            <td class="num">349</td>
+            <td class="num">536</td>
+            <td class="num">321</td>
+            <td class="num">493</td>
+            <td class="num">4</td>
+            <td class="desv-pct green">-46.1%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">terraza</span><span class="keyword-tag exterior">fondo</span><span class="keyword-tag legal">lote</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
+
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-madariaga-calle-3-bis-entre-2-y-4-57266375.html" target="_blank" class="barrio-link">San Nicolás</a></td>
+            <td class="num">119,000</td>
+            <td class="num">109,480</td>
+            <td class="num">340</td>
+            <td class="num">221</td>
+            <td class="num">350</td>
+            <td class="num">538</td>
+            <td class="num">322</td>
+            <td class="num">495</td>
+            <td class="num">5</td>
+            <td class="desv-pct green">-46.0%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">jardín</span><span class="keyword-tag exterior">cochera</span><span class="keyword-tag interior">luminosa</span><span class="keyword-tag interior">suite</span><span class="keyword-tag legal">lote</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
+
+          <tr>
+            <td><a href="https://www.zonaprop.com.ar/propiedades/clasificado/veclcain-casa-4-ambientes-con-local-58517398.html" target="_blank" class="barrio-link">Pompeya</a></td>
+            <td class="num">92,000</td>
+            <td class="num">84,640</td>
+            <td class="num">260</td>
+            <td class="num">169</td>
+            <td class="num">354</td>
+            <td class="num">544</td>
+            <td class="num">326</td>
+            <td class="num">501</td>
+            <td class="num">4</td>
+            <td class="desv-pct green">-45.4%</td>
+            <td><div class="keywords"><span class="keyword-tag exterior">patio</span><span class="keyword-tag exterior">terraza</span><span class="keyword-tag comercial">local</span><span class="keyword-tag estado">amplio</span><span class="keyword-tag estado">oportunidad</span></div></td>
+            <td><span class="source-badge zp">ZP</span></td>
+            <td class="constraint-icon">—</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <script>
-        // Chart color palette
-        const chartColors = {
-            cyan: '#00d4ff',
-            emerald: '#10b981',
-            amber: '#f59e0b',
-            red: '#ef4444',
-            darkBg: '#1a1f3a',
-            lightText: '#f0f4f8',
-            secondaryText: '#a0aec0'
-        };
+    <!-- Footnotes -->
+    <div class="footnotes">
+      <p><strong>*m² cubiertos estimados al 65% del total cuando no informado</strong><br>
+      <strong>Tasa de cambio:</strong> EUR/USD = 0.92<br>
+      <strong>Datos:</strong> 20 de marzo de 2026<br>
+      <strong>Categoría A:</strong> Máximo USD 200.000 | Mínimo 200 m² totales | Con jardín (91 casas)<br>
+      <strong>Categoría B:</strong> Máximo USD 150.000 | Mínimo 150 m² totales (360 casas)<br>
+      <strong>Fuentes:</strong> ZP = ZonaPropiedad.ar | ML = MercadoLibre.com.ar<br>
+      <strong>Keywords:</strong> <span class="keyword-tag exterior">Exterior</span> <span class="keyword-tag interior">Interior</span> <span class="keyword-tag estado">Estado</span> <span class="keyword-tag legal">Legal</span> <span class="keyword-tag comercial">Comercial</span></p>
+    </div>
 
-        // Data
-        const priceDistData = {
-            labels: ['$0-50k', '$50-100k', '$100-150k', '$150-200k', '$200-300k', '$300-500k', '$500k-1M', '$1M+'],
-            datasets: [{
-                label: 'ZonaProp',
-                data: [12, 85, 350, 625, 1180, 1320, 680, 238],
-                backgroundColor: chartColors.cyan,
-                borderColor: chartColors.cyan,
-                borderWidth: 1
-            }, {
-                label: 'MercadoLibre',
-                data: [4, 40, 190, 295, 540, 508, 277, 145],
-                backgroundColor: chartColors.amber,
-                borderColor: chartColors.amber,
-                borderWidth: 1
-            }]
-        };
+    <footer>
+      <p><strong>Consultoría Moderna</strong> | CABA Market Study | Marzo 2026</p>
+    </footer>
+  </div>
 
-        const avgM2Data = {
-            labels: ['Cheap', 'Refac', 'Recic', 'General'],
-            datasets: [{
-                label: 'Min USD/m²',
-                data: [832, 1168, 1793, 1505],
-                backgroundColor: chartColors.cyan,
-                borderColor: chartColors.cyan,
-                borderWidth: 2,
-                tension: 0.4
-            }, {
-                label: 'Max USD/m²',
-                data: [1141, 1724, 2044, 1959],
-                backgroundColor: chartColors.emerald,
-                borderColor: chartColors.emerald,
-                borderWidth: 2,
-                tension: 0.4
-            }]
-        };
+  <script>
+    function switchTab(tabName) {
+      // Hide all tab contents
+      const contents = document.querySelectorAll('.tab-content');
+      contents.forEach(content => content.classList.remove('active'));
 
-        const sourceData = {
-            labels: ['ZonaProp (70.4%)', 'MercadoLibre (29.6%)'],
-            datasets: [{
-                data: [4570, 1919],
-                backgroundColor: [chartColors.cyan, chartColors.amber],
-                borderColor: [chartColors.cyan, chartColors.amber],
-                borderWidth: 2
-            }]
-        };
+      // Remove active class from all buttons
+      const buttons = document.querySelectorAll('.tab-button');
+      buttons.forEach(button => button.classList.remove('active'));
 
-        const segmentData = {
-            labels: ['Cheap (≤150k)', 'Refaccionable', 'Reciclable', 'General'],
-            datasets: [{
-                label: 'ZonaProp',
-                data: [540, 185, 240, 3605],
-                backgroundColor: chartColors.cyan
-            }, {
-                label: 'MercadoLibre',
-                data: [228, 69, 102, 1520],
-                backgroundColor: chartColors.amber
-            }]
-        };
+      // Show selected tab
+      document.getElementById(tabName).classList.add('active');
 
-        const scatterData = {
-            datasets: [{
-                label: 'ZonaProp',
-                data: Array(500).fill(0).map(() => ({
-                    x: Math.random() * 600 + 50,
-                    y: Math.random() * 800000 + 50000
-                })),
-                backgroundColor: chartColors.cyan,
-                borderColor: chartColors.cyan,
-                borderWidth: 0,
-                radius: 4,
-                alpha: 0.6
-            }, {
-                label: 'MercadoLibre',
-                data: Array(200).fill(0).map(() => ({
-                    x: Math.random() * 600 + 50,
-                    y: Math.random() * 800000 + 50000
-                })),
-                backgroundColor: chartColors.amber,
-                borderColor: chartColors.amber,
-                borderWidth: 0,
-                radius: 4,
-                alpha: 0.6
-            }]
-        };
+      // Mark button as active
+      event.target.classList.add('active');
+    }
 
-        // Initialize all charts
-        function initCharts() {
-            // Price Distribution Chart
-            const priceCtx = document.getElementById('priceDistributionChart');
-            if (priceCtx) {
-                new Chart(priceCtx, {
-                    type: 'bar',
-                    data: priceDistData,
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                labels: { color: chartColors.lightText, font: { size: 12 } }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                stacked: true,
-                                ticks: { color: chartColors.secondaryText },
-                                grid: { color: 'rgba(255,255,255,0.1)' }
-                            },
-                            x: {
-                                stacked: true,
-                                ticks: { color: chartColors.secondaryText },
-                                grid: { color: 'rgba(255,255,255,0.1)' }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Avg m2 Chart
-            const avgM2Ctx = document.getElementById('avgM2Chart');
-            if (avgM2Ctx) {
-                new Chart(avgM2Ctx, {
-                    type: 'line',
-                    data: avgM2Data,
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                labels: { color: chartColors.lightText, font: { size: 12 } }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                ticks: { color: chartColors.secondaryText },
-                                grid: { color: 'rgba(255,255,255,0.1)' }
-                            },
-                            x: {
-                                ticks: { color: chartColors.secondaryText },
-                                grid: { color: 'rgba(255,255,255,0.1)' }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Source Distribution Donut
-            const sourceCtx = document.getElementById('sourceDistribution');
-            if (sourceCtx) {
-                new Chart(sourceCtx, {
-                    type: 'doughnut',
-                    data: sourceData,
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                labels: { color: chartColors.lightText, font: { size: 12 } }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Segment Distribution
-            const segmentCtx = document.getElementById('segmentDistribution');
-            if (segmentCtx) {
-                new Chart(segmentCtx, {
-                    type: 'bar',
-                    data: segmentData,
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                labels: { color: chartColors.lightText, font: { size: 12 } }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                ticks: { color: chartColors.secondaryText },
-                                grid: { color: 'rgba(255,255,255,0.1)' }
-                            },
-                            x: {
-                                ticks: { color: chartColors.secondaryText },
-                                grid: { color: 'rgba(255,255,255,0.1)' }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Scatter Plot
-            const scatterCtx = document.getElementById('scatterPlot');
-            if (scatterCtx) {
-                new Chart(scatterCtx, {
-                    type: 'scatter',
-                    data: scatterData,
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                labels: { color: chartColors.lightText, font: { size: 12 } }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                ticks: { color: chartColors.secondaryText },
-                                grid: { color: 'rgba(255,255,255,0.1)' },
-                                title: { display: true, text: 'Price (USD)' }
-                            },
-                            x: {
-                                ticks: { color: chartColors.secondaryText },
-                                grid: { color: 'rgba(255,255,255,0.1)' },
-                                title: { display: true, text: 'Area (m²)' }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // ROI Gauge Chart
-            const gaugeCtx = document.getElementById('roiGauge');
-            if (gaugeCtx) {
-                new Chart(gaugeCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['ROI', 'Remaining'],
-                        datasets: [{
-                            data: [20, 80],
-                            backgroundColor: [chartColors.emerald, 'rgba(255,255,255,0.1)'],
-                            borderColor: ['transparent', 'transparent'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        rotation: Math.PI,
-                        circumference: Math.PI,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { enabled: false }
-                        }
-                    },
-                    plugins: [{
-                        id: 'gaugeText',
-                        afterDatasetsDraw(chart) {
-                            const ctx = chart.ctx;
-                            const cx = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
-                            const cy = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2;
-                            ctx.fillStyle = chartColors.lightText;
-                            ctx.font = 'bold 24px Inter';
-                            ctx.textAlign = 'center';
-                            ctx.fillText(document.getElementById('roiPercent').textContent, cx, cy);
-                        }
-                    }]
-                });
-            }
+    // Apply color gradient to deviation percentages
+    function colorizeDeviations() {
+      const desvElements = document.querySelectorAll('.desv-pct');
+      desvElements.forEach(el => {
+        const value = parseFloat(el.textContent);
+        if (value < -40) {
+          el.classList.add('green');
+        } else if (value < -20) {
+          el.classList.add('gray');
+        } else if (value < 0) {
+          el.classList.add('orange');
+        } else {
+          el.classList.add('red');
         }
+      });
+    }
 
-        // Tab Navigation
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const tabName = e.target.dataset.tab;
-
-                // Hide all tabs
-                document.querySelectorAll('.tab-content').forEach(tab => {
-                    tab.classList.remove('active');
-                });
-
-                // Remove active from all buttons
-                document.querySelectorAll('.tab-btn').forEach(b => {
-                    b.classList.remove('active');
-                });
-
-                // Show selected tab
-                document.getElementById(tabName).classList.add('active');
-                e.target.classList.add('active');
-
-                // Re-initialize charts if needed
-                setTimeout(() => {
-                    if (tabName === 'dashboard' || tabName === 'source-comparison') {
-                        window.dispatchEvent(new Event('resize'));
-                    }
-                }, 100);
-            });
-        });
-
-        // Counter Animation
-        function animateCounters() {
-            document.querySelectorAll('.count-up').forEach(el => {
-                const target = parseInt(el.dataset.value);
-                let current = 0;
-                const increment = target / 30;
-                const timer = setInterval(() => {
-                    current += increment;
-                    if (current >= target) {
-                        el.textContent = target.toLocaleString();
-                        clearInterval(timer);
-                    } else {
-                        el.textContent = Math.floor(current).toLocaleString();
-                    }
-                }, 30);
-            });
-        }
-
-        // Calculator Logic
-        document.getElementById('purchasePrice').addEventListener('input', updateCalculator);
-        document.getElementById('area').addEventListener('input', updateCalculator);
-        document.getElementById('renovationCost').addEventListener('input', updateCalculator);
-        document.getElementById('targetBarrio').addEventListener('change', updateCalculator);
-
-        function updateCalculator() {
-            const price = parseFloat(document.getElementById('purchasePrice').value);
-            const area = parseFloat(document.getElementById('area').value);
-            const renoPerM2 = parseFloat(document.getElementById('renovationCost').value);
-            const targetM2 = parseFloat(document.getElementById('targetBarrio').value);
-
-            // Update display values
-            document.getElementById('priceValue').textContent = '$' + price.toLocaleString();
-            document.getElementById('areaValue').textContent = area.toLocaleString() + ' m²';
-            document.getElementById('renoValue').textContent = '$' + renoPerM2.toLocaleString() + '/m²';
-
-            // Calculate
-            const renoTotal = area * renoPerM2;
-            const totalInvestment = price + renoTotal;
-            const postRenoValue = area * targetM2;
-            const profit = postRenoValue - totalInvestment;
-            const roi = (profit / totalInvestment) * 100;
-
-            // Update results
-            document.getElementById('totalInvestment').textContent = '$' + totalInvestment.toLocaleString();
-            document.getElementById('postRenoValue').textContent = '$' + postRenoValue.toLocaleString();
-            document.getElementById('grossProfit').textContent = '$' + Math.max(0, profit).toLocaleString();
-            document.getElementById('roiPercent').textContent = Math.max(0, roi).toFixed(1) + '%';
-
-            // Update gauge
-            const gaugeCharts = Chart.helpers.findChartContainer(document.getElementById('roiGauge'));
-            if (gaugeCharts) {
-                gaugeCharts.data.datasets[0].data = [Math.min(100, Math.max(0, roi)), Math.max(0, 100 - roi)];
-                gaugeCharts.update();
-            }
-        }
-
-        // Initialize on load
-        window.addEventListener('load', () => {
-            animateCounters();
-            setTimeout(initCharts, 500);
-            updateCalculator();
-        });
-    </script>
+    // Initialize
+    document.addEventListener('DOMContentLoaded', colorizeDeviations);
+  </script>
 </body>
 </html>
