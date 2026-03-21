@@ -68,488 +68,647 @@
         }
 
         @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-            100% {
-                opacity: 1;
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
-        .main-container {
-            display: flex;
-            height: calc(100vh - 80px);
-        }
-
-        .sidebar {
-            width: 240px;
-            background: #111827;
-            border-right: 1px solid #334155;
-            padding: 24px 0;
-            overflow-y: auto;
-        }
-
-        .sidebar-section {
-            padding: 0 16px 24px 16px;
-        }
-
-        .sidebar-title {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #64748b;
-            margin-bottom: 12px;
-            letter-spacing: 0.5px;
-        }
-
-        .sidebar-button {
-            display: block;
-            width: 100%;
-            padding: 10px 12px;
-            margin-bottom: 6px;
-            background: transparent;
-            color: #cbd5e1;
-            border: 1px solid #334155;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar-button:hover {
-            background: #1e293b;
-            border-color: #475569;
-            color: #e2e8f0;
-        }
-
-        .sidebar-button.active {
-            background: #0f172a;
-            border-color: #00d4ff;
-            color: #00d4ff;
-        }
-
-        .content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #0a0e1a;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 0;
-            background: #111827;
+        .tabs-container {
             border-bottom: 1px solid #334155;
+            background-color: #0a0e1a;
             padding: 0 32px;
+            display: flex;
+            gap: 32px;
         }
 
-        .tab {
-            padding: 16px 20px;
-            background: transparent;
-            color: #94a3b8;
+        .tab-button {
+            padding: 16px 0;
             border: none;
-            border-bottom: 2px solid transparent;
+            background: none;
+            color: #94a3b8;
+            cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            cursor: pointer;
+            border-bottom: 2px solid transparent;
             transition: all 0.3s ease;
+            position: relative;
         }
 
-        .tab:hover {
+        .tab-button:hover {
             color: #cbd5e1;
         }
 
-        .tab.active {
+        .tab-button.active {
             color: #00d4ff;
             border-bottom-color: #00d4ff;
         }
 
-        .tab-content {
-            flex: 1;
-            overflow-y: auto;
+        .main-content {
             padding: 32px;
+            max-width: 1600px;
+            margin: 0 auto;
         }
 
-        .tab-content.hidden {
+        .tab-content {
             display: none;
         }
 
-        .grid {
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .kpi-card {
+            background-color: #111827;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 8px;
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 24px;
             margin-bottom: 32px;
         }
 
-        .card {
-            background: #111827;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 24px;
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            border-color: #475569;
-            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.05);
-        }
-
-        .card-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #94a3b8;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-        }
-
-        .card-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #e2e8f0;
-            margin-bottom: 12px;
-        }
-
-        .card-subtitle {
-            font-size: 12px;
-            color: #64748b;
-        }
-
         .chart-container {
-            background: #111827;
+            background-color: #111827;
             border: 1px solid #334155;
             border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 24px;
+            padding: 20px;
         }
 
         .chart-title {
             font-size: 14px;
             font-weight: 600;
             color: #e2e8f0;
-            margin-bottom: 20px;
-        }
-
-        .search-container {
-            margin-bottom: 32px;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 12px;
             margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .search-input {
-            flex: 1;
-            padding: 12px 16px;
-            background: #111827;
+        .chart-canvas {
+            max-height: 350px;
+        }
+
+        /* Table Styles */
+        .filters-container {
+            background-color: #111827;
             border: 1px solid #334155;
-            border-radius: 6px;
-            color: #e2e8f0;
-            font-size: 14px;
-            transition: all 0.3s ease;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
         }
 
-        .search-input:focus {
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        select:focus,
+        input:focus {
             outline: none;
             border-color: #00d4ff;
             box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
         }
 
-        .search-button {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
-            color: #0a0e1a;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .table-wrapper {
+            background-color: #111827;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        .search-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
-        }
-
-        .results-table {
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 32px;
+            font-size: 13px;
         }
 
-        .results-table thead {
-            background: #111827;
-            border: 1px solid #334155;
+        thead {
+            background-color: #0f172a;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
-        .results-table th {
+        th {
             padding: 12px 16px;
             text-align: left;
-            font-size: 12px;
             font-weight: 600;
             color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .results-table td {
-            padding: 12px 16px;
             border-bottom: 1px solid #334155;
-            font-size: 13px;
-            color: #cbd5e1;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
         }
 
-        .results-table tbody tr:hover {
-            background: #1e293b;
+        th:hover {
+            color: #cbd5e1;
+            background-color: #1e293b;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        tbody tr:hover {
+            background-color: #1e293b;
+        }
+
+        .neighborhood-cell {
+            color: #00d4ff;
+            font-weight: 500;
+        }
+
+        .title-cell {
+            color: #e2e8f0;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .title-cell:hover {
+            color: #00d4ff;
+            text-decoration: underline;
         }
 
         .price-cell {
-            color: #10b981;
             font-weight: 600;
+            color: #10b981;
         }
 
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #94a3b8;
+        .price-cell.yellow { color: #f59e0b; }
+        .price-cell.orange { color: #f97316; }
+        .price-cell.red { color: #ef4444; }
+
+        .source-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
         }
 
-        .error {
-            background: #7f1d1d;
-            color: #fecaca;
-            padding: 16px;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            font-size: 14px;
+        .source-badge.zp {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
         }
 
-        .success {
-            background: #065f46;
-            color: #d1fae5;
-            padding: 16px;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            font-size: 14px;
+        .source-badge.ml {
+            background-color: rgba(168, 85, 247, 0.2);
+            color: #d8b4fe;
         }
 
-        .filter-group {
+        .tags-cell {
             display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
             flex-wrap: wrap;
+            gap: 4px;
         }
 
-        .filter-button {
-            padding: 8px 16px;
-            background: #111827;
-            border: 1px solid #334155;
-            border-radius: 6px;
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            background-color: #334155;
             color: #cbd5e1;
-            font-size: 12px;
+            border-radius: 3px;
+            font-size: 11px;
             font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
         }
 
-        .filter-button.active {
-            background: #0f172a;
-            border-color: #00d4ff;
+        .tag.special {
+            background-color: rgba(0, 212, 255, 0.2);
             color: #00d4ff;
         }
 
-        .filter-button:hover {
-            border-color: #475569;
-            background: #1e293b;
-        }
-
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .stat-box {
-            background: #111827;
-            border: 1px solid #334155;
-            border-radius: 6px;
-            padding: 16px;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            color: #94a3b8;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-            letter-spacing: 0.5px;
-        }
-
-        .stat-value {
-            font-size: 22px;
-            font-weight: 700;
-            color: #e2e8f0;
+        .warning-icon {
+            display: inline-block;
+            margin-left: 4px;
+            color: #ef4444;
+            font-weight: bold;
         }
 
         .pagination {
             display: flex;
-            gap: 8px;
             justify-content: center;
-            margin-top: 24px;
+            gap: 8px;
+            padding: 24px;
+            align-items: center;
         }
 
         .pagination button {
             padding: 8px 12px;
-            background: #111827;
+            background-color: #1e293b;
             border: 1px solid #334155;
-            color: #cbd5e1;
+            color: #e2e8f0;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s ease;
+            font-weight: 500;
+            transition: all 0.2s;
         }
 
-        .pagination button:hover {
-            border-color: #475569;
-            background: #1e293b;
-        }
-
-        .pagination button.active {
-            background: #00d4ff;
-            color: #0a0e1a;
+        .pagination button:hover:not(:disabled) {
+            background-color: #334155;
             border-color: #00d4ff;
+            color: #00d4ff;
         }
 
-        .tooltip {
-            position: relative;
-            display: inline-block;
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            background-color: #1e293b;
-            color: #e2e8f0;
-            text-align: center;
-            border-radius: 6px;
-            padding: 8px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -50px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            white-space: nowrap;
-            font-size: 12px;
-            border: 1px solid #334155;
+        .pagination-info {
+            color: #94a3b8;
+            font-size: 13px;
         }
 
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .comparison-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 32px;
-        }
-
-        .comparison-card {
-            background: #111827;
+        /* Search Tab */
+        .search-container {
+            background-color: #111827;
             border: 1px solid #334155;
             border-radius: 8px;
-            padding: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
         }
 
-        .comparison-title {
-            font-size: 14px;
-            font-weight: 600;
+        .search-input-group {
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: #0f172a;
+            border: 1px solid #334155;
             color: #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .quick-keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .keyword-pill {
+            padding: 6px 12px;
+            background-color: #334155;
+            color: #cbd5e1;
+            border: 1px solid #475569;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .keyword-pill:hover {
+            background-color: #475569;
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
+        .search-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .search-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .result-card {
+            background-color: #111827;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+
+        .result-card:hover {
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+        }
+
+        .result-title {
+            font-weight: 600;
+            color: #00d4ff;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .result-meta {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .result-price {
+            font-weight: 700;
+            color: #10b981;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .result-description {
+            font-size: 12px;
+            color: #cbd5e1;
+            line-height: 1.5;
             margin-bottom: 12px;
         }
 
-        .comparison-metric {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 13px;
+        .highlight {
+            background-color: rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+            font-weight: 600;
         }
 
-        .comparison-metric-label {
+        .result-link {
+            display: inline-block;
+            padding: 6px 12px;
+            background-color: #00d4ff;
+            color: #0a0e1a;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .result-link:hover {
+            background-color: #00b8d4;
+        }
+
+        .stats-banner {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 12px;
             color: #94a3b8;
         }
 
-        .comparison-metric-value {
-            color: #e2e8f0;
-            font-weight: 500;
-        }
-
-        .alert {
-            background: #1e3a1f;
-            border-left: 4px solid #10b981;
-            padding: 12px 16px;
-            border-radius: 4px;
+        /* Opportunities Tab */
+        .opportunity-card {
+            background-color: #111827;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
             margin-bottom: 16px;
-            color: #d1fae5;
-            font-size: 13px;
+            transition: all 0.2s;
         }
 
-        .alert.warning {
-            background: #3f341f;
-            border-left-color: #f59e0b;
-            color: #fcd34d;
+        .opportunity-card:hover {
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
         }
 
-        .alert.danger {
-            background: #3f1f1f;
-            border-left-color: #ef4444;
-            color: #fecaca;
+        .opportunity-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background-color: #10b981;
+            color: white;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .opportunity-badge.refurbish {
+            background-color: #f59e0b;
+        }
+
+        .opportunity-badge.land {
+            background-color: #06b6d4;
+        }
+
+        .opportunity-title {
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .opportunity-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 12px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .detail-label {
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-weight: 500;
+            font-size: 10px;
+        }
+
+        .detail-value {
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        .discount-badge {
+            font-size: 18px;
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        .opportunity-link {
+            display: inline-block;
+            padding: 6px 12px;
+            background-color: #00d4ff;
+            color: #0a0e1a;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .opportunity-link:hover {
+            background-color: #00b8d4;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #334155;
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 20px;
+        }
+
+        .loading-text {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        /* Error Message */
+        .error-message {
+            background-color: #7f1d1d;
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 24px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-container {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px 12px;
+            }
         }
 
         @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                border-right: none;
-                border-bottom: 1px solid #334155;
-                display: flex;
-                gap: 8px;
-                padding: 12px;
-                overflow-x: auto;
-            }
-
-            .sidebar-section {
-                padding: 0;
-                flex-shrink: 0;
-            }
-
             .header {
                 flex-direction: column;
-                gap: 12px;
-                align-items: flex-start;
-            }
-
-            .tabs {
-                overflow-x: auto;
-                padding: 0 16px;
-            }
-
-            .tab-content {
+                gap: 16px;
                 padding: 16px;
             }
 
-            .grid {
+            .tabs-container {
+                padding: 0 16px;
+                gap: 16px;
+                overflow-x: auto;
+            }
+
+            .main-content {
+                padding: 16px;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .search-results {
                 grid-template-columns: 1fr;
+            }
+
+            .tags-cell {
+                display: none;
+            }
+
+            th:nth-child(n+5),
+            td:nth-child(n+5) {
+                display: none;
             }
         }
     </style>
@@ -558,1384 +717,396 @@
     <div class="header">
         <div class="header-left">
             <h1>CABA Market Study</h1>
-            <p class="header-subtitle">Real Estate Dashboard - Unified Analytics V5</p>
+            <div class="header-subtitle">Real Estate Market Dashboard</div>
         </div>
         <div class="connection-status">
-            <span class="status-dot connected"></span>
-            <span id="connectionStatus">Connected to Supabase</span>
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Conectando...</span>
         </div>
     </div>
 
-    <div class="main-container">
-        <div class="sidebar">
-            <div class="sidebar-section">
-                <div class="sidebar-title">Panorama</div>
-                <button class="sidebar-button active" data-view="overview">Overview</button>
-                <button class="sidebar-button" data-view="market-trends">Market Trends</button>
-                <button class="sidebar-button" data-view="distribution">Distribution</button>
-            </div>
-            <div class="sidebar-section">
-                <div class="sidebar-title">Propiedades</div>
-                <button class="sidebar-button" data-view="all-properties">All Properties</button>
-                <button class="sidebar-button" data-view="filtered-search">Filtered Search</button>
-                <button class="sidebar-button" data-view="property-stats">Statistics</button>
-            </div>
-            <div class="sidebar-section">
-                <div class="sidebar-title">Super Searcher</div>
-                <button class="sidebar-button" data-view="advanced-search">Advanced Search</button>
-                <button class="sidebar-button" data-view="location-analysis">Location Analysis</button>
-            </div>
-            <div class="sidebar-section">
-                <div class="sidebar-title">Oportunidades</div>
-                <button class="sidebar-button" data-view="opportunities">Opportunities</button>
-                <button class="sidebar-button" data-view="alerts">Smart Alerts</button>
+    <div class="tabs-container">
+        <button class="tab-button active" data-tab="panorama">Panorama</button>
+        <button class="tab-button" data-tab="propiedades">Propiedades</button>
+        <button class="tab-button" data-tab="searcher">Super Searcher</button>
+        <button class="tab-button" data-tab="oportunidades">Oportunidades</button>
+    </div>
+
+    <div class="main-content">
+        <!-- Tab 1: Panorama -->
+        <div id="panorama" class="tab-content active">
+            <div id="panoramaContent">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Cargando datos de mercado...</div>
+                </div>
             </div>
         </div>
 
-        <div class="content">
-            <!-- OVERVIEW TAB -->
-            <div id="overview" class="tab-content">
-                <h2 style="font-size: 20px; margin-bottom: 24px; color: #e2e8f0;">Market Overview</h2>
-                
-                <div class="stats-row">
-                    <div class="stat-box">
-                        <div class="stat-label">Total Properties</div>
-                        <div class="stat-value" id="totalProperties">-</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Average Price</div>
-                        <div class="stat-value" id="avgPrice">-</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Median Price</div>
-                        <div class="stat-value" id="medianPrice">-</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Price Range</div>
-                        <div class="stat-value" id="priceRange">-</div>
-                    </div>
-                </div>
-
-                <div class="chart-container">
-                    <h3 class="chart-title">Price Distribution by Neighborhood</h3>
-                    <canvas id="overviewChart"></canvas>
-                </div>
-
-                <div class="chart-container">
-                    <h3 class="chart-title">Property Count by Zone</h3>
-                    <canvas id="zoneChart"></canvas>
-                </div>
-
-                <div class="chart-container">
-                    <h3 class="chart-title">Price vs Size Correlation</h3>
-                    <canvas id="correlationChart"></canvas>
+        <!-- Tab 2: Propiedades -->
+        <div id="propiedades" class="tab-content">
+            <div id="propiedadesContent">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Cargando propiedades...</div>
                 </div>
             </div>
+        </div>
 
-            <!-- MARKET TRENDS TAB -->
-            <div id="market-trends" class="tab-content hidden">
-                <h2 style="font-size: 20px; margin-bottom: 24px; color: #e2e8f0;">Market Trends</h2>
-                
-                <div class="chart-container">
-                    <h3 class="chart-title">Price Trends by Neighborhood</h3>
-                    <canvas id="trendsChart"></canvas>
-                </div>
-
-                <div class="chart-container">
-                    <h3 class="chart-title">Market Momentum Index</h3>
-                    <canvas id="momentumChart"></canvas>
-                </div>
-
-                <div class="stats-row">
-                    <div class="stat-box">
-                        <div class="stat-label">Most Active Zone</div>
-                        <div class="stat-value" id="activeZone">-</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Highest Appreciation</div>
-                        <div class="stat-value" id="appreciation">-</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Avg Deal Size</div>
-                        <div class="stat-value" id="dealSize">-</div>
-                    </div>
+        <!-- Tab 3: Super Searcher -->
+        <div id="searcher" class="tab-content">
+            <div id="searcherContent">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Preparando búsqueda...</div>
                 </div>
             </div>
+        </div>
 
-            <!-- DISTRIBUTION TAB -->
-            <div id="distribution" class="tab-content hidden">
-                <h2 style="font-size: 20px; margin-bottom: 24px; color: #e2e8f0;">Property Distribution</h2>
-                
-                <div class="chart-container">
-                    <h3 class="chart-title">Distribution by Price Range</h3>
-                    <canvas id="distributionChart"></canvas>
-                </div>
-
-                <div class="chart-container">
-                    <h3 class="chart-title">Distribution by Type</h3>
-                    <canvas id="typeChart"></canvas>
-                </div>
-
-                <div class="comparison-grid">
-                    <div class="comparison-card">
-                        <div class="comparison-title">Apartments</div>
-                        <div class="comparison-metric">
-                            <span class="comparison-metric-label">Count</span>
-                            <span class="comparison-metric-value" id="apartmentCount">-</span>
-                        </div>
-                        <div class="comparison-metric">
-                            <span class="comparison-metric-label">Avg Price</span>
-                            <span class="comparison-metric-value" id="apartmentPrice">-</span>
-                        </div>
-                        <div class="comparison-metric">
-                            <span class="comparison-metric-label">Median Price</span>
-                            <span class="comparison-metric-value" id="apartmentMedian">-</span>
-                        </div>
-                    </div>
-
-                    <div class="comparison-card">
-                        <div class="comparison-title">Houses</div>
-                        <div class="comparison-metric">
-                            <span class="comparison-metric-label">Count</span>
-                            <span class="comparison-metric-value" id="houseCount">-</span>
-                        </div>
-                        <div class="comparison-metric">
-                            <span class="comparison-metric-label">Avg Price</span>
-                            <span class="comparison-metric-value" id="housePrice">-</span>
-                        </div>
-                        <div class="comparison-metric">
-                            <span class="comparison-metric-label">Median Price</span>
-                            <span class="comparison-metric-value" id="houseMedian">-</span>
-                        </div>
-                    </div>
-
-                    <div class="comparison-card">
-                        <div class="comparison-title">Lots</div>
-                        <div class="comparison-metric">
-                            <span class="comparison-metric-label">Count</span>
-                            <span class="comparison-metric-value" id="lotCount">-</span>
-                        </div>
-                        <div class="comparison-metric">
-                            <span class="comparison-metric-label">Avg Price</span>
-                            <span class="comparison-metric-value" id="lotPrice">-</span>
-                        </div>
-                        <div class="comparison-metric">
-                            <span class="comparison-metric-label">Median Price</span>
-                            <span class="comparison-metric-value" id="lotMedian">-</span>
-                        </div>
-                    </div>
-
-                    <div class="comparison-card">
-                        <div class="comparison-title">Others</div>
-                        <div class="comparison-metric">
-                            <span class="comparison-metric-label">Count</span>
-                            <span class="comparison-metric-value" id="otherCount">-</span>
-                        </div>
-                        <div class="comparison-metric">
-                            <span class="comparison-metric-label">Avg Price</span>
-                            <span class="comparison-metric-value" id="otherPrice">-</span>
-                        </div>
-                        <div class="comparison-metric">
-                            <span class="comparison-metric-label">Median Price</span>
-                            <span class="comparison-metric-value" id="otherMedian">-</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ALL PROPERTIES TAB -->
-            <div id="all-properties" class="tab-content hidden">
-                <h2 style="font-size: 20px; margin-bottom: 24px; color: #e2e8f0;">All Properties</h2>
-                
-                <div class="search-box">
-                    <input type="text" id="globalSearchInput" class="search-input" placeholder="Search by address, zone, or property ID...">
-                    <button class="search-button" onclick="performGlobalSearch()">Search</button>
-                </div>
-
-                <div id="propertiesLoading" class="loading" style="display: none;">Loading properties...</div>
-                <table class="results-table" id="propertiesTable" style="display: none;">
-                    <thead>
-                        <tr>
-                            <th>Address</th>
-                            <th>Zone</th>
-                            <th>Type</th>
-                            <th>Rooms</th>
-                            <th>Size (m²)</th>
-                            <th>Price (USD)</th>
-                            <th>$/m²</th>
-                        </tr>
-                    </thead>
-                    <tbody id="propertiesTableBody">
-                    </tbody>
-                </table>
-                <div id="propertiesError" class="error" style="display: none;"></div>
-            </div>
-
-            <!-- FILTERED SEARCH TAB -->
-            <div id="filtered-search" class="tab-content hidden">
-                <h2 style="font-size: 20px; margin-bottom: 24px; color: #e2e8f0;">Filtered Property Search</h2>
-                
-                <div class="search-box" style="margin-bottom: 24px;">
-                    <input type="number" id="minPrice" class="search-input" placeholder="Min Price (USD)" style="flex: 0.5;">
-                    <input type="number" id="maxPrice" class="search-input" placeholder="Max Price (USD)" style="flex: 0.5;">
-                    <input type="number" id="minSize" class="search-input" placeholder="Min Size (m²)" style="flex: 0.5;">
-                    <input type="number" id="maxSize" class="search-input" placeholder="Max Size (m²)" style="flex: 0.5;">
-                </div>
-
-                <div class="filter-group">
-                    <button class="filter-button active" onclick="filterByType('all')">All Types</button>
-                    <button class="filter-button" onclick="filterByType('apartment')">Apartments</button>
-                    <button class="filter-button" onclick="filterByType('house')">Houses</button>
-                    <button class="filter-button" onclick="filterByType('lot')">Lots</button>
-                    <button class="filter-button" onclick="filterByType('other')">Others</button>
-                </div>
-
-                <div class="filter-group">
-                    <input type="text" id="zoneFilter" class="search-input" placeholder="Filter by Zone..." style="flex: 1;">
-                    <button class="search-button" onclick="applyFilters()">Apply Filters</button>
-                </div>
-
-                <div id="filteredLoading" class="loading" style="display: none;">Loading filtered results...</div>
-                <table class="results-table" id="filteredTable" style="display: none;">
-                    <thead>
-                        <tr>
-                            <th>Address</th>
-                            <th>Zone</th>
-                            <th>Type</th>
-                            <th>Price (USD)</th>
-                            <th>Size (m²)</th>
-                            <th>Rooms</th>
-                        </tr>
-                    </thead>
-                    <tbody id="filteredTableBody">
-                    </tbody>
-                </table>
-                <div id="filteredError" class="error" style="display: none;"></div>
-            </div>
-
-            <!-- PROPERTY STATISTICS TAB -->
-            <div id="property-stats" class="tab-content hidden">
-                <h2 style="font-size: 20px; margin-bottom: 24px; color: #e2e8f0;">Property Statistics</h2>
-                
-                <div class="stats-row">
-                    <div class="stat-box">
-                        <div class="stat-label">Total Unique Properties</div>
-                        <div class="stat-value" id="totalUnique">-</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Data Quality Score</div>
-                        <div class="stat-value" id="qualityScore">-</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Average Price/m²</div>
-                        <div class="stat-value" id="avgPriceSqm">-</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Median Rooms</div>
-                        <div class="stat-value" id="medianRooms">-</div>
-                    </div>
-                </div>
-
-                <div class="chart-container">
-                    <h3 class="chart-title">Price Distribution (Log Scale)</h3>
-                    <canvas id="priceDistributionChart"></canvas>
-                </div>
-
-                <div class="chart-container">
-                    <h3 class="chart-title">Average Price by Zone (Top 15)</h3>
-                    <canvas id="zoneAnalysisChart"></canvas>
-                </div>
-            </div>
-
-            <!-- ADVANCED SEARCH TAB -->
-            <div id="advanced-search" class="tab-content hidden">
-                <h2 style="font-size: 20px; margin-bottom: 24px; color: #e2e8f0;">Advanced Property Search</h2>
-                
-                <div class="search-container">
-                    <div class="search-box">
-                        <input type="text" id="addressSearch" class="search-input" placeholder="Search by address or full-text query..." style="flex: 1;">
-                        <button class="search-button" onclick="performAdvancedSearch()">Search</button>
-                    </div>
-
-                    <div class="filter-group">
-                        <select id="roomsFilter" class="search-input" style="flex: 0.5;">
-                            <option value="">Any Rooms</option>
-                            <option value="1">1 Room</option>
-                            <option value="2">2 Rooms</option>
-                            <option value="3">3 Rooms</option>
-                            <option value="4+">4+ Rooms</option>
-                        </select>
-                        <select id="typeFilter" class="search-input" style="flex: 0.5;">
-                            <option value="">All Types</option>
-                            <option value="apartment">Apartments</option>
-                            <option value="house">Houses</option>
-                            <option value="lot">Lots</option>
-                            <option value="other">Other</option>
-                        </select>
-                        <button class="search-button" onclick="performAdvancedSearch()">Filter</button>
-                    </div>
-                </div>
-
-                <div id="advancedLoading" class="loading" style="display: none;">Searching...</div>
-                <table class="results-table" id="advancedTable" style="display: none;">
-                    <thead>
-                        <tr>
-                            <th>Address</th>
-                            <th>Zone</th>
-                            <th>Type</th>
-                            <th>Rooms</th>
-                            <th>Size (m²)</th>
-                            <th>Price (USD)</th>
-                            <th>Source</th>
-                        </tr>
-                    </thead>
-                    <tbody id="advancedTableBody">
-                    </tbody>
-                </table>
-                <div id="advancedError" class="error" style="display: none;"></div>
-            </div>
-
-            <!-- LOCATION ANALYSIS TAB -->
-            <div id="location-analysis" class="tab-content hidden">
-                <h2 style="font-size: 20px; margin-bottom: 24px; color: #e2e8f0;">Location Analysis</h2>
-                
-                <div class="search-box">
-                    <input type="text" id="locationInput" class="search-input" placeholder="Enter zone or location..." style="flex: 1;">
-                    <button class="search-button" onclick="analyzeLocation()">Analyze</button>
-                </div>
-
-                <div id="locationStats" style="display: none;">
-                    <div class="stats-row">
-                        <div class="stat-box">
-                            <div class="stat-label">Properties in Zone</div>
-                            <div class="stat-value" id="locationCount">-</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">Average Price</div>
-                            <div class="stat-value" id="locationAvgPrice">-</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">Median Price</div>
-                            <div class="stat-value" id="locationMedianPrice">-</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">Price/m²</div>
-                            <div class="stat-value" id="locationPricePerSqm">-</div>
-                        </div>
-                    </div>
-
-                    <div class="chart-container">
-                        <h3 class="chart-title">Price Distribution in Zone</h3>
-                        <canvas id="locationChart"></canvas>
-                    </div>
-                </div>
-                <div id="locationError" class="error" style="display: none;"></div>
-            </div>
-
-            <!-- OPPORTUNITIES TAB -->
-            <div id="opportunities" class="tab-content hidden">
-                <h2 style="font-size: 20px; margin-bottom: 24px; color: #e2e8f0;">Market Opportunities</h2>
-                
-                <div class="alert warning">
-                    Opportunities identified based on price anomalies, market trends, and cross-source analysis. Data last updated: <span id="lastUpdate">-</span>
-                </div>
-
-                <div id="opportunitiesLoading" class="loading" style="display: none;">Analyzing market opportunities...</div>
-                <table class="results-table" id="opportunitiesTable" style="display: none;">
-                    <thead>
-                        <tr>
-                            <th>Address</th>
-                            <th>Zone</th>
-                            <th>Type</th>
-                            <th>Market Price</th>
-                            <th>Listed Price</th>
-                            <th>Variance</th>
-                            <th>Opportunity</th>
-                        </tr>
-                    </thead>
-                    <tbody id="opportunitiesTableBody">
-                    </tbody>
-                </table>
-                <div id="opportunitiesError" class="error" style="display: none;"></div>
-            </div>
-
-            <!-- SMART ALERTS TAB -->
-            <div id="alerts" class="tab-content hidden">
-                <h2 style="font-size: 20px; margin-bottom: 24px; color: #e2e8f0;">Smart Market Alerts</h2>
-                
-                <div id="alertsList">
-                    <div class="alert">
-                        <strong>Market Activity Alert:</strong> Detected 1,247 new listings this month with average price increase of 2.3%
-                    </div>
-                    <div class="alert warning">
-                        <strong>Zone Analysis:</strong> San Telmo showing unusual price volatility - recommend caution
-                    </div>
-                    <div class="alert">
-                        <strong>Opportunity Detected:</strong> 89 undervalued properties identified based on neighborhood comparison
-                    </div>
-                    <div class="alert warning">
-                        <strong>Data Quality Note:</strong> Some properties missing complete information - results may vary
-                    </div>
-                </div>
-
-                <div class="chart-container" style="margin-top: 32px;">
-                    <h3 class="chart-title">Market Activity Timeline</h3>
-                    <canvas id="alertsChart"></canvas>
+        <!-- Tab 4: Oportunidades -->
+        <div id="oportunidades" class="tab-content">
+            <div id="oportunidadesContent">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Analizando oportunidades...</div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Supabase configuration
-        const SUPABASE_URL = 'https://tlpsvuomqwqzlqdllokv.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRscHN2dW9tcXdxemxxZGxsb2t2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTA0MDMxMTYsImV4cCI6MTk5OTk5OTk5OX0.1vkuEJVd5Tq2hIqNr5oKpCNxv0FUWJMKXGPxK0D4s-Y';
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const SUPABASE_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
 
+        const DEFAULT_HEADERS = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+        };
+
+        // ============================================
+        // STATE
+        // ============================================
         let allProperties = [];
-        let currentChart = null;
+        let marketStats = [];
+        let currentTab = 'panorama';
+        let currentPage = 1;
+        const itemsPerPage = 50;
 
-        // Initialize application
-        async function initializeApp() {
-            console.log('Initializing CABA Market Study Dashboard...');
-            setupEventListeners();
-            await loadProperties();
-            updateDashboard();
-        }
+        // Filter state
+        let filterPriceMin = 0;
+        let filterPriceMax = 5000000;
+        let filterNeighborhood = '';
+        let filterSource = '';
+        let filterMinArea = 0;
 
-        // Setup event listeners
-        function setupEventListeners() {
-            // Sidebar navigation
-            document.querySelectorAll('.sidebar-button').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    document.querySelectorAll('.sidebar-button').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-                    
-                    const viewName = e.target.getAttribute('data-view');
-                    showView(viewName);
-                });
+        // Chart instances
+        let neighborhoodsChart = null;
+        let priceChart = null;
+        let segmentChart = null;
+
+        // ============================================
+        // TAB SWITCHING
+        // ============================================
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const tabName = e.target.dataset.tab;
+                switchTab(tabName);
+            });
+        });
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
             });
 
-            // Tab navigation
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', (e) => {
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    e.target.classList.add('active');
-                    
-                    const tabName = e.target.getAttribute('data-tab');
-                    showTab(tabName);
-                });
-            });
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
 
-            // Close welcome modal on click
-            const modal = document.getElementById('welcomeModal');
-            if (modal) {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.style.display = 'none';
-                    }
-                });
-            }
+            currentTab = tabName;
+
+            // Load content if not already loaded
+            if (tabName === 'panorama') initPanorama();
+            else if (tabName === 'propiedades') initPropiedades();
+            else if (tabName === 'searcher') initSearcher();
+            else if (tabName === 'oportunidades') initOportunidades();
         }
 
-        // Load properties from Supabase
-        async function loadProperties() {
+        // ============================================
+        // CONNECTION STATUS
+        // ============================================
+        async function updateConnectionStatus() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+
             try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=*`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Content-Type': 'application/json'
-                    }
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=count()&limit=1`, {
+                    headers: DEFAULT_HEADERS
                 });
 
                 if (response.ok) {
-                    allProperties = await response.json();
-                    console.log(`Loaded ${allProperties.length} properties`);
-                    updateConnectionStatus(true);
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'Conectado en vivo';
                 } else {
-                    console.error('Failed to load properties:', response.statusText);
-                    updateConnectionStatus(false);
+                    statusDot.classList.remove('connected');
+                    statusText.textContent = 'Desconectado';
                 }
             } catch (error) {
-                console.error('Error loading properties:', error);
-                updateConnectionStatus(false);
-            }
-        }
-
-        // Update connection status
-        function updateConnectionStatus(connected) {
-            const statusEl = document.getElementById('connectionStatus');
-            const statusDot = document.querySelector('.status-dot');
-            
-            if (connected) {
-                statusEl.textContent = 'Connected to Supabase';
-                statusDot.classList.add('connected');
-            } else {
-                statusEl.textContent = 'Disconnected';
                 statusDot.classList.remove('connected');
+                statusText.textContent = 'Error de conexión';
             }
         }
 
-        // Show view
-        function showView(viewName) {
-            // Hide all tab-contents
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
+        updateConnectionStatus();
 
-            // Show selected view
-            const viewEl = document.getElementById(viewName);
-            if (viewEl) {
-                viewEl.classList.remove('hidden');
-                
-                // Trigger view-specific initialization
-                if (viewName === 'overview') {
-                    updateOverviewDashboard();
-                } else if (viewName === 'all-properties') {
-                    loadAllPropertiesTable();
-                } else if (viewName === 'market-trends') {
-                    updateMarketTrends();
-                } else if (viewName === 'distribution') {
-                    updateDistribution();
-                } else if (viewName === 'property-stats') {
-                    updatePropertyStats();
-                } else if (viewName === 'opportunities') {
-                    loadOpportunities();
-                }
+        // ============================================
+        // FETCH FUNCTIONS
+        // ============================================
+        async function fetchProperties() {
+            if (allProperties.length > 0) return allProperties;
+
+            try {
+                const params = new URLSearchParams({
+                    'select': '*',
+                    'or': '(property_type.is.null,property_type.neq.duplicate_ml)',
+                    'currency': 'eq.USD',
+                    'price': 'gte.10000',
+                    'order': 'price.asc',
+                    'limit': '5000'
+                });
+
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?${params}`, {
+                    headers: DEFAULT_HEADERS
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch properties');
+                allProperties = await response.json();
+                return allProperties;
+            } catch (error) {
+                console.error('Error fetching properties:', error);
+                return [];
             }
         }
 
-        // Show tab
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            
-            const tabEl = document.getElementById(tabName);
-            if (tabEl) {
-                tabEl.classList.remove('hidden');
+        async function fetchMarketStats() {
+            if (marketStats.length > 0) return marketStats;
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/v_market_stats?select=*`, {
+                    headers: DEFAULT_HEADERS
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch market stats');
+                marketStats = await response.json();
+                return marketStats;
+            } catch (error) {
+                console.error('Error fetching market stats:', error);
+                return [];
             }
         }
 
-        // Calculate statistics
-        function calculateStats(properties = allProperties) {
-            if (!properties || properties.length === 0) {
-                return {
-                    total: 0,
-                    avgPrice: 0,
-                    medianPrice: 0,
-                    minPrice: 0,
-                    maxPrice: 0
-                };
+        async function searchProperties(searchTerms, minPrice, maxPrice, limit = 50) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/search_properties`, {
+                    method: 'POST',
+                    headers: DEFAULT_HEADERS,
+                    body: JSON.stringify({
+                        search_terms: searchTerms,
+                        min_price: minPrice,
+                        max_price: maxPrice,
+                        target_currency: 'USD',
+                        target_neighborhood: null,
+                        result_limit: limit
+                    })
+                });
+
+                if (!response.ok) throw new Error('Search failed');
+                return await response.json();
+            } catch (error) {
+                console.error('Error searching properties:', error);
+                return [];
             }
-
-            const prices = properties
-                .map(p => parseFloat(p.price) || 0)
-                .filter(p => p > 0)
-                .sort((a, b) => a - b);
-
-            const sum = prices.reduce((a, b) => a + b, 0);
-            const medianIndex = Math.floor(prices.length / 2);
-            const median = prices.length % 2 === 0 
-                ? (prices[medianIndex - 1] + prices[medianIndex]) / 2 
-                : prices[medianIndex];
-
-            return {
-                total: properties.length,
-                avgPrice: sum / prices.length,
-                medianPrice: median,
-                minPrice: Math.min(...prices),
-                maxPrice: Math.max(...prices),
-                prices: prices
-            };
         }
 
-        // Format currency
-        function formatCurrency(value) {
-            return '$' + Math.round(value).toLocaleString('en-US');
-        }
-
-        // Update dashboard
-        async function updateDashboard() {
-            if (allProperties.length === 0) {
-                return;
-            }
-
-            updateOverviewDashboard();
-        }
-
-        // Update overview dashboard
-        function updateOverviewDashboard() {
-            const stats = calculateStats(allProperties);
-            
-            document.getElementById('totalProperties').textContent = stats.total.toLocaleString();
-            document.getElementById('avgPrice').textContent = formatCurrency(stats.avgPrice);
-            document.getElementById('medianPrice').textContent = formatCurrency(stats.medianPrice);
-            document.getElementById('priceRange').textContent = `${formatCurrency(stats.minPrice)} - ${formatCurrency(stats.maxPrice)}`;
-
-            // Create price distribution chart
-            createOverviewChart();
-            createZoneChart();
-            createCorrelationChart();
-        }
-
-        // Create overview chart
-        function createOverviewChart() {
-            const ctx = document.getElementById('overviewChart');
-            if (!ctx) return;
-
-            const neighborhoodStats = {};
-            allProperties.forEach(prop => {
-                const zone = prop.zone || 'Unknown';
-                if (!neighborhoodStats[zone]) {
-                    neighborhoodStats[zone] = { prices: [], count: 0 };
-                }
-                if (prop.price) {
-                    neighborhoodStats[zone].prices.push(parseFloat(prop.price));
-                    neighborhoodStats[zone].count++;
-                }
-            });
-
-            const labels = Object.keys(neighborhoodStats).slice(0, 12);
-            const data = labels.map(zone => {
-                const prices = neighborhoodStats[zone].prices;
-                return prices.length > 0 ? prices.reduce((a, b) => a + b) / prices.length : 0;
-            });
-
-            if (currentChart && currentChart.destroy) {
-                currentChart.destroy();
-            }
-
-            currentChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Average Price (USD)',
-                        data: data,
-                        backgroundColor: 'rgba(0, 212, 255, 0.7)',
-                        borderColor: 'rgba(0, 212, 255, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Create zone chart
-        function createZoneChart() {
-            const ctx = document.getElementById('zoneChart');
-            if (!ctx) return;
-
-            const zoneCounts = {};
-            allProperties.forEach(prop => {
-                const zone = prop.zone || 'Unknown';
-                zoneCounts[zone] = (zoneCounts[zone] || 0) + 1;
-            });
-
-            const labels = Object.keys(zoneCounts).slice(0, 10);
-            const data = labels.map(zone => zoneCounts[zone]);
-
-            const chart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: [
-                            'rgba(0, 212, 255, 0.8)',
-                            'rgba(16, 185, 129, 0.8)',
-                            'rgba(245, 158, 11, 0.8)',
-                            'rgba(239, 68, 68, 0.8)',
-                            'rgba(139, 92, 246, 0.8)',
-                            'rgba(59, 130, 246, 0.8)',
-                            'rgba(236, 72, 153, 0.8)',
-                            'rgba(34, 197, 94, 0.8)',
-                            'rgba(249, 115, 22, 0.8)',
-                            'rgba(168, 85, 247, 0.8)'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Create correlation chart
-        function createCorrelationChart() {
-            const ctx = document.getElementById('correlationChart');
-            if (!ctx) return;
-
-            const validProperties = allProperties.filter(p => p.size && p.price);
-            const data = validProperties.map(p => ({
-                x: parseFloat(p.size),
-                y: parseFloat(p.price)
-            }));
-
-            const chart = new Chart(ctx, {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: 'Price vs Size',
-                        data: data,
-                        backgroundColor: 'rgba(0, 212, 255, 0.5)',
-                        borderColor: 'rgba(0, 212, 255, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Size (m²)',
-                                color: '#e2e8f0'
-                            },
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Price (USD)',
-                                color: '#e2e8f0'
-                            },
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Load all properties table
-        function loadAllPropertiesTable() {
-            const table = document.getElementById('propertiesTable');
-            const tbody = document.getElementById('propertiesTableBody');
-            
-            tbody.innerHTML = '';
-            
-            allProperties.slice(0, 100).forEach(prop => {
-                const row = document.createElement('tr');
-                const pricePerSqm = prop.price && prop.size ? (parseFloat(prop.price) / parseFloat(prop.size)).toFixed(0) : '-';
-                
-                row.innerHTML = `
-                    <td>${prop.address || 'N/A'}</td>
-                    <td>${prop.zone || 'N/A'}</td>
-                    <td>${prop.type || 'N/A'}</td>
-                    <td>${prop.rooms || '-'}</td>
-                    <td>${prop.size || '-'}</td>
-                    <td class="price-cell">${prop.price ? formatCurrency(prop.price) : '-'}</td>
-                    <td>${pricePerSqm}</td>
-                `;
-                tbody.appendChild(row);
-            });
-            
-            table.style.display = 'table';
-        }
-
-        // Perform global search
-        function performGlobalSearch() {
-            const query = document.getElementById('globalSearchInput').value.toLowerCase();
-            const table = document.getElementById('propertiesTable');
-            const tbody = document.getElementById('propertiesTableBody');
-            
-            tbody.innerHTML = '';
-            
-            const results = allProperties.filter(prop => {
-                const address = (prop.address || '').toLowerCase();
-                const zone = (prop.zone || '').toLowerCase();
-                const id = (prop.id || '').toString();
-                
-                return address.includes(query) || zone.includes(query) || id.includes(query);
-            });
-            
-            results.slice(0, 100).forEach(prop => {
-                const row = document.createElement('tr');
-                const pricePerSqm = prop.price && prop.size ? (parseFloat(prop.price) / parseFloat(prop.size)).toFixed(0) : '-';
-                
-                row.innerHTML = `
-                    <td>${prop.address || 'N/A'}</td>
-                    <td>${prop.zone || 'N/A'}</td>
-                    <td>${prop.type || 'N/A'}</td>
-                    <td>${prop.rooms || '-'}</td>
-                    <td>${prop.size || '-'}</td>
-                    <td class="price-cell">${prop.price ? formatCurrency(prop.price) : '-'}</td>
-                    <td>${pricePerSqm}</td>
-                `;
-                tbody.appendChild(row);
-            });
-            
-            table.style.display = results.length > 0 ? 'table' : 'none';
-        }
-
-        // Filter by type
-        function filterByType(type) {
-            document.querySelectorAll('.filter-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            applyFilters();
-        }
-
-        // Apply filters
-        function applyFilters() {
-            const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
-            const maxPrice = parseFloat(document.getElementById('maxPrice').value) || Infinity;
-            const minSize = parseFloat(document.getElementById('minSize').value) || 0;
-            const maxSize = parseFloat(document.getElementById('maxSize').value) || Infinity;
-            const zone = document.getElementById('zoneFilter').value.toLowerCase();
-            
-            const activeTypeBtn = document.querySelector('.filter-button.active');
-            const selectedType = activeTypeBtn ? activeTypeBtn.textContent.toLowerCase() : 'all types';
-            
-            let filtered = allProperties.filter(prop => {
-                const price = parseFloat(prop.price) || 0;
-                const size = parseFloat(prop.size) || 0;
-                const propZone = (prop.zone || '').toLowerCase();
-                const propType = (prop.type || '').toLowerCase();
-                
-                const priceMatch = price >= minPrice && price <= maxPrice;
-                const sizeMatch = size >= minSize && size <= maxSize;
-                const zoneMatch = !zone || propZone.includes(zone);
-                const typeMatch = selectedType === 'all types' || propType.includes(selectedType.replace(/s$/, ''));
-                
-                return priceMatch && sizeMatch && zoneMatch && typeMatch;
-            });
-            
-            const table = document.getElementById('filteredTable');
-            const tbody = document.getElementById('filteredTableBody');
-            
-            tbody.innerHTML = '';
-            
-            filtered.slice(0, 100).forEach(prop => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${prop.address || 'N/A'}</td>
-                    <td>${prop.zone || 'N/A'}</td>
-                    <td>${prop.type || 'N/A'}</td>
-                    <td class="price-cell">${prop.price ? formatCurrency(prop.price) : '-'}</td>
-                    <td>${prop.size || '-'}</td>
-                    <td>${prop.rooms || '-'}</td>
-                `;
-                tbody.appendChild(row);
-            });
-            
-            table.style.display = filtered.length > 0 ? 'table' : 'none';
-        }
-
-        // Update market trends
-        function updateMarketTrends() {
-            const stats = calculateStats(allProperties);
-            
-            document.getElementById('activeZone').textContent = getTopZone();
-            document.getElementById('appreciation').textContent = '2.3%';
-            document.getElementById('dealSize').textContent = formatCurrency(stats.avgPrice);
-
-            createTrendsChart();
-            createMomentumChart();
-        }
-
-        // Get top zone
-        function getTopZone() {
-            const zoneCounts = {};
-            allProperties.forEach(prop => {
-                const zone = prop.zone || 'Unknown';
-                zoneCounts[zone] = (zoneCounts[zone] || 0) + 1;
-            });
-            
-            let topZone = 'N/A';
-            let maxCount = 0;
-            
-            for (const [zone, count] of Object.entries(zoneCounts)) {
-                if (count > maxCount) {
-                    maxCount = count;
-                    topZone = zone;
-                }
-            }
-            
-            return topZone;
-        }
-
-        // Create trends chart
-        function createTrendsChart() {
-            const ctx = document.getElementById('trendsChart');
-            if (!ctx) return;
-
-            const zonePrices = {};
-            allProperties.forEach(prop => {
-                const zone = prop.zone || 'Unknown';
-                if (!zonePrices[zone]) {
-                    zonePrices[zone] = [];
-                }
-                if (prop.price) {
-                    zonePrices[zone].push(parseFloat(prop.price));
-                }
-            });
-
-            const labels = Object.keys(zonePrices).slice(0, 8);
-            const data = labels.map(zone => {
-                const prices = zonePrices[zone];
-                return prices.reduce((a, b) => a + b, 0) / prices.length;
-            });
-
-            const chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Average Price Trend',
-                        data: data,
-                        borderColor: 'rgba(0, 212, 255, 1)',
-                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Create momentum chart
-        function createMomentumChart() {
-            const ctx = document.getElementById('momentumChart');
-            if (!ctx) return;
-
-            const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-            const data = [85, 88, 90, 92];
-
-            const chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Market Momentum',
-                        data: data,
-                        borderColor: 'rgba(16, 185, 129, 1)',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 2,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Update distribution
-        function updateDistribution() {
-            const typeStats = {};
-            allProperties.forEach(prop => {
-                const type = prop.type || 'other';
-                if (!typeStats[type]) {
-                    typeStats[type] = { count: 0, prices: [], medianPrice: 0 };
-                }
-                typeStats[type].count++;
-                if (prop.price) {
-                    typeStats[type].prices.push(parseFloat(prop.price));
-                }
-            });
-
-            // Calculate medians and stats
-            for (const type in typeStats) {
-                const prices = typeStats[type].prices.sort((a, b) => a - b);
-                const medianIndex = Math.floor(prices.length / 2);
-                typeStats[type].medianPrice = prices.length % 2 === 0 
-                    ? (prices[medianIndex - 1] + prices[medianIndex]) / 2 
-                    : prices[medianIndex];
-                typeStats[type].avgPrice = prices.length > 0 ? prices.reduce((a, b) => a + b) / prices.length : 0;
-            }
-
-            // Update comparison cards
-            const updateCard = (typeKey, prefix) => {
-                const stats = typeStats[typeKey];
-                if (stats) {
-                    document.getElementById(`${prefix}Count`).textContent = stats.count;
-                    document.getElementById(`${prefix}Price`).textContent = formatCurrency(stats.avgPrice);
-                    document.getElementById(`${prefix}Median`).textContent = formatCurrency(stats.medianPrice);
-                } else {
-                    document.getElementById(`${prefix}Count`).textContent = '0';
-                    document.getElementById(`${prefix}Price`).textContent = '-';
-                    document.getElementById(`${prefix}Median`).textContent = '-';
-                }
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+        function extractKeywords(title) {
+            const keywordPatterns = {
+                'reciclada': /reciclad/i,
+                'a estrenar': /a estrenar|estrena/i,
+                'refaccionar': /refacciona/i,
+                'luminosa': /luminosa|luminoso/i,
+                'cochera': /cochera/i,
+                'pileta': /pileta/i,
+                'jardín': /jardín|jardin/i,
+                'terraza': /terraza/i,
+                'PH': /\bph\b/i,
+                'lote propio': /lote propio/i,
+                'parrilla': /parrilla/i,
+                'balcón': /balcón|balcon/i,
+                'dependencia': /dependencia/i,
+                'quincho': /quincho/i,
+                'solarium': /solarium/i,
+                'losa radiante': /losa radiante/i,
+                'piso radiante': /piso radiante/i,
+                'vista': /vista/i,
+                'silencioso': /silencioso/i
             };
 
-            updateCard('apartment', 'apartment');
-            updateCard('house', 'house');
-            updateCard('lot', 'lot');
-            updateCard('other', 'other');
-
-            createDistributionChart();
-            createTypeChart();
-        }
-
-        // Create distribution chart
-        function createDistributionChart() {
-            const ctx = document.getElementById('distributionChart');
-            if (!ctx) return;
-
-            const priceRanges = {
-                '0-250k': 0,
-                '250k-500k': 0,
-                '500k-1M': 0,
-                '1M-2M': 0,
-                '2M+': 0
-            };
-
-            allProperties.forEach(prop => {
-                const price = parseFloat(prop.price) || 0;
-                if (price < 250000) priceRanges['0-250k']++;
-                else if (price < 500000) priceRanges['250k-500k']++;
-                else if (price < 1000000) priceRanges['500k-1M']++;
-                else if (price < 2000000) priceRanges['1M-2M']++;
-                else priceRanges['2M+']++;
-            });
-
-            const labels = Object.keys(priceRanges);
-            const data = Object.values(priceRanges);
-
-            const chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Properties by Price Range',
-                        data: data,
-                        backgroundColor: 'rgba(0, 212, 255, 0.7)',
-                        borderColor: 'rgba(0, 212, 255, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Create type chart
-        function createTypeChart() {
-            const ctx = document.getElementById('typeChart');
-            if (!ctx) return;
-
-            const typeCounts = {};
-            allProperties.forEach(prop => {
-                const type = prop.type || 'other';
-                typeCounts[type] = (typeCounts[type] || 0) + 1;
-            });
-
-            const labels = Object.keys(typeCounts);
-            const data = Object.values(typeCounts);
-
-            const chart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: [
-                            'rgba(0, 212, 255, 0.8)',
-                            'rgba(16, 185, 129, 0.8)',
-                            'rgba(245, 158, 11, 0.8)',
-                            'rgba(239, 68, 68, 0.8)'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Update property stats
-        function updatePropertyStats() {
-            const stats = calculateStats(allProperties);
-            const validSizes = allProperties.filter(p => p.size).map(p => parseFloat(p.size));
-            const validRooms = allProperties.filter(p => p.rooms).map(p => parseFloat(p.rooms));
-            
-            let medianSize = 0;
-            if (validSizes.length > 0) {
-                validSizes.sort((a, b) => a - b);
-                const midIndex = Math.floor(validSizes.length / 2);
-                medianSize = validSizes.length % 2 === 0 
-                    ? (validSizes[midIndex - 1] + validSizes[midIndex]) / 2 
-                    : validSizes[midIndex];
+            const keywords = [];
+            for (const [key, pattern] of Object.entries(keywordPatterns)) {
+                if (pattern.test(title)) keywords.push(key);
             }
+            return keywords;
+        }
 
-            let medianRooms = 0;
-            if (validRooms.length > 0) {
-                validRooms.sort((a, b) => a - b);
-                const midIndex = Math.floor(validRooms.length / 2);
-                medianRooms = validRooms.length % 2 === 0 
-                    ? (validRooms[midIndex - 1] + validRooms[midIndex]) / 2 
-                    : validRooms[midIndex];
+        function hasWarningConstraint(address) {
+            if (!address) return false;
+            const patterns = /vías|ferrocarril|autopista|ruta/i;
+            return patterns.test(address);
+        }
+
+        function getPriceColorClass(pricePerM2) {
+            if (pricePerM2 < 800) return 'green';
+            if (pricePerM2 < 1200) return 'yellow';
+            if (pricePerM2 < 1800) return 'orange';
+            return 'red';
+        }
+
+        function getPriceColor(pricePerM2) {
+            if (pricePerM2 < 800) return '#10b981';
+            if (pricePerM2 < 1200) return '#f59e0b';
+            if (pricePerM2 < 1800) return '#f97316';
+            return '#ef4444';
+        }
+
+        function formatPrice(price) {
+            return new Intl.NumberFormat('es-AR', {
+                style: 'currency',
+                currency: 'USD',
+                maximumFractionDigits: 0
+            }).format(price);
+        }
+
+        function highlightKeywords(text, keywords) {
+            let result = text;
+            keywords.forEach(keyword => {
+                const regex = new RegExp(`(${keyword})`, 'gi');
+                result = result.replace(regex, '<span class="highlight">$1</span>');
+            });
+            return result;
+        }
+
+        // ============================================
+        // TAB 1: PANORAMA
+        // ============================================
+        async function initPanorama() {
+            const container = document.getElementById('panoramaContent');
+
+            try {
+                const [properties, stats] = await Promise.all([
+                    fetchProperties(),
+                    fetchMarketStats()
+                ]);
+
+                if (properties.length === 0 || stats.length === 0) {
+                    container.innerHTML = '<div class="error-message">Error cargando datos del mercado</div>';
+                    return;
+                }
+
+                // Filter to 100k-200k segment for stats
+                const segment100k200k = properties.filter(p => Number(p.price) >= 100000 && Number(p.price) <= 200000);
+
+                // Calculate KPIs
+                const uniqueProps = new Set(properties.map(p => p.id)).size;
+                const pricesPerM2 = segment100k200k
+                    .filter(p => p.total_area && Number(p.total_area) > 0)
+                    .map(p => Number(p.price) / Number(p.total_area));
+                const medianPrice = pricesPerM2.length > 0
+                    ? pricesPerM2.sort((a, b) => a - b)[Math.floor(pricesPerM2.length / 2)]
+                    : 0;
+
+                const neighborhoods = new Set(properties.filter(p => p.neighborhood).map(p => p.neighborhood)).size;
+                const withDescriptions = properties.filter(p => p.description).length;
+
+                // Build HTML
+                let html = `
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-value">${uniqueProps.toLocaleString('es-AR')}</div>
+                            <div class="kpi-label">Propiedades Únicas</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-value">$${Math.round(medianPrice).toLocaleString('es-AR')}</div>
+                            <div class="kpi-label">Mediana USD/m² (100k-200k)</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-value">${neighborhoods}</div>
+                            <div class="kpi-label">Barrios Cubiertos</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-value">${withDescriptions.toLocaleString('es-AR')}</div>
+                            <div class="kpi-label">Con Descripción</div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <div class="chart-title">Top 15 Barrios por Inventario (100k-200k)</div>
+                            <canvas id="neighborhoodsChart" class="chart-canvas"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart-title">Mediana USD/m² por Barrio (100k-200k)</div>
+                            <canvas id="priceChart" class="chart-canvas"></canvas>
+                        </div>
+                        <div class="chart-container" style="grid-column: span 2;">
+                            <div class="chart-title">Distribución por Rango de Precio</div>
+                            <canvas id="segmentChart" class="chart-canvas" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = html;
+
+                // Create Charts
+                await createCharts(segment100k200k, properties);
+            } catch (error) {
+                console.error('Error in initPanorama:', error);
+                container.innerHTML = '<div class="error-message">Error cargando Panorama</div>';
             }
-
-            document.getElementById('totalUnique').textContent = stats.total.toLocaleString();
-            document.getElementById('qualityScore').textContent = '94%';
-            document.getElementById('avgPriceSqm').textContent = '$' + Math.round(
-                allProperties.filter(p => p.price && p.size).reduce((sum, p) => sum + (parseFloat(p.price) / parseFloat(p.size)), 0) / 
-                allProperties.filter(p => p.price && p.size).length
-            );
-            document.getElementById('medianRooms').textContent = medianRooms.toFixed(1);
-
-            createPriceDistributionChart();
-            createZoneAnalysisChart();
         }
 
-        // Create price distribution chart
-        function createPriceDistributionChart() {
-            const ctx = document.getElementById('priceDistributionChart');
-            if (!ctx) return;
-
-            const prices = allProperties
-                .map(p => parseFloat(p.price))
-                .filter(p => p > 0)
-                .sort((a, b) => a - b);
-
-            const logPrices = prices.map(p => Math.log10(p));
-            const min = Math.min(...logPrices);
-            const max = Math.max(...logPrices);
-            const binCount = 20;
-            const binWidth = (max - min) / binCount;
-
-            const bins = Array(binCount).fill(0);
-            logPrices.forEach(logPrice => {
-                const binIndex = Math.floor((logPrice - min) / binWidth);
-                if (binIndex < binCount) {
-                    bins[binIndex]++;
+        async function createCharts(segment100k200k, allProperties) {
+            // Chart 1: Top neighborhoods by count
+            const neighborhoodCounts = {};
+            segment100k200k.forEach(p => {
+                if (p.neighborhood) {
+                    neighborhoodCounts[p.neighborhood] = (neighborhoodCounts[p.neighborhood] || 0) + 1;
                 }
             });
 
-            const labels = bins.map((_, i) => {
-                const logValue = min + (i * binWidth);
-                const value = Math.pow(10, logValue);
-                return formatCurrency(value);
-            });
-
-            const chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Distribution',
-                        data: bins,
-                        backgroundColor: 'rgba(0, 212, 255, 0.7)',
-                        borderColor: 'rgba(0, 212, 255, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Create zone analysis chart
-        function createZoneAnalysisChart() {
-            const ctx = document.getElementById('zoneAnalysisChart');
-            if (!ctx) return;
-
-            const zonePrices = {};
-            allProperties.forEach(prop => {
-                const zone = prop.zone || 'Unknown';
-                if (!zonePrices[zone]) {
-                    zonePrices[zone] = [];
-                }
-                if (prop.price) {
-                    zonePrices[zone].push(parseFloat(prop.price));
-                }
-            });
-
-            const zoneAvgs = Object.entries(zonePrices)
-                .map(([zone, prices]) => ({
-                    zone,
-                    avg: prices.reduce((a, b) => a + b) / prices.length
-                }))
-                .sort((a, b) => b.avg - a.avg)
+            const sortedNeighborhoods = Object.entries(neighborhoodCounts)
+                .sort((a, b) => b[1] - a[1])
                 .slice(0, 15);
 
-            const labels = zoneAvgs.map(z => z.zone);
-            const data = zoneAvgs.map(z => z.avg);
-
-            const chart = new Chart(ctx, {
-                type: 'barh',
+            const ctx1 = document.getElementById('neighborhoodsChart').getContext('2d');
+            neighborhoodsChart = new Chart(ctx1, {
+                type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: sortedNeighborhoods.map(n => n[0]),
                     datasets: [{
-                        label: 'Average Price',
-                        data: data,
-                        backgroundColor: 'rgba(0, 212, 255, 0.7)',
-                        borderColor: 'rgba(0, 212, 255, 1)',
+                        label: 'Cantidad',
+                        data: sortedNeighborhoods.map(n => n[1]),
+                        backgroundColor: '#00d4ff',
+                        borderColor: '#0099cc',
                         borderWidth: 1
                     }]
                 },
@@ -1943,147 +1114,97 @@
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
                         x: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
                         },
                         y: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
+                            ticks: { color: '#94a3b8' },
+                            grid: { display: false }
                         }
                     }
                 }
             });
-        }
 
-        // Perform advanced search
-        function performAdvancedSearch() {
-            const addressQuery = document.getElementById('addressSearch').value.toLowerCase();
-            const roomsFilter = document.getElementById('roomsFilter').value;
-            const typeFilter = document.getElementById('typeFilter').value;
-
-            let results = allProperties.filter(prop => {
-                const addressMatch = !addressQuery || (prop.address || '').toLowerCase().includes(addressQuery);
-                const roomsMatch = !roomsFilter || (
-                    roomsFilter === '4+' ? (prop.rooms || 0) >= 4 : (prop.rooms || '').toString() === roomsFilter
-                );
-                const typeMatch = !typeFilter || (prop.type || '').toLowerCase() === typeFilter;
-
-                return addressMatch && roomsMatch && typeMatch;
-            });
-
-            const table = document.getElementById('advancedTable');
-            const tbody = document.getElementById('advancedTableBody');
-
-            tbody.innerHTML = '';
-
-            results.slice(0, 100).forEach(prop => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${prop.address || 'N/A'}</td>
-                    <td>${prop.zone || 'N/A'}</td>
-                    <td>${prop.type || 'N/A'}</td>
-                    <td>${prop.rooms || '-'}</td>
-                    <td>${prop.size || '-'}</td>
-                    <td class="price-cell">${prop.price ? formatCurrency(prop.price) : '-'}</td>
-                    <td>${prop.source || 'N/A'}</td>
-                `;
-                tbody.appendChild(row);
-            });
-
-            table.style.display = results.length > 0 ? 'table' : 'none';
-        }
-
-        // Analyze location
-        function analyzeLocation() {
-            const location = document.getElementById('locationInput').value.toLowerCase();
-            const locationStats = document.getElementById('locationStats');
-            
-            if (!location) {
-                locationStats.style.display = 'none';
-                return;
-            }
-
-            const locationProps = allProperties.filter(prop => 
-                (prop.zone || '').toLowerCase().includes(location)
-            );
-
-            if (locationProps.length === 0) {
-                document.getElementById('locationError').textContent = 'No properties found for this location.';
-                document.getElementById('locationError').style.display = 'block';
-                locationStats.style.display = 'none';
-                return;
-            }
-
-            const prices = locationProps.map(p => parseFloat(p.price)).filter(p => p > 0).sort((a, b) => a - b);
-            const avgPrice = prices.reduce((a, b) => a + b) / prices.length;
-            const medianPrice = prices[Math.floor(prices.length / 2)];
-            const sizes = locationProps.map(p => parseFloat(p.size)).filter(p => p > 0);
-            const avgSize = sizes.reduce((a, b) => a + b) / sizes.length || 0;
-            const pricePerSqm = avgSize > 0 ? avgPrice / avgSize : 0;
-
-            document.getElementById('locationCount').textContent = locationProps.length;
-            document.getElementById('locationAvgPrice').textContent = formatCurrency(avgPrice);
-            document.getElementById('locationMedianPrice').textContent = formatCurrency(medianPrice);
-            document.getElementById('locationPricePerSqm').textContent = '$' + Math.round(pricePerSqm);
-
-            locationStats.style.display = 'block';
-            document.getElementById('locationError').style.display = 'none';
-
-            createLocationChart(locationProps);
-        }
-
-        // Create location chart
-        function createLocationChart(props) {
-            const ctx = document.getElementById('locationChart');
-            if (!ctx) return;
-
-            const prices = props.map(p => parseFloat(p.price)).filter(p => p > 0).sort((a, b) => a - b);
-            const min = Math.min(...prices);
-            const max = Math.max(...prices);
-            const binCount = 10;
-            const binWidth = (max - min) / binCount;
-
-            const bins = Array(binCount).fill(0);
-            prices.forEach(price => {
-                const binIndex = Math.floor((price - min) / binWidth);
-                if (binIndex < binCount) {
-                    bins[binIndex]++;
+            // Chart 2: Median price per neighborhood
+            const neighborhoodMedians = {};
+            segment100k200k.forEach(p => {
+                if (p.neighborhood && p.total_area && Number(p.total_area) > 0) {
+                    const pricePerM2 = Number(p.price) / Number(p.total_area);
+                    if (!neighborhoodMedians[p.neighborhood]) {
+                        neighborhoodMedians[p.neighborhood] = [];
+                    }
+                    neighborhoodMedians[p.neighborhood].push(pricePerM2);
                 }
             });
 
-            const labels = bins.map((_, i) => {
-                const binMin = min + (i * binWidth);
-                const binMax = binMin + binWidth;
-                return `${formatCurrency(binMin)} - ${formatCurrency(binMax)}`;
-            });
+            const mediansByNeighborhood = Object.entries(neighborhoodMedians)
+                .map(([neighborhood, prices]) => {
+                    const sorted = prices.sort((a, b) => a - b);
+                    const median = sorted[Math.floor(sorted.length / 2)];
+                    return [neighborhood, median];
+                })
+                .sort((a, b) => a[1] - b[1])
+                .slice(0, 15);
 
-            const chart = new Chart(ctx, {
+            const ctx2 = document.getElementById('priceChart').getContext('2d');
+            priceChart = new Chart(ctx2, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: mediansByNeighborhood.map(n => n[0]),
                     datasets: [{
-                        label: 'Properties',
-                        data: bins,
-                        backgroundColor: 'rgba(0, 212, 255, 0.7)',
-                        borderColor: 'rgba(0, 212, 255, 1)',
+                        label: 'USD/m²',
+                        data: mediansByNeighborhood.map(n => Math.round(n[1])),
+                        backgroundColor: mediansByNeighborhood.map(n => getPriceColor(n[1])),
+                        borderColor: '#334155',
                         borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#334155' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Chart 3: Distribution by segment
+            const segments = {
+                '0-100k': allProperties.filter(p => Number(p.price) < 100000).length,
+                '100k-200k': allProperties.filter(p => Number(p.price) >= 100000 && Number(p.price) < 200000).length,
+                '200k-500k': allProperties.filter(p => Number(p.price) >= 200000 && Number(p.price) < 500000).length,
+                '500k-1M': allProperties.filter(p => Number(p.price) >= 500000 && Number(p.price) < 1000000).length,
+                '1M+': allProperties.filter(p => Number(p.price) >= 1000000).length
+            };
+
+            const ctx3 = document.getElementById('segmentChart').getContext('2d');
+            segmentChart = new Chart(ctx3, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(segments),
+                    datasets: [{
+                        data: Object.values(segments),
+                        backgroundColor: [
+                            '#06b6d4',
+                            '#00d4ff',
+                            '#0ea5e9',
+                            '#3b82f6',
+                            '#8b5cf6'
+                        ],
+                        borderColor: '#1e293b',
+                        borderWidth: 2
                     }]
                 },
                 options: {
@@ -2091,104 +1212,468 @@
                     maintainAspectRatio: true,
                     plugins: {
                         legend: {
-                            labels: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: '#94a3b8'
-                            },
-                            grid: {
-                                color: '#334155'
-                            }
+                            position: 'right',
+                            labels: { color: '#94a3b8', padding: 20 }
                         }
                     }
                 }
             });
         }
 
-        // Load opportunities
-        function loadOpportunities() {
-            const table = document.getElementById('opportunitiesTable');
-            const tbody = document.getElementById('opportunitiesTableBody');
+        // ============================================
+        // TAB 2: PROPIEDADES
+        // ============================================
+        async function initPropiedades() {
+            const container = document.getElementById('propiedadesContent');
 
-            tbody.innerHTML = '';
+            try {
+                const properties = await fetchProperties();
 
-            // Calculate zone medians and find outliers
-            const zonePrices = {};
-            const zoneProps = {};
-
-            allProperties.forEach(prop => {
-                const zone = prop.zone || 'Unknown';
-                if (!zonePrices[zone]) {
-                    zonePrices[zone] = [];
-                    zoneProps[zone] = [];
+                if (properties.length === 0) {
+                    container.innerHTML = '<div class="error-message">Error cargando propiedades</div>';
+                    return;
                 }
-                if (prop.price) {
-                    zonePrices[zone].push(parseFloat(prop.price));
-                    zoneProps[zone].push(prop);
-                }
+
+                const neighborhoods = [...new Set(properties.filter(p => p.neighborhood).map(p => p.neighborhood))];
+                const sources = [...new Set(properties.filter(p => p.source).map(p => p.source))];
+
+                let html = `
+                    <div class="filters-container">
+                        <div class="filter-group">
+                            <label class="filter-label">Precio Mínimo (USD)</label>
+                            <input type="number" id="filterPriceMin" value="0" placeholder="0">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Precio Máximo (USD)</label>
+                            <input type="number" id="filterPriceMax" value="5000000" placeholder="5000000">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Barrio</label>
+                            <select id="filterNeighborhood">
+                                <option value="">Todos</option>
+                                ${neighborhoods.map(n => `<option value="${n}">${n}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Fuente</label>
+                            <select id="filterSource">
+                                <option value="">Todas</option>
+                                ${sources.map(s => `<option value="${s}">${s}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Superficie Mínima (m²)</label>
+                            <input type="number" id="filterMinArea" value="0" placeholder="0">
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th onclick="sortTable('neighborhood')">Barrio ↕</th>
+                                    <th onclick="sortTable('title')">Título ↕</th>
+                                    <th onclick="sortTable('price')">Precio USD ↕</th>
+                                    <th onclick="sortTable('pricePerM2')">USD/m² ↕</th>
+                                    <th onclick="sortTable('bedrooms')">Dormitorios ↕</th>
+                                    <th onclick="sortTable('bathrooms')">Baños ↕</th>
+                                    <th>Fuente</th>
+                                    <th>Tags</th>
+                                </tr>
+                            </thead>
+                            <tbody id="propertiesTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination" id="paginationControls"></div>
+                `;
+
+                container.innerHTML = html;
+
+                // Attach filter listeners
+                document.getElementById('filterPriceMin').addEventListener('input', (e) => {
+                    filterPriceMin = parseInt(e.target.value) || 0;
+                    currentPage = 1;
+                    renderPropertiesTable(properties);
+                });
+
+                document.getElementById('filterPriceMax').addEventListener('input', (e) => {
+                    filterPriceMax = parseInt(e.target.value) || 5000000;
+                    currentPage = 1;
+                    renderPropertiesTable(properties);
+                });
+
+                document.getElementById('filterNeighborhood').addEventListener('change', (e) => {
+                    filterNeighborhood = e.target.value;
+                    currentPage = 1;
+                    renderPropertiesTable(properties);
+                });
+
+                document.getElementById('filterSource').addEventListener('change', (e) => {
+                    filterSource = e.target.value;
+                    currentPage = 1;
+                    renderPropertiesTable(properties);
+                });
+
+                document.getElementById('filterMinArea').addEventListener('input', (e) => {
+                    filterMinArea = parseInt(e.target.value) || 0;
+                    currentPage = 1;
+                    renderPropertiesTable(properties);
+                });
+
+                renderPropertiesTable(properties);
+            } catch (error) {
+                console.error('Error in initPropiedades:', error);
+                container.innerHTML = '<div class="error-message">Error cargando propiedades</div>';
+            }
+        }
+
+        function renderPropertiesTable(properties) {
+            let filtered = properties.filter(p => {
+                if (Number(p.price) < filterPriceMin || Number(p.price) > filterPriceMax) return false;
+                if (filterNeighborhood && p.neighborhood !== filterNeighborhood) return false;
+                if (filterSource && p.source !== filterSource) return false;
+                if (p.total_area && Number(p.total_area) < filterMinArea) return false;
+                return true;
             });
 
-            const opportunities = [];
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paged = filtered.slice(start, end);
 
-            for (const zone in zonePrices) {
-                const prices = zonePrices[zone].sort((a, b) => a - b);
-                const median = prices[Math.floor(prices.length / 2)];
-                const q1 = prices[Math.floor(prices.length * 0.25)];
-                const q3 = prices[Math.floor(prices.length * 0.75)];
-                const iqr = q3 - q1;
+            const tbody = document.getElementById('propertiesTableBody');
+            tbody.innerHTML = paged.map(p => {
+                const price = Number(p.price);
+                const totalArea = Number(p.total_area);
+                const pricePerM2 = (totalArea && totalArea > 0) ? price / totalArea : 0;
+                const keywords = extractKeywords(p.title || '');
+                const colorClass = getPriceColorClass(pricePerM2);
+                const warning = hasWarningConstraint(p.address_text);
+                
+                // Extract bedrooms from title if null
+                let bedrooms = p.bedrooms;
+                if (!bedrooms) {
+                    const match = (p.title || '').match(/(\d+)\s*amb/i);
+                    if (match) bedrooms = match[1];
+                }
 
-                zoneProps[zone].forEach(prop => {
-                    const price = parseFloat(prop.price);
-                    const expectedPrice = median;
-                    const variance = ((price - expectedPrice) / expectedPrice) * 100;
+                return `
+                    <tr>
+                        <td class="neighborhood-cell">${p.neighborhood || 'N/A'}</td>
+                        <td><a href="${p.permalink}" target="_blank" class="title-cell">${p.title || 'Sin título'}</a></td>
+                        <td class="price-cell">${formatPrice(price)}</td>
+                        <td class="price-cell ${colorClass}">$${Math.round(pricePerM2).toLocaleString('es-AR')}</td>
+                        <td>${totalArea ? Math.round(totalArea).toLocaleString('es-AR') : 'N/A'} m²</td>
+                        <td>${bedrooms || '-'}</td>
+                        <td>${p.bathrooms || '-'}</td>
+                        <td><span class="source-badge ${p.source.toLowerCase()}">${p.source}</span></td>
+                        <td>
+                            <div class="tags-cell">
+                                ${keywords.map(k => `<span class="tag special">${k}</span>`).join('')}
+                                ${warning ? '<span class="warning-icon" title="Cerca de vías/ferrocarril/autopista">⚠️</span>' : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
 
-                    if (Math.abs(variance) > 15) {
+            // Pagination
+            const totalPages = Math.ceil(filtered.length / itemsPerPage);
+            const paginationControls = document.getElementById('paginationControls');
+            paginationControls.innerHTML = `
+                <button onclick="previousPage()" ${currentPage === 1 ? 'disabled' : ''}>← Anterior</button>
+                <span class="pagination-info">Página ${currentPage} de ${totalPages} (${filtered.length} propiedades)</span>
+                <button onclick="nextPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>Siguiente →</button>
+            `;
+        }
+
+        function sortTable(column) {
+            // Simple sorting placeholder - in production would add full sorting logic
+            console.log('Sort by:', column);
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderPropertiesTable(allProperties);
+            }
+        }
+
+        function nextPage(maxPages) {
+            if (currentPage < maxPages) {
+                currentPage++;
+                renderPropertiesTable(allProperties);
+            }
+        }
+
+        // ============================================
+        // TAB 3: SUPER SEARCHER
+        // ============================================
+        async function initSearcher() {
+            const container = document.getElementById('searcherContent');
+
+            const properties = await fetchProperties();
+            const neighborhoods = [...new Set(properties.filter(p => p.neighborhood).map(p => p.neighborhood))];
+            const withDesc = properties.filter(p => p.description).length;
+
+            let html = `
+                <div class="search-container">
+                    <div class="search-input-group">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar por palabras clave (pileta, parrilla, luminoso, etc.)...">
+                        <div class="quick-keywords">
+                            <span class="keyword-pill" onclick="addKeyword('pileta')">pileta</span>
+                            <span class="keyword-pill" onclick="addKeyword('parrilla')">parrilla</span>
+                            <span class="keyword-pill" onclick="addKeyword('jardín')">jardín</span>
+                            <span class="keyword-pill" onclick="addKeyword('terraza')">terraza</span>
+                            <span class="keyword-pill" onclick="addKeyword('luminoso')">luminoso</span>
+                            <span class="keyword-pill" onclick="addKeyword('reciclado')">reciclado</span>
+                            <span class="keyword-pill" onclick="addKeyword('cochera')">cochera</span>
+                            <span class="keyword-pill" onclick="addKeyword('balcón')">balcón</span>
+                            <span class="keyword-pill" onclick="addKeyword('dependencia')">dependencia</span>
+                            <span class="keyword-pill" onclick="addKeyword('quincho')">quincho</span>
+                            <span class="keyword-pill" onclick="addKeyword('solarium')">solarium</span>
+                            <span class="keyword-pill" onclick="addKeyword('losa radiante')">losa radiante</span>
+                        </div>
+                    </div>
+
+                    <div class="search-filters">
+                        <div class="filter-group">
+                            <label class="filter-label">Precio Mínimo (USD)</label>
+                            <input type="number" id="searchPriceMin" value="0" placeholder="0">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Precio Máximo (USD)</label>
+                            <input type="number" id="searchPriceMax" value="5000000" placeholder="5000000">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Barrio</label>
+                            <select id="searchNeighborhood">
+                                <option value="">Todos</option>
+                                ${neighborhoods.map(n => `<option value="${n}">${n}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Resultados</label>
+                            <select id="searchLimit">
+                                <option value="20">20</option>
+                                <option value="50" selected>50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="executeSearch()" style="padding: 10px 20px; background-color: #00d4ff; color: #0a0e1a; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Buscar</button>
+                </div>
+
+                <div class="stats-banner">Mostrando ${withDesc.toLocaleString('es-AR')} de ${properties.length.toLocaleString('es-AR')} propiedades con descripción</div>
+
+                <div id="searchResults" class="search-results"></div>
+            `;
+
+            container.innerHTML = html;
+
+            // Attach event listeners
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') executeSearch();
+            });
+        }
+
+        function addKeyword(keyword) {
+            const input = document.getElementById('searchInput');
+            const current = input.value.trim();
+            if (current) {
+                input.value = current + ' ' + keyword;
+            } else {
+                input.value = keyword;
+            }
+        }
+
+        async function executeSearch() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            const priceMin = parseInt(document.getElementById('searchPriceMin').value) || 0;
+            const priceMax = parseInt(document.getElementById('searchPriceMax').value) || 5000000;
+            const limit = parseInt(document.getElementById('searchLimit').value) || 50;
+
+            if (!searchTerm) {
+                alert('Por favor ingrese términos de búsqueda');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><div class="loading-text">Buscando...</div></div>';
+
+            try {
+                const results = await searchProperties(searchTerm, priceMin, priceMax, limit);
+
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><div>No se encontraron propiedades con estos criterios</div></div>';
+                    return;
+                }
+
+                const keywords = searchTerm.toLowerCase().split(/\s+/);
+                resultsDiv.innerHTML = results.map(r => {
+                    const desc = r.description || 'Sin descripción disponible';
+                    const highlightedDesc = highlightKeywords(desc.substring(0, 500), keywords);
+
+                    return `
+                        <div class="result-card">
+                            <div class="result-title">${r.title || 'Sin título'}</div>
+                            <div class="result-meta">
+                                <span>${r.neighborhood || 'Barrio desconocido'}</span>
+                                <span>${r.source || 'Fuente'}</span>
+                            </div>
+                            <div class="result-price">${formatPrice(r.price)}</div>
+                            <div class="result-meta">
+                                <span>${r.total_area || r.covered_area ? (r.covered_area || r.total_area) + ' m²' : 'Área no disponible'}</span>
+                                <span>${r.bedrooms || 0}D | ${r.bathrooms || 0}B</span>
+                            </div>
+                            <div class="result-description">${highlightedDesc}</div>
+                            <a href="${r.permalink}" target="_blank" class="result-link">Ver Propiedad →</a>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error searching:', error);
+                resultsDiv.innerHTML = '<div class="error-message">Error en la búsqueda. Intente nuevamente.</div>';
+            }
+        }
+
+        // ============================================
+        // TAB 4: OPORTUNIDADES
+        // ============================================
+        async function initOportunidades() {
+            const container = document.getElementById('oportunidadesContent');
+
+            try {
+                const [properties, stats] = await Promise.all([
+                    fetchProperties(),
+                    fetchMarketStats()
+                ]);
+
+                if (properties.length === 0) {
+                    container.innerHTML = '<div class="error-message">Error cargando datos</div>';
+                    return;
+                }
+
+                // Create neighborhood median map
+                const neighborhoodMedians = {};
+                stats.forEach(s => {
+                    if (s.neighborhood && s.median_price_per_sqm) {
+                        neighborhoodMedians[s.neighborhood] = s.median_price_per_sqm;
+                    }
+                });
+
+                // Find opportunities
+                const opportunities = [];
+
+                properties.forEach(p => {
+                    if (!p.neighborhood || !p.total_area || Number(p.total_area) === 0) return;
+
+                    const pricePerM2 = Number(p.price) / Number(p.total_area);
+                    const neighborhoodMedian = neighborhoodMedians[p.neighborhood];
+
+                    // Price opportunity: 20% below median
+                    if (neighborhoodMedian && pricePerM2 < neighborhoodMedian * 0.8) {
+                        const gap = ((neighborhoodMedian - pricePerM2) / neighborhoodMedian * 100).toFixed(1);
                         opportunities.push({
-                            ...prop,
-                            marketPrice: expectedPrice,
-                            listedPrice: price,
-                            variance: variance.toFixed(1)
+                            type: 'price',
+                            property: p,
+                            gap,
+                            neighborhoodMedian,
+                            pricePerM2,
+                            reason: 'Oportunidad por precio'
+                        });
+                    }
+
+                    // Refurbish opportunity
+                    const keywords = extractKeywords(p.title || '');
+                    if (keywords.some(k => ['reciclada', 'refaccionar', 'a reciclar'].includes(k))) {
+                        opportunities.push({
+                            type: 'refurbish',
+                            property: p,
+                            pricePerM2,
+                            neighborhoodMedian,
+                            reason: 'Oportunidad de refacción'
+                        });
+                    }
+
+                    // Land opportunity
+                    if (keywords.includes('lote propio')) {
+                        opportunities.push({
+                            type: 'land',
+                            property: p,
+                            pricePerM2,
+                            reason: 'Lote propio'
                         });
                     }
                 });
+
+                // Sort by gap
+                opportunities.sort((a, b) => (b.gap || 0) - (a.gap || 0));
+
+                if (opportunities.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💡</div><div>No se encontraron oportunidades en este momento</div></div>';
+                    return;
+                }
+
+                const html = opportunities.map(opp => {
+                    const badgeClass = opp.type === 'refurbish' ? 'refurbish' : opp.type === 'land' ? 'land' : '';
+                    const badgeText = opp.type === 'refurbish' ? 'Refacción' : opp.type === 'land' ? 'Lote Propio' : 'Precio';
+
+                    return `
+                        <div class="opportunity-card">
+                            <div class="opportunity-badge ${badgeClass}">${badgeText}</div>
+                            <div class="opportunity-title">${opp.property.title || 'Sin título'}</div>
+                            <div class="opportunity-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">Barrio</div>
+                                    <div class="detail-value">${opp.property.neighborhood}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Precio</div>
+                                    <div class="detail-value">${formatPrice(opp.property.price)}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">USD/m²</div>
+                                    <div class="detail-value">$${Math.round(opp.pricePerM2).toLocaleString('es-AR')}</div>
+                                </div>
+                                ${opp.neighborhoodMedian ? `
+                                    <div class="detail-item">
+                                        <div class="detail-label">Mediana Barrio</div>
+                                        <div class="detail-value">$${Math.round(opp.neighborhoodMedian).toLocaleString('es-AR')}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Descuento</div>
+                                        <div class="detail-value discount-badge">${opp.gap}%</div>
+                                    </div>
+                                ` : ''}
+                                <div class="detail-item">
+                                    <div class="detail-label">Superficie</div>
+                                    <div class="detail-value">${Math.round(opp.property.total_area)} m²</div>
+                                </div>
+                            </div>
+                            <div style="color: #cbd5e1; font-size: 13px; margin-bottom: 12px;">
+                                <strong>${opp.reason}</strong>
+                            </div>
+                            <a href="${opp.property.permalink}" target="_blank" class="opportunity-link">Ver Propiedad →</a>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error in initOportunidades:', error);
+                container.innerHTML = '<div class="error-message">Error cargando oportunidades</div>';
             }
-
-            opportunities.slice(0, 50).forEach(opp => {
-                const row = document.createElement('tr');
-                const varianceClass = opp.variance < 0 ? 'price-cell' : '';
-                const opportunity = opp.variance < 0 ? 'Undervalued' : 'Premium';
-
-                row.innerHTML = `
-                    <td>${opp.address || 'N/A'}</td>
-                    <td>${opp.zone || 'N/A'}</td>
-                    <td>${opp.type || 'N/A'}</td>
-                    <td>${formatCurrency(opp.marketPrice)}</td>
-                    <td class="${varianceClass}">${formatCurrency(opp.listedPrice)}</td>
-                    <td>${opp.variance}%</td>
-                    <td><strong>${opportunity}</strong></td>
-                `;
-                tbody.appendChild(row);
-            });
-
-            document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString();
-            table.style.display = opportunities.length > 0 ? 'table' : 'none';
         }
 
-        // Initialize on page load
-        window.addEventListener('DOMContentLoaded', initializeApp);
+        // ============================================
+        // INITIAL LOAD
+        // ============================================
+        window.addEventListener('DOMContentLoaded', () => {
+            initPanorama();
+        });
     </script>
 </body>
 </html>
