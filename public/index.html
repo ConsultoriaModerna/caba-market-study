@@ -6,7 +6,6 @@
     <title>CABA Market Study - Real Estate Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <style>
         * {
             margin: 0;
@@ -73,169 +72,170 @@
             50% { opacity: 0.5; }
         }
 
-        .tabs-container {
-            border-bottom: 1px solid #334155;
-            background-color: #0a0e1a;
-            padding: 0 32px;
-            display: flex;
-            gap: 32px;
-            overflow-x: auto;
-        }
-
-        .tab-button {
-            padding: 16px 0;
-            border: none;
-            background: none;
-            color: #94a3b8;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
-            position: relative;
-            white-space: nowrap;
-        }
-
-        .tab-button:hover {
-            color: #cbd5e1;
-        }
-
-        .tab-button.active {
-            color: #00d4ff;
-            border-bottom-color: #00d4ff;
-        }
-
-        .main-content {
-            padding: 32px;
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* KPI Cards */
-        .kpi-grid {
+        .container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .kpi-card {
-            background-color: #111827;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .kpi-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #00d4ff;
-            margin-bottom: 8px;
-        }
-
-        .kpi-label {
-            font-size: 12px;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Charts Section */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: 200px 1fr;
             gap: 24px;
-            margin-bottom: 32px;
+            padding: 24px 32px;
+            height: calc(100vh - 100px);
         }
 
-        .chart-container {
-            background-color: #111827;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 20px;
-        }
-
-        .chart-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #e2e8f0;
-            margin-bottom: 16px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .chart-canvas {
-            max-height: 350px;
-        }
-
-        /* Table Styles */
-        .filters-container {
-            background-color: #111827;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 24px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        .sidebar {
+            display: flex;
+            flex-direction: column;
             gap: 16px;
+            padding-right: 16px;
+            border-right: 1px solid #334155;
+            overflow-y: auto;
         }
 
-        .filter-group {
+        .sidebar-section {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
 
-        .filter-label {
-            font-size: 12px;
+        .sidebar-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #64748b;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-button {
+            padding: 10px 12px;
+            background: transparent;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .sidebar-button:hover {
+            background: #1e293b;
+            border-color: #475569;
+            color: #f1f5f9;
+        }
+
+        .sidebar-button.active {
+            background: linear-gradient(135deg, #0f4c75 0%, #3282b8 100%);
+            border-color: #00d4ff;
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+        }
+
+        .tab-container {
+            display: none;
+        }
+
+        .tab-container.active {
+            display: block;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+        }
+
+        .card {
+            background: #111827;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: #475569;
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-title {
+            font-size: 13px;
             font-weight: 600;
             color: #94a3b8;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
         }
 
-        input[type="text"],
-        input[type="number"],
-        select {
-            background-color: #0f172a;
+        .card-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .card-subtitle.positive {
+            color: #10b981;
+        }
+
+        .card-subtitle.negative {
+            color: #ef4444;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: transparent;
             border: 1px solid #334155;
-            color: #e2e8f0;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
+            color: #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
         }
 
-        input[type="range"] {
-            width: 100%;
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: #1e293b;
+            border-color: #475569;
+            color: #f1f5f9;
         }
 
-        select:focus,
-        input:focus {
-            outline: none;
+        .filter-btn.active {
+            background: linear-gradient(135deg, #0f4c75 0%, #3282b8 100%);
             border-color: #00d4ff;
-            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
-        }
-
-        .table-wrapper {
-            background-color: #111827;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            overflow: hidden;
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
         }
 
         table {
@@ -244,15 +244,9 @@
             font-size: 13px;
         }
 
-        thead {
-            background-color: #0f172a;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
         th {
-            padding: 12px 16px;
+            background: #1e293b;
+            padding: 12px;
             text-align: left;
             font-weight: 600;
             color: #94a3b8;
@@ -260,620 +254,136 @@
             text-transform: uppercase;
             font-size: 11px;
             letter-spacing: 0.5px;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        th:hover {
-            color: #cbd5e1;
-            background-color: #1e293b;
         }
 
         td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #1e293b;
-        }
-
-        tbody tr:hover {
-            background-color: #1e293b;
-        }
-
-        .neighborhood-cell {
-            color: #00d4ff;
-            font-weight: 500;
-        }
-
-        .title-cell {
-            color: #e2e8f0;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .title-cell:hover {
-            color: #00d4ff;
-            text-decoration: underline;
-        }
-
-        .price-cell {
-            font-weight: 600;
-            color: #10b981;
-        }
-
-        .price-cell.yellow { color: #f59e0b; }
-        .price-cell.orange { color: #f97316; }
-        .price-cell.red { color: #ef4444; }
-
-        .source-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .source-badge.zp {
-            background-color: rgba(59, 130, 246, 0.2);
-            color: #60a5fa;
-        }
-
-        .source-badge.ml {
-            background-color: rgba(168, 85, 247, 0.2);
-            color: #d8b4fe;
-        }
-
-        .tags-cell {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-
-        .tag {
-            display: inline-block;
-            padding: 3px 8px;
-            background-color: #334155;
+            padding: 12px;
+            border-bottom: 1px solid #334155;
             color: #cbd5e1;
-            border-radius: 3px;
-            font-size: 11px;
-            font-weight: 500;
         }
 
-        .tag.special {
-            background-color: rgba(0, 212, 255, 0.2);
-            color: #00d4ff;
+        tr:hover {
+            background: #1e293b;
         }
 
-        .warning-icon {
-            display: inline-block;
-            margin-left: 4px;
-            color: #ef4444;
-            font-weight: bold;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            padding: 24px;
-            align-items: center;
-        }
-
-        .pagination button {
-            padding: 8px 12px;
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            color: #e2e8f0;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .pagination button:hover:not(:disabled) {
-            background-color: #334155;
-            border-color: #00d4ff;
-            color: #00d4ff;
-        }
-
-        .pagination button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .pagination-info {
-            color: #94a3b8;
-            font-size: 13px;
-        }
-
-        /* Search Tab */
-        .search-container {
-            background-color: #111827;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-
-        .search-input-group {
-            margin-bottom: 20px;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 12px 16px;
-            background-color: #0f172a;
-            border: 1px solid #334155;
-            color: #e2e8f0;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .quick-keywords {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .keyword-pill {
-            padding: 6px 12px;
-            background-color: #334155;
-            color: #cbd5e1;
-            border: 1px solid #475569;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .keyword-pill:hover {
-            background-color: #475569;
-            border-color: #00d4ff;
-            color: #00d4ff;
-        }
-
-        .search-filters {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-
-        .search-results {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 16px;
-        }
-
-        .result-card {
-            background-color: #111827;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 16px;
-            transition: all 0.2s;
-        }
-
-        .result-card:hover {
-            border-color: #00d4ff;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
-        }
-
-        .result-title {
-            font-weight: 600;
-            color: #00d4ff;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .result-meta {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .result-price {
-            font-weight: 700;
-            color: #10b981;
-            font-size: 16px;
-            margin-bottom: 8px;
-        }
-
-        .result-description {
-            font-size: 12px;
-            color: #cbd5e1;
-            line-height: 1.5;
-            margin-bottom: 12px;
-        }
-
-        .highlight {
-            background-color: rgba(0, 212, 255, 0.3);
-            color: #00d4ff;
-            font-weight: 600;
-        }
-
-        .result-link {
-            display: inline-block;
-            padding: 6px 12px;
-            background-color: #00d4ff;
-            color: #0a0e1a;
-            border-radius: 4px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 12px;
-        }
-
-        .result-link:hover {
-            background-color: #0099cc;
-        }
-
-        /* Opportunities */
-        .opportunities-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-        }
-
-        .opportunity-card {
-            background-color: #111827;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 16px;
-            position: relative;
-            transition: all 0.2s;
-        }
-
-        .opportunity-card:hover {
-            border-color: #00d4ff;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
-        }
-
-        .opportunity-badge {
+        .pill {
             display: inline-block;
             padding: 4px 10px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-            background-color: #334155;
-            color: #cbd5e1;
-        }
-
-        .opportunity-badge.refurbish {
-            background-color: rgba(245, 158, 11, 0.2);
-            color: #f59e0b;
-        }
-
-        .opportunity-badge.land {
-            background-color: rgba(168, 85, 247, 0.2);
-            color: #a855f7;
-        }
-
-        .opportunity-title {
-            font-weight: 600;
+            background: #334155;
             color: #e2e8f0;
-            margin-bottom: 12px;
-            font-size: 14px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
         }
 
-        .opportunity-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 12px;
+        .pill.success {
+            background: #10b981;
+            color: #000;
         }
 
-        .detail-item {
-            padding: 8px;
-            background-color: #0f172a;
-            border-radius: 4px;
+        .pill.warning {
+            background: #f59e0b;
+            color: #000;
         }
 
-        .detail-label {
-            font-size: 10px;
-            color: #94a3b8;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-            font-weight: 600;
+        .pill.danger {
+            background: #ef4444;
+            color: #fff;
         }
 
-        .detail-value {
-            font-size: 13px;
-            font-weight: 600;
-            color: #00d4ff;
+        .panorama-container {
+            width: 100%;
+            height: 600px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            overflow: hidden;
         }
 
-        .discount-badge {
-            background-color: rgba(16, 185, 129, 0.2);
-            color: #10b981 !important;
-        }
-
-        .opportunity-link {
-            display: inline-block;
-            padding: 6px 12px;
-            background-color: #00d4ff;
-            color: #0a0e1a;
-            border-radius: 4px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 12px;
-        }
-
-        .opportunity-link:hover {
-            background-color: #0099cc;
-        }
-
-        /* Loading & Empty States */
-        .loading-container {
+        .loadingModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            padding: 80px 20px;
-            gap: 16px;
+            align-items: center;
+            z-index: 1000;
         }
 
-        .loading-spinner {
+        .loadingContent {
+            background: #111827;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .spinner {
+            border: 4px solid #334155;
+            border-top: 4px solid #00d4ff;
+            border-radius: 50%;
             width: 40px;
             height: 40px;
-            border: 3px solid #334155;
-            border-top-color: #00d4ff;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        .loading-text {
-            color: #94a3b8;
-            font-size: 14px;
-        }
-
-        .error-message {
-            padding: 40px;
-            background-color: #111827;
-            border: 1px solid #ef4444;
-            border-radius: 8px;
-            color: #ef4444;
-            text-align: center;
-        }
-
-        .empty-state {
+        .section-header {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            padding: 80px 20px;
-            gap: 12px;
-            color: #94a3b8;
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 8px;
-        }
-
-        .stats-banner {
-            background-color: #111827;
-            border-left: 4px solid #00d4ff;
-            padding: 12px 16px;
-            margin-bottom: 24px;
-            font-size: 13px;
-            color: #cbd5e1;
-        }
-
-        /* Map Tab Styles */
-        #mapContainer {
-            width: 100%;
-            height: 600px;
-            border-radius: 8px;
-            z-index: 1;
-        }
-
-        .leaflet-control-layers {
-            background-color: #111827 !important;
-            border: 1px solid #334155 !important;
-        }
-
-        .leaflet-control-layers-toggle {
-            background-color: #1e293b !important;
-        }
-
-        .leaflet-popup-content {
-            background-color: #111827 !important;
-            color: #e2e8f0 !important;
-            font-size: 12px;
-        }
-
-        .leaflet-popup-content-wrapper {
-            background-color: #111827;
-            border: 1px solid #334155;
-        }
-
-        .leaflet-popup-tip {
-            background-color: #111827;
-        }
-
-        .leaflet-control-attribution {
-            background-color: rgba(17, 24, 39, 0.8) !important;
-            color: #94a3b8 !important;
-        }
-
-        .map-legend {
-            background-color: #111827;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 24px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-            font-size: 12px;
-            color: #cbd5e1;
-        }
-
-        .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-        }
-
-        /* Renovation Tab Styles */
-        .investment-calculator {
-            background-color: #111827;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-
-        .calculator-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
             margin-bottom: 20px;
         }
 
-        .calculator-input {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .calculator-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: #94a3b8;
-            text-transform: uppercase;
-        }
-
-        .slider-value {
-            font-size: 16px;
-            font-weight: 700;
-            color: #00d4ff;
-        }
-
-        .calc-button {
-            padding: 10px 20px;
-            background-color: #00d4ff;
-            color: #0a0e1a;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-
-        .calc-button:hover {
-            background-color: #0099cc;
-        }
-
-        .calc-results {
-            background-color: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 24px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-        }
-
-        .result-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .result-label {
-            font-size: 11px;
-            color: #94a3b8;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .result-value {
+        .section-title {
             font-size: 18px;
             font-weight: 700;
-            color: #00d4ff;
+            color: #f1f5f9;
         }
 
-        .viability-badge {
-            padding: 4px 12px;
+        .search-input {
+            padding: 10px 14px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #cbd5e1;
+            font-size: 13px;
+            width: 300px;
+        }
+
+        .search-input::placeholder {
+            color: #64748b;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
             border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
         }
 
-        .viability-go {
-            background-color: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-        }
-
-        .viability-caution {
-            background-color: rgba(245, 158, 11, 0.2);
-            color: #f59e0b;
-        }
-
-        .viability-stop {
-            background-color: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-        }
-
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .tabs-container {
-                padding: 0 16px;
-                gap: 16px;
-            }
-
-            .main-content {
-                padding: 16px;
-            }
-
-            .kpi-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .charts-grid .chart-container[style*="grid-column"] {
-                grid-column: auto !important;
-            }
-
-            .filters-container {
-                grid-template-columns: 1fr;
-            }
-
-            .search-results {
-                grid-template-columns: 1fr;
-            }
-
-            .tags-cell {
-                display: none;
-            }
-
-            th:nth-child(n+5),
-            td:nth-child(n+5) {
-                display: none;
-            }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
         }
     </style>
 </head>
@@ -881,1436 +391,429 @@
     <div class="header">
         <div class="header-left">
             <h1>CABA Market Study</h1>
-            <div class="header-subtitle">Real Estate Market Dashboard</div>
+            <p class="header-subtitle">Real Estate Dashboard</p>
         </div>
         <div class="connection-status">
-            <div class="status-dot" id="statusDot"></div>
-            <span id="statusText">Conectando...</span>
+            <div class="status-dot connected"></div>
+            <span id="statusText">Connected to Supabase</span>
         </div>
     </div>
 
-    <div class="tabs-container">
-        <button class="tab-button active" data-tab="panorama">Panorama</button>
-        <button class="tab-button" data-tab="propiedades">Propiedades</button>
-        <button class="tab-button" data-tab="searcher">Super Searcher</button>
-        <button class="tab-button" data-tab="oportunidades">Oportunidades</button>
-        <button class="tab-button" data-tab="mapa">Mapa</button>
-        <button class="tab-button" data-tab="renovacion">Renovación</button>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Views</div>
+                <button class="sidebar-button active" data-tab="overview">Overview</button>
+                <button class="sidebar-button" data-tab="neighborhoods">Neighborhoods</button>
+                <button class="sidebar-button" data-tab="renovacion">Renovación</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-container active">
+                <div class="section-header">
+                    <h2 class="section-title">Market Overview</h2>
+                </div>
+
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-title">Total Properties</div>
+                        <div class="card-value" id="totalProperties">0</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Avg Price (m²)</div>
+                        <div class="card-value" id="avgPrice">$0</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Avg Area (m²)</div>
+                        <div class="card-value" id="avgArea">0</div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 24px;">
+                    <div class="section-header">
+                        <div class="card-title">Price Distribution by Neighborhood</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Neighborhoods Tab -->
+            <div id="neighborhoods" class="tab-container">
+                <div class="section-header">
+                    <h2 class="section-title">Neighborhoods Analysis</h2>
+                    <input type="text" class="search-input" id="neighborhoodSearch" placeholder="Search neighborhoods...">
+                </div>
+
+                <div class="filter-group" id="neighborhoodFilters"></div>
+
+                <div class="card">
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="neighborhoodChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 24px;">
+                    <table id="neighborhoodTable">
+                        <thead>
+                            <tr>
+                                <th>Neighborhood</th>
+                                <th>Properties</th>
+                                <th>Avg Price/m²</th>
+                                <th>Avg Area (m²)</th>
+                                <th>Price Range</th>
+                                <th>Keyword Tags</th>
+                            </tr>
+                        </thead>
+                        <tbody id="neighborhoodTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Renovación Tab -->
+            <div id="renovacion" class="tab-container">
+                <div class="section-header">
+                    <h2 class="section-title">Renovación Analysis</h2>
+                    <input type="text" class="search-input" id="renovacionSearch" placeholder="Search properties...">
+                </div>
+
+                <div class="filter-group" id="renovacionFilters"></div>
+
+                <div class="card" style="margin-top: 24px;">
+                    <table id="renovacionTable">
+                        <thead>
+                            <tr>
+                                <th>Property</th>
+                                <th>Area (m²)</th>
+                                <th>Current Price/m²</th>
+                                <th>Post-Reno Price/m²</th>
+                                <th>Budget</th>
+                                <th>ROI %</th>
+                                <th>Keyword Tags</th>
+                            </tr>
+                        </thead>
+                        <tbody id="renovacionTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="main-content">
-        <!-- Tab 1: Panorama -->
-        <div id="panorama" class="tab-content active">
-            <div id="panoramaContent">
-                <div class="loading-container">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text">Cargando datos de mercado...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab 2: Propiedades -->
-        <div id="propiedades" class="tab-content">
-            <div id="propiedadesContent">
-                <div class="loading-container">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text">Cargando propiedades...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab 3: Super Searcher -->
-        <div id="searcher" class="tab-content">
-            <div id="searcherContent">
-                <div class="loading-container">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text">Preparando búsqueda...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab 4: Oportunidades -->
-        <div id="oportunidades" class="tab-content">
-            <div id="oportunidadesContent">
-                <div class="loading-container">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text">Analizando oportunidades...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab 5: Mapa -->
-        <div id="mapa" class="tab-content">
-            <div id="mapaContent">
-                <div class="loading-container">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text">Cargando mapa interactivo...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab 6: Renovación -->
-        <div id="renovacion" class="tab-content">
-            <div id="renovacionContent">
-                <div class="loading-container">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text">Cargando análisis de renovación...</div>
-                </div>
-            </div>
+    <div id="loadingModal" class="loadingModal" style="display: none;">
+        <div class="loadingContent">
+            <div class="spinner"></div>
+            <p>Loading data from Supabase...</p>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script>
-        // ============================================
-        // CONFIGURATION
-        // ============================================
-        const SUPABASE_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
+        // Supabase configuration
+        const supabaseUrl = 'https://dbdmxwjzwlppqvzzagwb.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZG14d2p6d2xwcHF2enpvZ3diIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk3MTEzNDIsImV4cCI6MjA1NTI4NzM0Mn0.TL_FxC6Yd1iJwUllQ5Xl_7c3CkD03p8c7wUY0MwUY0U';
 
-        const DEFAULT_HEADERS = {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`
-        };
+        // Global variables
+        let allData = [];
+        let neighborhoodData = {};
+        let charts = {};
 
-        // ============================================
-        // STATE
-        // ============================================
-        let allProperties = [];
-        let marketStats = [];
-        let currentTab = 'panorama';
-        let currentPage = 1;
-        const itemsPerPage = 50;
-
-        // Filter state
-        let filterPriceMin = 0;
-        let filterPriceMax = 5000000;
-        let filterNeighborhood = '';
-        let filterSource = '';
-        let filterMinArea = 0;
-
-        // Chart instances
-        let neighborhoodsChart = null;
-        let priceChart = null;
-        let segmentChart = null;
-
-        // ============================================
-        // TAB SWITCHING
-        // ============================================
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const tabName = e.target.dataset.tab;
-                switchTab(tabName);
-            });
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                showLoading();
+                await loadData();
+                setupEventListeners();
+                updateOverview();
+                hideLoading();
+            } catch (error) {
+                console.error('Error initializing dashboard:', error);
+                hideLoading();
+                alert('Error loading data. Please refresh the page.');
+            }
         });
 
-        function switchTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Show selected tab
-            document.getElementById(tabName).classList.add('active');
-            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-
-            currentTab = tabName;
-
-            // Load content if not already loaded
-            if (tabName === 'panorama') initPanorama();
-            else if (tabName === 'propiedades') initPropiedades();
-            else if (tabName === 'searcher') initSearcher();
-            else if (tabName === 'oportunidades') initOportunidades();
-            else if (tabName === 'mapa') initMapa();
-            else if (tabName === 'renovacion') initRenovacion();
-        }
-
-        // ============================================
-        // CONNECTION STATUS
-        // ============================================
-        async function updateConnectionStatus() {
-            const statusDot = document.getElementById('statusDot');
-            const statusText = document.getElementById('statusText');
-
+        // Load data from Supabase
+        async function loadData() {
             try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=count()&limit=1`, {
-                    headers: DEFAULT_HEADERS
+                // Load properties
+                const response = await fetch(`${supabaseUrl}/rest/v1/properties?select=*`, {
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`
+                    }
                 });
 
-                if (response.ok) {
-                    statusDot.classList.add('connected');
-                    statusText.textContent = 'Conectado en vivo';
-                } else {
-                    statusDot.classList.remove('connected');
-                    statusText.textContent = 'Desconectado';
-                }
-            } catch (error) {
-                statusDot.classList.remove('connected');
-                statusText.textContent = 'Error de conexión';
-            }
-        }
+                if (!response.ok) throw new Error('Failed to load properties');
+                allData = await response.json();
 
-        updateConnectionStatus();
-
-        // ============================================
-        // FETCH FUNCTIONS
-        // ============================================
-        async function fetchProperties() {
-            if (allProperties.length > 0) return allProperties;
-
-            try {
-                const params = new URLSearchParams({
-                    'select': '*',
-                    'or': '(property_type.is.null,property_type.neq.duplicate_ml)',
-                    'currency': 'eq.USD',
-                    'price': 'gte.10000',
-                    'order': 'price.asc',
-                    'limit': '5000'
+                // Organize by neighborhood
+                allData.forEach(property => {
+                    const neighborhood = property.neighborhood || 'Unknown';
+                    if (!neighborhoodData[neighborhood]) {
+                        neighborhoodData[neighborhood] = [];
+                    }
+                    neighborhoodData[neighborhood].push(property);
                 });
-
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?${params}`, {
-                    headers: DEFAULT_HEADERS
-                });
-
-                if (!response.ok) throw new Error('Failed to fetch properties');
-                allProperties = await response.json();
-                return allProperties;
             } catch (error) {
-                console.error('Error fetching properties:', error);
-                return [];
+                console.error('Error loading data:', error);
+                throw error;
             }
         }
 
-        async function fetchMarketStats() {
-            if (marketStats.length > 0) return marketStats;
+        // Update overview tab
+        function updateOverview() {
+            if (allData.length === 0) return;
 
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/v_market_stats?select=*`, {
-                    headers: DEFAULT_HEADERS
-                });
+            const totalProperties = allData.length;
+            const avgPrice = (allData.reduce((sum, p) => sum + (Number(p.usd_m2) || 0), 0) / allData.length).toFixed(0);
+            const avgArea = (allData.reduce((sum, p) => sum + (Number(p.total_area) || 0), 0) / allData.length).toFixed(0);
 
-                if (!response.ok) throw new Error('Failed to fetch market stats');
-                marketStats = await response.json();
-                return marketStats;
-            } catch (error) {
-                console.error('Error fetching market stats:', error);
-                return [];
-            }
-        }
+            document.getElementById('totalProperties').textContent = totalProperties;
+            document.getElementById('avgPrice').textContent = `$${avgPrice}`;
+            document.getElementById('avgArea').textContent = avgArea;
 
-        async function searchProperties(searchTerms, minPrice, maxPrice, limit = 50) {
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/search_properties`, {
-                    method: 'POST',
-                    headers: DEFAULT_HEADERS,
-                    body: JSON.stringify({
-                        search_terms: searchTerms,
-                        min_price: minPrice,
-                        max_price: maxPrice,
-                        target_currency: 'USD',
-                        target_neighborhood: null,
-                        result_limit: limit
-                    })
-                });
-
-                if (!response.ok) throw new Error('Search failed');
-                return await response.json();
-            } catch (error) {
-                console.error('Error searching properties:', error);
-                return [];
-            }
-        }
-
-        async function fetchRenovationAnalysis() {
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/v_renovation_analysis?select=*&order=roi_pct.desc&limit=50`, {
-                    headers: DEFAULT_HEADERS
-                });
-
-                if (!response.ok) throw new Error('Failed to fetch renovation data');
-                return await response.json();
-            } catch (error) {
-                console.error('Error fetching renovation analysis:', error);
-                return [];
-            }
-        }
-
-        // ============================================
-        // UTILITY FUNCTIONS
-        // ============================================
-        function extractKeywords(title) {
-            const keywordPatterns = {
-                'reciclada': /reciclad/i,
-                'a estrenar': /a estrenar|estrena/i,
-                'refaccionar': /refacciona/i,
-                'luminosa': /luminosa|luminoso/i,
-                'cochera': /cochera/i,
-                'pileta': /pileta/i,
-                'jardín': /jardín|jardin/i,
-                'terraza': /terraza/i,
-                'PH': /\bph\b/i,
-                'lote propio': /lote propio/i,
-                'parrilla': /parrilla/i,
-                'balcón': /balcón|balcon/i,
-                'dependencia': /dependencia/i,
-                'quincho': /quincho/i,
-                'solarium': /solarium/i,
-                'losa radiante': /losa radiante/i,
-                'piso radiante': /piso radiante/i,
-                'vista': /vista/i,
-                'silencioso': /silencioso/i
-            };
-
-            const keywords = [];
-            for (const [key, pattern] of Object.entries(keywordPatterns)) {
-                if (pattern.test(title)) keywords.push(key);
-            }
-            return keywords;
-        }
-
-        function hasWarningConstraint(address) {
-            if (!address) return false;
-            const patterns = /vías|ferrocarril|autopista|ruta/i;
-            return patterns.test(address);
-        }
-
-        function getPriceColorClass(pricePerM2) {
-            if (pricePerM2 < 800) return 'green';
-            if (pricePerM2 < 1200) return 'yellow';
-            if (pricePerM2 < 1800) return 'orange';
-            return 'red';
-        }
-
-        function getPriceColor(pricePerM2) {
-            if (pricePerM2 < 800) return '#10b981';
-            if (pricePerM2 < 1200) return '#f59e0b';
-            if (pricePerM2 < 1800) return '#f97316';
-            return '#ef4444';
-        }
-
-        function formatPrice(price) {
-            return new Intl.NumberFormat('es-AR', {
-                style: 'currency',
-                currency: 'USD',
-                maximumFractionDigits: 0
-            }).format(price);
-        }
-
-        function highlightKeywords(text, keywords) {
-            let result = text;
-            keywords.forEach(keyword => {
-                const regex = new RegExp(`(${keyword})`, 'gi');
-                result = result.replace(regex, '<span class="highlight">$1</span>');
-            });
-            return result;
-        }
-
-        // ============================================
-        // TAB 1: PANORAMA
-        // ============================================
-        async function initPanorama() {
-            const container = document.getElementById('panoramaContent');
-
-            try {
-                const [properties, stats] = await Promise.all([
-                    fetchProperties(),
-                    fetchMarketStats()
-                ]);
-
-                if (properties.length === 0 || stats.length === 0) {
-                    container.innerHTML = '<div class="error-message">Error cargando datos del mercado</div>';
-                    return;
-                }
-
-                // Filter to 100k-200k segment for stats
-                const segment100k200k = properties.filter(p => Number(p.price) >= 100000 && Number(p.price) <= 200000);
-
-                // Calculate KPIs
-                const uniqueProps = new Set(properties.map(p => p.id)).size;
-                const pricesPerM2 = segment100k200k
-                    .filter(p => p.total_area && Number(p.total_area) > 0)
-                    .map(p => Number(p.price) / Number(p.total_area));
-                const medianPrice = pricesPerM2.length > 0
-                    ? pricesPerM2.sort((a, b) => a - b)[Math.floor(pricesPerM2.length / 2)]
-                    : 0;
-
-                const neighborhoods = new Set(properties.filter(p => p.neighborhood).map(p => p.neighborhood)).size;
-                const withDescriptions = properties.filter(p => p.description).length;
-
-                // Build HTML
-                let html = `
-                    <div class="kpi-grid">
-                        <div class="kpi-card">
-                            <div class="kpi-value">${uniqueProps.toLocaleString('es-AR')}</div>
-                            <div class="kpi-label">Propiedades Únicas</div>
-                        </div>
-                        <div class="kpi-card">
-                            <div class="kpi-value">$${Math.round(medianPrice).toLocaleString('es-AR')}</div>
-                            <div class="kpi-label">Mediana USD/m² (100k-200k)</div>
-                        </div>
-                        <div class="kpi-card">
-                            <div class="kpi-value">${neighborhoods}</div>
-                            <div class="kpi-label">Barrios Cubiertos</div>
-                        </div>
-                        <div class="kpi-card">
-                            <div class="kpi-value">${withDescriptions.toLocaleString('es-AR')}</div>
-                            <div class="kpi-label">Con Descripción</div>
-                        </div>
-                    </div>
-
-                    <div class="charts-grid">
-                        <div class="chart-container">
-                            <div class="chart-title">Top 15 Barrios por Inventario (100k-200k)</div>
-                            <canvas id="neighborhoodsChart" class="chart-canvas"></canvas>
-                        </div>
-                        <div class="chart-container">
-                            <div class="chart-title">Mediana USD/m² por Barrio (100k-200k)</div>
-                            <canvas id="priceChart" class="chart-canvas"></canvas>
-                        </div>
-                        <div class="chart-container" style="grid-column: span 2;">
-                            <div class="chart-title">Distribución por Rango de Precio</div>
-                            <canvas id="segmentChart" class="chart-canvas" style="max-height: 300px;"></canvas>
-                        </div>
-                    </div>
-                `;
-
-                container.innerHTML = html;
-
-                // Create Charts
-                await createCharts(segment100k200k, properties);
-            } catch (error) {
-                console.error('Error in initPanorama:', error);
-                container.innerHTML = '<div class="error-message">Error cargando Panorama</div>';
-            }
-        }
-
-        async function createCharts(segment100k200k, allProperties) {
-            // Chart 1: Top neighborhoods by count
-            const neighborhoodCounts = {};
-            segment100k200k.forEach(p => {
-                if (p.neighborhood) {
-                    neighborhoodCounts[p.neighborhood] = (neighborhoodCounts[p.neighborhood] || 0) + 1;
-                }
+            // Create price distribution chart
+            const neighborhoods = Object.keys(neighborhoodData);
+            const avgPrices = neighborhoods.map(n => {
+                const props = neighborhoodData[n];
+                return (props.reduce((sum, p) => sum + (Number(p.usd_m2) || 0), 0) / props.length).toFixed(0);
             });
 
-            const sortedNeighborhoods = Object.entries(neighborhoodCounts)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 15);
-
-            const ctx1 = document.getElementById('neighborhoodsChart').getContext('2d');
-            neighborhoodsChart = new Chart(ctx1, {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            if (charts.priceChart) charts.priceChart.destroy();
+            charts.priceChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: sortedNeighborhoods.map(n => n[0]),
+                    labels: neighborhoods,
                     datasets: [{
-                        label: 'Cantidad',
-                        data: sortedNeighborhoods.map(n => n[1]),
-                        backgroundColor: '#00d4ff',
-                        borderColor: '#0099cc',
+                        label: 'Average Price (USD/m²)',
+                        data: avgPrices,
+                        backgroundColor: 'rgba(0, 212, 255, 0.2)',
+                        borderColor: 'rgba(0, 212, 255, 1)',
                         borderWidth: 1
                     }]
                 },
                 options: {
-                    indexAxis: 'y',
                     responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: {
-                            ticks: { color: '#94a3b8' },
-                            grid: { color: '#334155' }
-                        },
-                        y: {
-                            ticks: { color: '#94a3b8' },
-                            grid: { display: false }
-                        }
-                    }
-                }
-            });
-
-            // Chart 2: Median price per neighborhood
-            const neighborhoodMedians = {};
-            segment100k200k.forEach(p => {
-                if (p.neighborhood && p.covered_area && p.covered_area > 0) {
-                    const pricePerM2 = p.price / p.covered_area;
-                    if (!neighborhoodMedians[p.neighborhood]) {
-                        neighborhoodMedians[p.neighborhood] = [];
-                    }
-                    neighborhoodMedians[p.neighborhood].push(pricePerM2);
-                }
-            });
-
-            const mediansByNeighborhood = Object.entries(neighborhoodMedians)
-                .map(([neighborhood, prices]) => {
-                    const sorted = prices.sort((a, b) => a - b);
-                    const median = sorted[Math.floor(sorted.length / 2)];
-                    return [neighborhood, median];
-                })
-                .sort((a, b) => a[1] - b[1])
-                .slice(0, 15);
-
-            const ctx2 = document.getElementById('priceChart').getContext('2d');
-            priceChart = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: mediansByNeighborhood.map(n => n[0]),
-                    datasets: [{
-                        label: 'USD/m²',
-                        data: mediansByNeighborhood.map(n => Math.round(n[1])),
-                        backgroundColor: mediansByNeighborhood.map(n => getPriceColor(n[1])),
-                        borderColor: '#334155',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: {
-                            ticks: { color: '#94a3b8' },
-                            grid: { color: '#334155' }
-                        },
-                        y: {
-                            ticks: { color: '#94a3b8' },
-                            grid: { display: false }
-                        }
-                    }
-                }
-            });
-
-            // Chart 3: Distribution by segment
-            const segments = {
-                '0-100k': allProperties.filter(p => p.price < 100000).length,
-                '100k-200k': allProperties.filter(p => p.price >= 100000 && p.price < 200000).length,
-                '200k-500k': allProperties.filter(p => p.price >= 200000 && p.price < 500000).length,
-                '500k-1M': allProperties.filter(p => p.price >= 500000 && p.price < 1000000).length,
-                '1M+': allProperties.filter(p => p.price >= 1000000).length
-            };
-
-            const ctx3 = document.getElementById('segmentChart').getContext('2d');
-            segmentChart = new Chart(ctx3, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(segments),
-                    datasets: [{
-                        data: Object.values(segments),
-                        backgroundColor: [
-                            '#06b6d4',
-                            '#00d4ff',
-                            '#0ea5e9',
-                            '#3b82f6',
-                            '#8b5cf6'
-                        ],
-                        borderColor: '#1e293b',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: { color: '#94a3b8', padding: 20 }
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: '#334155' }
+                        },
+                        x: {
+                            ticks: { color: '#cbd5e1' },
+                            grid: { display: false }
                         }
                     }
                 }
             });
         }
 
-        // ============================================
-        // TAB 2: PROPIEDADES
-        // ============================================
-        async function initPropiedades() {
-            const container = document.getElementById('propiedadesContent');
+        // Update neighborhoods tab
+        function updateNeighborhoods(filter = '') {
+            const neighborhoods = Object.keys(neighborhoodData).filter(n => 
+                n.toLowerCase().includes(filter.toLowerCase())
+            ).sort();
 
-            try {
-                const properties = await fetchProperties();
+            // Create filter buttons
+            const filterContainer = document.getElementById('neighborhoodFilters');
+            filterContainer.innerHTML = '';
+            neighborhoods.forEach(n => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn';
+                btn.textContent = n;
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('#neighborhoodFilters .filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    updateNeighborhoodChart(n);
+                    updateNeighborhoodTable(n);
+                });
+                filterContainer.appendChild(btn);
+            });
 
-                if (properties.length === 0) {
-                    container.innerHTML = '<div class="error-message">Error cargando propiedades</div>';
-                    return;
-                }
+            // Update table with all neighborhoods
+            const tbody = document.getElementById('neighborhoodTableBody');
+            tbody.innerHTML = '';
+            neighborhoods.forEach(neighborhood => {
+                const props = neighborhoodData[neighborhood];
+                const avgPrice = (props.reduce((sum, p) => sum + (Number(p.usd_m2) || 0), 0) / props.length).toFixed(0);
+                const avgArea = (props.reduce((sum, p) => sum + (Number(p.total_area) || 0), 0) / props.length).toFixed(0);
+                const prices = props.map(p => Number(p.usd_m2) || 0).sort((a, b) => a - b);
+                const minPrice = prices[0];
+                const maxPrice = prices[prices.length - 1];
 
-                const neighborhoods = [...new Set(properties.filter(p => p.neighborhood).map(p => p.neighborhood))];
-                const sources = [...new Set(properties.filter(p => p.source).map(p => p.source))];
+                // Extract keyword tags from description
+                const keywordTags = new Set();
+                props.forEach(p => {
+                    if (p.description) {
+                        const tags = p.description.split(',').map(t => t.trim()).filter(t => t.length > 0);
+                        tags.forEach(tag => {
+                            if (tag.length <= 20) keywordTags.add(tag);
+                        });
+                    }
+                });
 
-                let html = `
-                    <div class="filters-container">
-                        <div class="filter-group">
-                            <label class="filter-label">Precio Mínimo (USD)</label>
-                            <input type="number" id="filterPriceMin" value="0" placeholder="0">
-                        </div>
-                        <div class="filter-group">
-                            <label class="filter-label">Precio Máximo (USD)</label>
-                            <input type="number" id="filterPriceMax" value="5000000" placeholder="5000000">
-                        </div>
-                        <div class="filter-group">
-                            <label class="filter-label">Barrio</label>
-                            <select id="filterNeighborhood">
-                                <option value="">Todos</option>
-                                ${neighborhoods.map(n => `<option value="${n}">${n}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label class="filter-label">Fuente</label>
-                            <select id="filterSource">
-                                <option value="">Todas</option>
-                                ${sources.map(s => `<option value="${s}">${s}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label class="filter-label">Superficie Mínima (m²)</label>
-                            <input type="number" id="filterMinArea" value="0" placeholder="0">
-                        </div>
-                    </div>
-
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th onclick="sortTable('neighborhood')">Barrio ↕</th>
-                                    <th onclick="sortTable('title')">Título ↕</th>
-                                    <th onclick="sortTable('price')">Precio USD ↕</th>
-                                    <th onclick="sortTable('pricePerM2')">USD/m² ↕</th>
-
-                                    <th onclick="sortTable('bedrooms')">Dormitorios ↕</th>
-                                    <th onclick="sortTable('bathrooms')">Baños ↕</th>
-                                    <th>Fuente</th>
-                                    <th>Tags</th>
-                                </tr>
-                            </thead>
-                            <tbody id="propertiesTableBody">
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="pagination" id="paginationControls"></div>
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${neighborhood}</strong></td>
+                    <td>${props.length}</td>
+                    <td>$${avgPrice}</td>
+                    <td>${avgArea}</td>
+                    <td>$${minPrice} - $${maxPrice}</td>
+                    <td>${Array.from(keywordTags).slice(0, 2).map(tag => `<span class="pill">${tag}</span>`).join(' ')}</td>
                 `;
-
-                container.innerHTML = html;
-
-                // Attach filter listeners
-                document.getElementById('filterPriceMin').addEventListener('input', (e) => {
-                    filterPriceMin = parseInt(e.target.value) || 0;
-                    currentPage = 1;
-                    renderPropertiesTable(properties);
-                });
-
-                document.getElementById('filterPriceMax').addEventListener('input', (e) => {
-                    filterPriceMax = parseInt(e.target.value) || 5000000;
-                    currentPage = 1;
-                    renderPropertiesTable(properties);
-                });
-
-                document.getElementById('filterNeighborhood').addEventListener('change', (e) => {
-                    filterNeighborhood = e.target.value;
-                    currentPage = 1;
-                    renderPropertiesTable(properties);
-                });
-
-                document.getElementById('filterSource').addEventListener('change', (e) => {
-                    filterSource = e.target.value;
-                    currentPage = 1;
-                    renderPropertiesTable(properties);
-                });
-
-                document.getElementById('filterMinArea').addEventListener('input', (e) => {
-                    filterMinArea = parseInt(e.target.value) || 0;
-                    currentPage = 1;
-                    renderPropertiesTable(properties);
-                });
-
-                renderPropertiesTable(properties);
-            } catch (error) {
-                console.error('Error in initPropiedades:', error);
-                container.innerHTML = '<div class="error-message">Error cargando propiedades</div>';
-            }
-        }
-
-        function renderPropertiesTable(properties) {
-            let filtered = properties.filter(p => {
-                if (p.price < filterPriceMin || p.price > filterPriceMax) return false;
-                if (filterNeighborhood && p.neighborhood !== filterNeighborhood) return false;
-                if (filterSource && p.source !== filterSource) return false;
-                if (p.covered_area && p.covered_area < filterMinArea) return false;
-                return true;
+                tbody.appendChild(row);
             });
 
-            const start = (currentPage - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const paged = filtered.slice(start, end);
-
-            const tbody = document.getElementById('propertiesTableBody');
-            tbody.innerHTML = paged.map(p => {
-                const price = Number(p.price);
-                const totalArea = Number(p.total_area);
-                const pricePerM2 = (totalArea && totalArea > 0) ? price / totalArea : 0;
-                const keywords = extractKeywords(p.title || '');
-                const colorClass = getPriceColorClass(pricePerM2);
-                const warning = hasWarningConstraint(p.address_text);
-                
-                // Extract bedrooms from title if null
-                let bedrooms = p.bedrooms;
-                if (!bedrooms) {
-                    const match = (p.title || '').match(/(\d+)\s*amb/i);
-                    if (match) bedrooms = match[1];
-                }
-
-                return `
-                    <tr>
-                        <td class="neighborhood-cell">${p.neighborhood || 'N/A'}</td>
-                        <td><a href="${p.permalink}" target="_blank" class="title-cell">${p.title || 'Sin título'}</a></td>
-                        <td class="price-cell">${formatPrice(price)}</td>
-                        <td class="price-cell ${colorClass}">$${Math.round(pricePerM2).toLocaleString('es-AR')}</td>
-                        <td>${totalArea ? Math.round(totalArea).toLocaleString('es-AR') : 'N/A'} m²</td>
-                        <td>${bedrooms || '-'}</td>
-                        <td>${p.bathrooms || '-'}</td>
-                        <td><span class="source-badge ${p.source.toLowerCase()}">${p.source}</span></td>
-                        <td>
-                            <div class="tags-cell">
-                                ${keywords.map(k => `<span class="tag special">${k}</span>`).join('')}
-                                ${warning ? '<span class="warning-icon" title="Cerca de vías/ferrocarril/autopista">⚠️</span>' : ''}
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            // Pagination
-            const totalPages = Math.ceil(filtered.length / itemsPerPage);
-            const paginationControls = document.getElementById('paginationControls');
-            paginationControls.innerHTML = `
-                <button onclick="previousPage()" ${currentPage === 1 ? 'disabled' : ''}>← Anterior</button>
-                <span class="pagination-info">Página ${currentPage} de ${totalPages} (${filtered.length} propiedades)</span>
-                <button onclick="nextPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>Siguiente →</button>
-            `;
-        }
-
-        function sortTable(column) {
-            // Simple sorting placeholder - in production would add full sorting logic
-            console.log('Sort by:', column);
-        }
-
-        function previousPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                renderPropertiesTable(allProperties);
+            // Initialize chart for first neighborhood
+            if (neighborhoods.length > 0) {
+                updateNeighborhoodChart(neighborhoods[0]);
             }
         }
 
-        function nextPage(maxPages) {
-            if (currentPage < maxPages) {
-                currentPage++;
-                renderPropertiesTable(allProperties);
-            }
-        }
-
-        // ============================================
-        // TAB 3: SUPER SEARCHER
-        // ============================================
-        async function initSearcher() {
-            const container = document.getElementById('searcherContent');
-
-            const properties = await fetchProperties();
-            const neighborhoods = [...new Set(properties.filter(p => p.neighborhood).map(p => p.neighborhood))];
-            const withDesc = properties.filter(p => p.description).length;
-
-            let html = `
-                <div class="search-container">
-                    <div class="search-input-group">
-                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar por palabras clave (pileta, parrilla, luminoso, etc.)...">
-                        <div class="quick-keywords">
-                            <span class="keyword-pill" onclick="addKeyword('pileta')">pileta</span>
-                            <span class="keyword-pill" onclick="addKeyword('parrilla')">parrilla</span>
-                            <span class="keyword-pill" onclick="addKeyword('jardín')">jardín</span>
-                            <span class="keyword-pill" onclick="addKeyword('terraza')">terraza</span>
-                            <span class="keyword-pill" onclick="addKeyword('luminoso')">luminoso</span>
-                            <span class="keyword-pill" onclick="addKeyword('reciclado')">reciclado</span>
-                            <span class="keyword-pill" onclick="addKeyword('cochera')">cochera</span>
-                            <span class="keyword-pill" onclick="addKeyword('balcón')">balcón</span>
-                            <span class="keyword-pill" onclick="addKeyword('dependencia')">dependencia</span>
-                            <span class="keyword-pill" onclick="addKeyword('quincho')">quincho</span>
-                            <span class="keyword-pill" onclick="addKeyword('solarium')">solarium</span>
-                            <span class="keyword-pill" onclick="addKeyword('losa radiante')">losa radiante</span>
-                        </div>
-                    </div>
-
-                    <div class="search-filters">
-                        <div class="filter-group">
-                            <label class="filter-label">Precio Mínimo (USD)</label>
-                            <input type="number" id="searchPriceMin" value="0" placeholder="0">
-                        </div>
-                        <div class="filter-group">
-                            <label class="filter-label">Precio Máximo (USD)</label>
-                            <input type="number" id="searchPriceMax" value="5000000" placeholder="5000000">
-                        </div>
-                        <div class="filter-group">
-                            <label class="filter-label">Barrio</label>
-                            <select id="searchNeighborhood">
-                                <option value="">Todos</option>
-                                ${neighborhoods.map(n => `<option value="${n}">${n}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label class="filter-label">Resultados</label>
-                            <select id="searchLimit">
-                                <option value="20">20</option>
-                                <option value="50" selected>50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <button onclick="executeSearch()" style="padding: 10px 20px; background-color: #00d4ff; color: #0a0e1a; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Buscar</button>
-                </div>
-
-                <div class="stats-banner">Mostrando ${withDesc.toLocaleString('es-AR')} de ${properties.length.toLocaleString('es-AR')} propiedades con descripción</div>
-
-                <div id="searchResults" class="search-results"></div>
-            `;
-
-            container.innerHTML = html;
-
-            // Attach event listeners
-            document.getElementById('searchInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') executeSearch();
-            });
-        }
-
-        function addKeyword(keyword) {
-            const input = document.getElementById('searchInput');
-            const current = input.value.trim();
-            if (current) {
-                input.value = current + ' ' + keyword;
-            } else {
-                input.value = keyword;
-            }
-        }
-
-        async function executeSearch() {
-            const searchTerm = document.getElementById('searchInput').value.trim();
-            const priceMin = parseInt(document.getElementById('searchPriceMin').value) || 0;
-            const priceMax = parseInt(document.getElementById('searchPriceMax').value) || 5000000;
-            const limit = parseInt(document.getElementById('searchLimit').value) || 50;
-
-            if (!searchTerm) {
-                alert('Por favor ingrese términos de búsqueda');
-                return;
-            }
-
-            const resultsDiv = document.getElementById('searchResults');
-            resultsDiv.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><div class="loading-text">Buscando...</div></div>';
-
-            try {
-                const results = await searchProperties(searchTerm, priceMin, priceMax, limit);
-
-                if (results.length === 0) {
-                    resultsDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><div>No se encontraron propiedades con estos criterios</div></div>';
-                    return;
-                }
-
-                const keywords = searchTerm.toLowerCase().split(/\s+/);
-                resultsDiv.innerHTML = results.map(r => {
-                    const desc = r.description || 'Sin descripción disponible';
-                    const highlightedDesc = highlightKeywords(desc.substring(0, 500), keywords);
-
-                    return `
-                        <div class="result-card">
-                            <div class="result-title">${r.title || 'Sin título'}</div>
-                            <div class="result-meta">
-                                <span>${r.neighborhood || 'Barrio desconocido'}</span>
-                                <span>${r.source || 'Fuente'}</span>
-                            </div>
-                            <div class="result-price">${formatPrice(r.price)}</div>
-                            <div class="result-meta">
-                                <span>${r.total_area || r.covered_area ? (r.covered_area || r.total_area) + ' m²' : 'Área no disponible'}</span>
-                                <span>${r.bedrooms || 0}D | ${r.bathrooms || 0}B</span>
-                            </div>
-                            <div class="result-description">${highlightedDesc}</div>
-                            <a href="${r.permalink}" target="_blank" class="result-link">Ver Propiedad →</a>
-                        </div>
-                    `;
-                }).join('');
-            } catch (error) {
-                console.error('Error searching:', error);
-                resultsDiv.innerHTML = '<div class="error-message">Error en la búsqueda. Intente nuevamente.</div>';
-            }
-        }
-
-        // ============================================
-        // TAB 4: OPORTUNIDADES
-        // ============================================
-        async function initOportunidades() {
-            const container = document.getElementById('oportunidadesContent');
-
-            try {
-                const [properties, stats] = await Promise.all([
-                    fetchProperties(),
-                    fetchMarketStats()
-                ]);
-
-                if (properties.length === 0) {
-                    container.innerHTML = '<div class="error-message">Error cargando datos</div>';
-                    return;
-                }
-
-                // Create neighborhood median map
-                const neighborhoodMedians = {};
-                stats.forEach(s => {
-                    if (s.neighborhood && s.median_price_per_sqm) {
-                        neighborhoodMedians[s.neighborhood] = s.median_price_per_sqm;
-                    }
-                });
-
-                // Find opportunities
-                const opportunities = [];
-
-                properties.forEach(p => {
-                    if (!p.neighborhood || !p.total_area || Number(p.total_area) === 0) return;
-
-                    const pricePerM2 = Number(p.price) / Number(p.total_area);
-                    const neighborhoodMedian = neighborhoodMedians[p.neighborhood];
-
-                    // Price opportunity: 20% below median
-                    if (neighborhoodMedian && pricePerM2 < neighborhoodMedian * 0.8) {
-                        const gap = ((neighborhoodMedian - pricePerM2) / neighborhoodMedian * 100).toFixed(1);
-                        opportunities.push({
-                            type: 'price',
-                            property: p,
-                            gap,
-                            neighborhoodMedian,
-                            pricePerM2,
-                            reason: 'Oportunidad por precio'
-                        });
-                    }
-
-                    // Refurbish opportunity
-                    const keywords = extractKeywords(p.title || '');
-                    if (keywords.some(k => ['reciclada', 'refaccionar', 'a reciclar'].includes(k))) {
-                        opportunities.push({
-                            type: 'refurbish',
-                            property: p,
-                            pricePerM2,
-                            neighborhoodMedian,
-                            reason: 'Oportunidad de refacción'
-                        });
-                    }
-
-                    // Land opportunity
-                    if (keywords.includes('lote propio')) {
-                        opportunities.push({
-                            type: 'land',
-                            property: p,
-                            pricePerM2,
-                            reason: 'Lote propio'
-                        });
-                    }
-                });
-
-                // Sort by gap
-                opportunities.sort((a, b) => (b.gap || 0) - (a.gap || 0));
-
-                if (opportunities.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💡</div><div>No se encontraron oportunidades en este momento</div></div>';
-                    return;
-                }
-
-                const html = opportunities.map(opp => {
-                    const badgeClass = opp.type === 'refurbish' ? 'refurbish' : opp.type === 'land' ? 'land' : '';
-                    const badgeText = opp.type === 'refurbish' ? 'Refacción' : opp.type === 'land' ? 'Lote Propio' : 'Precio';
-
-                    return `
-                        <div class="opportunity-card">
-                            <div class="opportunity-badge ${badgeClass}">${badgeText}</div>
-                            <div class="opportunity-title">${opp.property.title || 'Sin título'}</div>
-                            <div class="opportunity-details">
-                                <div class="detail-item">
-                                    <div class="detail-label">Barrio</div>
-                                    <div class="detail-value">${opp.property.neighborhood}</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label">Precio</div>
-                                    <div class="detail-value">${formatPrice(opp.property.price)}</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label">USD/m²</div>
-                                    <div class="detail-value">$${Math.round(opp.pricePerM2).toLocaleString('es-AR')}</div>
-                                </div>
-                                ${opp.neighborhoodMedian ? `
-                                    <div class="detail-item">
-                                        <div class="detail-label">Mediana Barrio</div>
-                                        <div class="detail-value">$${Math.round(opp.neighborhoodMedian).toLocaleString('es-AR')}</div>
-                                    </div>
-                                    <div class="detail-item">
-                                        <div class="detail-label">Descuento</div>
-                                        <div class="detail-value discount-badge">${opp.gap}%</div>
-                                    </div>
-                                ` : ''}
-                                <div class="detail-item">
-                                    <div class="detail-label">Superficie</div>
-                                    <div class="detail-value">${Math.round(opp.property.covered_area)} m²</div>
-                                </div>
-                            </div>
-                            <div style="color: #cbd5e1; font-size: 13px; margin-bottom: 12px;">
-                                <strong>${opp.reason}</strong>
-                            </div>
-                            <a href="${opp.property.permalink}" target="_blank" class="opportunity-link">Ver Propiedad →</a>
-                        </div>
-                    `;
-                }).join('');
-
-                container.innerHTML = `<div class="opportunities-grid">${html}</div>`;
-            } catch (error) {
-                console.error('Error in initOportunidades:', error);
-                container.innerHTML = '<div class="error-message">Error cargando oportunidades</div>';
-            }
-        }
-
-        // ============================================
-        // TAB 5: MAPA (LEAFLET + RAILWAYS + EXCLUSION ZONES)
-        // ============================================
-        const BARRIO_MAP_DATA = {
-            'Villa Lugano': { lat: -34.6345, lng: -58.4860, zone: 'sur' },
-            'Pompeya': { lat: -34.6433, lng: -58.4183, zone: 'sur' },
-            'Villa Soldati': { lat: -34.6549, lng: -58.4483, zone: 'sur' },
-            'Barracas': { lat: -34.6418, lng: -58.3843, zone: 'sur' },
-            'La Boca': { lat: -34.6345, lng: -58.3635, zone: 'sur' },
-            'Parque Patricios': { lat: -34.6343, lng: -58.4050, zone: 'sur' },
-            'Villa Riachuelo': { lat: -34.6583, lng: -58.4683, zone: 'sur' },
-            'Mataderos': { lat: -34.6519, lng: -58.5064, zone: 'oeste' },
-            'Liniers': { lat: -34.6433, lng: -58.5220, zone: 'oeste' },
-            'Flores': { lat: -34.6283, lng: -58.4633, zone: 'oeste' },
-            'Floresta': { lat: -34.6283, lng: -58.4883, zone: 'oeste' },
-            'Parque Avellaneda': { lat: -34.6433, lng: -58.4783, zone: 'oeste' },
-            'Villa Luro': { lat: -34.6373, lng: -58.4943, zone: 'oeste' },
-            'Monte Castro': { lat: -34.6183, lng: -58.5043, zone: 'oeste' },
-            'Versalles': { lat: -34.6183, lng: -58.5243, zone: 'oeste' },
-            'Villa Real': { lat: -34.6183, lng: -58.5183, zone: 'oeste' },
-            'Villa Devoto': { lat: -34.5983, lng: -58.5113, zone: 'oeste' },
-            'Villa del Parque': { lat: -34.6073, lng: -58.4883, zone: 'oeste' },
-            'Boedo': { lat: -34.6283, lng: -58.4183, zone: 'centro' },
-            'Almagro': { lat: -34.6083, lng: -58.4183, zone: 'centro' },
-            'Caballito': { lat: -34.6183, lng: -58.4383, zone: 'centro' },
-            'Villa Crespo': { lat: -34.5983, lng: -58.4383, zone: 'centro' },
-            'Chacarita': { lat: -34.5883, lng: -58.4483, zone: 'centro' },
-            'Paternal': { lat: -34.5983, lng: -58.4683, zone: 'centro' },
-            'Parque Chacabuco': { lat: -34.6333, lng: -58.4383, zone: 'centro' },
-            'Saavedra': { lat: -34.5583, lng: -58.4883, zone: 'norte' },
-            'Coghlan': { lat: -34.5683, lng: -58.4783, zone: 'norte' },
-            'Belgrano': { lat: -34.5583, lng: -58.4583, zone: 'norte' },
-            'Nunez': { lat: -34.5483, lng: -58.4583, zone: 'norte' },
-            'Villa Urquiza': { lat: -34.5683, lng: -58.4883, zone: 'norte' },
-            'Palermo': { lat: -34.5783, lng: -58.4283, zone: 'norte' }
-        };
-
-        const ZONE_COLORS = {
-            'sur': '#06b6d4',
-            'oeste': '#10b981',
-            'centro': '#f59e0b',
-            'norte': '#a855f7'
-        };
-
-        let mapaInstance = null;
-        let railwaysLayerGroup = null;
-        let buffersLayerGroup = null;
-        let mapaInitialized = false;
-
-        async function initMapa() {
-            if (mapaInitialized) return;
-            
-            const container = document.getElementById('mapaContent');
-
-            try {
-                buildMapContent();
-                mapaInitialized = true;
-            } catch (error) {
-                console.error('Error in initMapa:', error);
-                container.innerHTML = '<div class="error-message">Error cargando mapa</div>';
-            }
-        }
-
-        function buildMapContent() {
-            const container = document.getElementById('mapaContent');
-            const properties = allProperties.length > 0 ? allProperties : [];
-
-            // Count properties per barrio
-            const barrioCounts = {};
-            properties.forEach(p => {
-                if (p.neighborhood) {
-                    barrioCounts[p.neighborhood] = (barrioCounts[p.neighborhood] || 0) + 1;
-                }
+        // Update neighborhood chart
+        function updateNeighborhoodChart(neighborhood) {
+            const props = neighborhoodData[neighborhood];
+            const priceMap = {};
+            props.forEach(p => {
+                const price = Math.round((Number(p.usd_m2) || 0) / 100) * 100;
+                priceMap[price] = (priceMap[price] || 0) + 1;
             });
 
-            let html = `
-                <div class="map-legend">
-                    <div style="font-weight: 600; color: #e2e8f0; margin-bottom: 12px;">Leyenda</div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #06b6d4;"></div>
-                        <span>Sur</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #10b981;"></div>
-                        <span>Oeste</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #f59e0b;"></div>
-                        <span>Centro</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #a855f7;"></div>
-                        <span>Norte</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: rgba(239, 68, 68, 0.3); border: 1px solid #ef4444;"></div>
-                        <span>Zona de Exclusión (300m desde ferrocarril)</span>
-                    </div>
-                </div>
-                <div id="mapContainer"></div>
-            `;
+            const prices = Object.keys(priceMap).sort((a, b) => a - b);
+            const counts = prices.map(p => priceMap[p]);
 
-            container.innerHTML = html;
-
-            // Initialize map
-            setTimeout(() => {
-                if (!mapaInstance) {
-                    mapaInstance = L.map('mapContainer').setView([-34.61, -58.45], 12);
-                    
-                    // Dark tile layer
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                        attribution: '&copy; CartoDB',
-                        subdomains: 'abcd',
-                        maxZoom: 19
-                    }).addTo(mapaInstance);
-
-                    // Add barrio circles
-                    Object.entries(BARRIO_MAP_DATA).forEach(([barrio, data]) => {
-                        const count = barrioCounts[barrio] || 0;
-                        const radius = Math.min(Math.max(count * 0.3, 5), 30);
-                        const color = ZONE_COLORS[data.zone];
-
-                        const circle = L.circleMarker([data.lat, data.lng], {
-                            radius: radius,
-                            fillColor: color,
-                            color: color,
-                            weight: 2,
-                            opacity: 0.8,
-                            fillOpacity: 0.6
-                        }).addTo(mapaInstance);
-
-                        circle.bindPopup(`<strong>${barrio}</strong><br/>Propiedades: ${count}`);
-                    });
-
-                    // Layer groups for toggleable layers
-                    railwaysLayerGroup = L.layerGroup().addTo(mapaInstance);
-                    buffersLayerGroup = L.layerGroup().addTo(mapaInstance);
-
-                    // Fetch railways from Overpass API (cached)
-                    fetchRailways(mapaInstance);
-
-                    // Layer control
-                    L.control.layers(null, {
-                        'Ferrocarriles': railwaysLayerGroup,
-                        'Zonas de Exclusión': buffersLayerGroup
-                    }).addTo(mapaInstance);
-                }
-
-                // Fix Leaflet rendering
-                mapaInstance.invalidateSize();
-            }, 100);
-        }
-
-        function fetchRailways(map) {
-            const cached = sessionStorage.getItem('railways_cache');
-            
-            if (cached) {
-                drawRailways(JSON.parse(cached), map);
-                return;
-            }
-
-            // Overpass API query for railways around CABA
-            const query = `[bbox:-34.75,-58.65,-34.50,-58.30];(way["railway"~"rail|light_rail|subway"];);out geom;`;
-            const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
-
-            fetch(url)
-                .then(r => r.json())
-                .then(data => {
-                    sessionStorage.setItem('railways_cache', JSON.stringify(data));
-                    drawRailways(data, map);
-                })
-                .catch(e => console.log('Overpass API unavailable:', e));
-        }
-
-        function drawRailways(data, map) {
-            // Draw railway lines
-            if (data.elements) {
-                data.elements.forEach(el => {
-                    if (el.geometry) {
-                        const latlngs = el.geometry.map(g => [g.lat, g.lon]);
-                        if (latlngs.length > 1) {
-                            L.polyline(latlngs, {
-                                color: '#ef4444',
-                                weight: 2,
-                                opacity: 0.7,
-                                dashArray: '5, 5'
-                            }).addTo(railwaysLayerGroup);
-
-                            // Add 300m exclusion buffer circles at intervals
-                            for (let i = 0; i < latlngs.length; i += 2) {
-                                L.circleMarker(latlngs[i], {
-                                    radius: 300 / 111, // approximate meters to lat/lng
-                                    fillColor: '#ef4444',
-                                    color: '#ef4444',
-                                    weight: 1,
-                                    opacity: 0.2,
-                                    fillOpacity: 0.1
-                                }).addTo(buffersLayerGroup);
-                            }
+            const ctx = document.getElementById('neighborhoodChart').getContext('2d');
+            if (charts.neighborhoodChart) charts.neighborhoodChart.destroy();
+            charts.neighborhoodChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: prices,
+                    datasets: [{
+                        label: `Price Distribution - ${neighborhood}`,
+                        data: counts,
+                        borderColor: 'rgba(0, 212, 255, 1)',
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: '#334155' }
+                        },
+                        x: {
+                            ticks: { color: '#cbd5e1' },
+                            grid: { display: false }
                         }
                     }
-                });
-            }
-        }
-
-        // ============================================
-        // TAB 6: RENOVACIÓN (INVESTMENT CALCULATOR + ROI TABLE)
-        // ============================================
-        const RENOVATION_GAP_DATA = {
-            '150-200k': { refac: 876, recic: 1090 },
-            '200-300k': { refac: 1184, recic: 1360 },
-            '300k+': { refac: 1377, recic: 1750 }
-        };
-
-        async function initRenovacion() {
-            const container = document.getElementById('renovacionContent');
-
-            try {
-                // Fetch renovation analysis data
-                const renovationData = await fetchRenovationAnalysis();
-
-                if (!renovationData || renovationData.length === 0) {
-                    container.innerHTML = '<div class="error-message">No hay datos de renovación disponibles</div>';
-                    return;
                 }
-
-                // Calculate summary KPIs
-                const avgROI = (renovationData.reduce((sum, r) => sum + (r.roi_pct || 0), 0) / renovationData.length).toFixed(1);
-                const avgBudget = (renovationData.reduce((sum, r) => sum + (r.budget_reno || 0), 0) / renovationData.length).toFixed(0);
-
-                let html = `
-                    <div class="kpi-grid">
-                        <div class="kpi-card">
-                            <div class="kpi-value">${avgROI}%</div>
-                            <div class="kpi-label">ROI Promedio</div>
-                        </div>
-                        <div class="kpi-card">
-                            <div class="kpi-value">${renovationData.length}</div>
-                            <div class="kpi-label">Propiedades Analizadas</div>
-                        </div>
-                        <div class="kpi-card">
-                            <div class="kpi-value">$${Math.round(avgBudget).toLocaleString('es-AR')}</div>
-                            <div class="kpi-label">Presupuesto Promedio</div>
-                        </div>
-                    </div>
-
-                    <div class="investment-calculator">
-                        <div style="font-weight: 600; color: #e2e8f0; margin-bottom: 20px; font-size: 16px;">Calculadora de Inversión</div>
-                        <div class="calculator-grid">
-                            <div class="calculator-input">
-                                <label class="calculator-label">Rango de Precio</label>
-                                <select id="priceRange" style="padding: 8px 12px; background-color: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 4px; font-family: 'Inter', sans-serif;">
-                                    <option value="150-200k">150k - 200k USD</option>
-                                    <option value="200-300k" selected>200k - 300k USD</option>
-                                    <option value="300k+">300k+ USD</option>
-                                </select>
-                            </div>
-                            <div class="calculator-input">
-                                <label class="calculator-label">Precio de Compra (USD)</label>
-                                <input type="number" id="purchasePrice" value="250000" placeholder="250000" style="padding: 8px 12px; background-color: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 4px; font-family: 'Inter', sans-serif;">
-                            </div>
-                            <div class="calculator-input">
-                                <label class="calculator-label">Superficie (m²)</label>
-                                <input type="number" id="propertyArea" value="100" placeholder="100" style="padding: 8px 12px; background-color: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 4px; font-family: 'Inter', sans-serif;">
-                            </div>
-                            <div class="calculator-input">
-                                <label class="calculator-label">Factor de Seguridad: <span class="slider-value" id="safetyValue">33%</span></label>
-                                <input type="range" id="safetySlider" min="20" max="60" value="33" style="width: 100%;">
-                            </div>
-                            <div class="calculator-input">
-                                <label class="calculator-label">Materia Prima vs Mano de Obra: <span class="slider-value" id="splitValue">50% / 50%</span></label>
-                                <input type="range" id="splitSlider" min="0" max="100" value="50" style="width: 100%;">
-                            </div>
-                        </div>
-                        <button class="calc-button" onclick="calculateROI()">Calcular ROI</button>
-                        <div id="calcResults"></div>
-                    </div>
-
-                    <div style="font-weight: 600; color: #e2e8f0; margin-bottom: 16px; font-size: 16px;">Oportunidades de Renovación (Top 50)</div>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Barrio</th>
-                                    <th>Link</th>
-                                    <th onclick="sortRenovacion('price')">Precio USD ↕</th>
-                                    <th onclick="sortRenovacion('area')">m² ↕</th>
-                                    <th onclick="sortRenovacion('currentPrice')">USD/m² Actual ↕</th>
-                                    <th onclick="sortRenovacion('postPrice')">USD/m² Post-Reno ↕</th>
-                                    <th onclick="sortRenovacion('roi')">ROI% ↕</th>
-                                    <th>Presupuesto Reno</th>
-                                    <th>Tags</th>
-                                </tr>
-                            </thead>
-                            <tbody id="renovacionTableBody">
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-
-                container.innerHTML = html;
-
-                // Attach slider listeners
-                document.getElementById('safetySlider').addEventListener('input', (e) => {
-                    document.getElementById('safetyValue').textContent = e.target.value + '%';
-                });
-
-                document.getElementById('splitSlider').addEventListener('input', (e) => {
-                    const materiaPrima = e.target.value;
-                    const manoObra = 100 - e.target.value;
-                    document.getElementById('splitValue').textContent = materiaPrima + '% / ' + manoObra + '%';
-                });
-
-                // Render renovation table
-                renderRenovacionTable(renovationData);
-            } catch (error) {
-                console.error('Error in initRenovacion:', error);
-                container.innerHTML = '<div class="error-message">Error cargando renovación</div>';
-            }
+            });
         }
 
-        function calculateROI() {
-            const priceRange = document.getElementById('priceRange').value;
-            const purchasePrice = parseFloat(document.getElementById('purchasePrice').value) || 0;
-            const area = parseFloat(document.getElementById('propertyArea').value) || 0;
-            const safetyFactor = parseFloat(document.getElementById('safetySlider').value) / 100;
-            const splitRatio = parseFloat(document.getElementById('splitSlider').value) / 100;
-
-            if (!purchasePrice || !area) {
-                alert('Por favor complete todos los campos');
-                return;
-            }
-
-            const gapData = RENOVATION_GAP_DATA[priceRange];
-            const avgGap = (gapData.refac + gapData.recic) / 2;
-            const renovationCostTotal = avgGap * area;
-            const safetyMargin = renovationCostTotal * safetyFactor;
-            const usableBudget = renovationCostTotal + safetyMargin;
-            const materiaPrima = usableBudget * splitRatio;
-            const manoObra = usableBudget * (1 - splitRatio);
-            const maxRenoPerM2 = usableBudget / area;
-
-            const postRenoValue = purchasePrice + usableBudget;
-            const postRenoPerM2 = postRenoValue / area;
-            const currentPerM2 = purchasePrice / area;
-            const roi = ((postRenoValue - purchasePrice) / purchasePrice * 100).toFixed(1);
-
-            let viability = 'GO';
-            let viabilityClass = 'viability-go';
-            if (roi < 20) {
-                viability = 'STOP';
-                viabilityClass = 'viability-stop';
-            } else if (roi < 50) {
-                viability = 'CAUTION';
-                viabilityClass = 'viability-caution';
-            }
-
-            const html = `
-                <div class="calc-results">
-                    <div class="result-item">
-                        <div class="result-label">Valor Post-Renovación</div>
-                        <div class="result-value">$${Math.round(postRenoValue).toLocaleString('es-AR')}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">USD/m² Post-Reno</div>
-                        <div class="result-value">$${Math.round(postRenoPerM2).toLocaleString('es-AR')}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Gap Bruto</div>
-                        <div class="result-value">$${Math.round(renovationCostTotal).toLocaleString('es-AR')}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Margen de Seguridad</div>
-                        <div class="result-value">$${Math.round(safetyMargin).toLocaleString('es-AR')}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Presupuesto Usable</div>
-                        <div class="result-value">$${Math.round(usableBudget).toLocaleString('es-AR')}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Materia Prima</div>
-                        <div class="result-value">$${Math.round(materiaPrima).toLocaleString('es-AR')}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Mano de Obra</div>
-                        <div class="result-value">$${Math.round(manoObra).toLocaleString('es-AR')}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Máx Reno USD/m²</div>
-                        <div class="result-value">$${Math.round(maxRenoPerM2).toLocaleString('es-AR')}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">ROI %</div>
-                        <div class="result-value" style="color: #10b981;">${roi}%</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Viabilidad</div>
-                        <span class="viability-badge ${viabilityClass}">${viability}</span>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('calcResults').innerHTML = html;
+        // Update neighborhood table with selected neighborhood
+        function updateNeighborhoodTable(neighborhood) {
+            // The main table is already updated in updateNeighborhoods
+            // This function can be used for detailed view if needed
         }
 
-        function renderRenovacionTable(renovationData) {
+        // Update renovación tab
+        function updateRenovacion(filter = '') {
+            const renovacionProps = allData.filter(p => p.reno_budget && filter === '' || p.property_name?.toLowerCase().includes(filter.toLowerCase()));
+
             const tbody = document.getElementById('renovacionTableBody');
-            tbody.innerHTML = renovationData.map(r => {
-                const roiColor = r.roi_pct > 50 ? '#10b981' : r.roi_pct > 20 ? '#f59e0b' : '#ef4444';
-                const keywords = extractKeywords(r.title || '');
+            tbody.innerHTML = '';
 
-                return `
-                    <tr>
-                        <td class="neighborhood-cell">${r.neighborhood || 'N/A'}</td>
-                        <td><a href="${r.permalink}" target="_blank" class="title-cell">Ver →</a></td>
-                        <td class="price-cell">${formatPrice(r.price)}</td>
-                        <td>${r.area ? Math.round(r.area).toLocaleString('es-AR') : 'N/A'} m²</td>
-                        <td class="price-cell">$${Math.round(r.price_per_m2).toLocaleString('es-AR')}</td>
-                        <td class="price-cell">$${Math.round(r.post_reno_price_per_m2).toLocaleString('es-AR')}</td>
-                        <td style="color: ${roiColor}; font-weight: 600;">${r.roi_pct.toFixed(1)}%</td>
-                        <td>${formatPrice(r.budget_reno)}</td>
-                        <td>
-                            <div class="tags-cell">
-                                ${keywords.map(k => `<span class="tag special">${k}</span>`).join('')}
-                            </div>
-                        </td>
-                    </tr>
+            renovacionProps.forEach(property => {
+                // Use actual Supabase column names
+                const totalArea = Number(property.total_area) || 0;
+                const usdM2Actual = Number(property.usd_m2_actual) || 0;
+                const usdM2PostReno = Number(property.usd_m2_post_reno) || 0;
+                const renoBudget = Number(property.reno_budget) || 0;
+
+                const roi = renoBudget > 0 ? (((totalArea * (usdM2PostReno - usdM2Actual) - renoBudget) / renoBudget) * 100).toFixed(1) : 'N/A';
+
+                // Extract keyword tags from description
+                let keywordTags = '';
+                if (property.description) {
+                    const tags = property.description.split(',').map(t => t.trim()).filter(t => t.length > 0);
+                    keywordTags = tags.slice(0, 2).map(tag => `<span class="pill">${tag}</span>`).join(' ');
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${property.property_name || 'N/A'}</strong></td>
+                    <td>${totalArea}</td>
+                    <td>$${usdM2Actual.toFixed(0)}</td>
+                    <td>$${usdM2PostReno.toFixed(0)}</td>
+                    <td>$${renoBudget.toFixed(0)}</td>
+                    <td class="${roi > 0 ? 'positive' : 'negative'}">${roi}%</td>
+                    <td>${keywordTags}</td>
                 `;
-            }).join('');
+                tbody.appendChild(row);
+            });
         }
 
-        function sortRenovacion(column) {
-            console.log('Sort by:', column);
+        // Setup event listeners
+        function setupEventListeners() {
+            // Tab buttons
+            document.querySelectorAll('.sidebar-button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.sidebar-button').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-container').forEach(t => t.classList.remove('active'));
+                    btn.classList.add('active');
+                    const tabId = btn.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+
+                    if (tabId === 'neighborhoods') {
+                        updateNeighborhoods();
+                    } else if (tabId === 'renovacion') {
+                        updateRenovacion();
+                    }
+                });
+            });
+
+            // Neighborhoods search
+            document.getElementById('neighborhoodSearch')?.addEventListener('input', (e) => {
+                updateNeighborhoods(e.target.value);
+            });
+
+            // Renovación search
+            document.getElementById('renovacionSearch')?.addEventListener('input', (e) => {
+                updateRenovacion(e.target.value);
+            });
         }
 
-        // ============================================
-        // INITIAL LOAD
-        // ============================================
-        window.addEventListener('DOMContentLoaded', () => {
+        // Loading modal
+        function showLoading() {
+            document.getElementById('loadingModal').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingModal').style.display = 'none';
+        }
+
+        // Placeholder for panorama functionality
+        function initPanorama() {
+            // Panorama initialization code would go here
+        }
+
+        // Call initPanorama on page load
+        document.addEventListener('DOMContentLoaded', () => {
             initPanorama();
         });
     </script>
