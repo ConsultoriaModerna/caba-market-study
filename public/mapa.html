@@ -160,9 +160,15 @@
             <div class="filter-section">
                 <div class="filter-label">Precio USD</div>
                 <div class="filter-row">
-                    <input type="number" class="filter-input" id="f-price-min" placeholder="Min" step="10000">
+                    <input type="number" class="filter-input" id="f-price-min" placeholder="Min" value="50000" step="10000">
                     <span style="color:var(--dim)">—</span>
-                    <input type="number" class="filter-input" id="f-price-max" placeholder="Max (200k)" value="200000" step="10000">
+                    <input type="number" class="filter-input" id="f-price-max" placeholder="Max" value="210000" step="10000">
+                </div>
+                <div class="chip-group" style="margin-top:6px;">
+                    <span class="chip highlight" onclick="setPreset(150000,180000)">Sweet spot 150–180k</span>
+                    <span class="chip" onclick="setPreset(50000,210000)">Todo ≤210k</span>
+                    <span class="chip" onclick="setPreset(100000,150000)">100–150k</span>
+                    <span class="chip" onclick="setPreset(180000,250000)">180–250k</span>
                 </div>
             </div>
             <div class="filter-section">
@@ -332,7 +338,7 @@ async function fetchProperties() {
 
 // Apply filters
 function applyFilters() {
-    const pMin = Number(document.getElementById('f-price-min').value) || 0;
+    const pMin = Math.max(Number(document.getElementById('f-price-min').value) || 0, 50000);
     const pMax = Number(document.getElementById('f-price-max').value) || Infinity;
     const aMin = Number(document.getElementById('f-area-min').value) || 0;
     const aMax = Number(document.getElementById('f-area-max').value) || Infinity;
@@ -359,9 +365,15 @@ function applyFilters() {
     updateStats();
 }
 
+function setPreset(min, max) {
+    document.getElementById('f-price-min').value = min;
+    document.getElementById('f-price-max').value = max;
+    applyFilters();
+}
+
 function resetFilters() {
-    document.getElementById('f-price-min').value = '';
-    document.getElementById('f-price-max').value = '200000';
+    document.getElementById('f-price-min').value = '50000';
+    document.getElementById('f-price-max').value = '210000';
     document.getElementById('f-area-min').value = '120';
     document.getElementById('f-area-max').value = '';
     document.getElementById('f-usdm2-max').value = '';
