@@ -3,150 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CABA Real Estate Investment Map</title>
-
-    <!-- Leaflet CSS -->
+    <title>CABA Real Estate — Mapa de Precios</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0e1a;
+            --panel: #0f1419;
+            --border: #1e2735;
+            --text: #e0e0e0;
+            --text-dim: #a0a8b8;
+            --accent: #06b6d4;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #0a0e1a;
-            color: #e0e0e0;
+            background: var(--bg);
+            color: var(--text);
             overflow: hidden;
         }
 
-        #map-container {
-            display: flex;
-            height: 100vh;
-        }
+        #map-container { display: flex; height: 100vh; }
 
         #sidebar {
-            width: 300px;
-            background: #0f1419;
-            border-right: 1px solid #1e2735;
+            width: 320px;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
             overflow-y: auto;
             padding: 20px;
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.3);
         }
 
-        #sidebar.collapsed {
-            transform: translateX(-300px);
-        }
-
-        #map {
-            flex: 1;
-            position: relative;
-        }
-
-        .sidebar-toggle {
-            display: none;
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            background: #1e2735;
-            border: 1px solid #2a3545;
-            color: #e0e0e0;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-
-        .sidebar-toggle:hover {
-            background: #2a3545;
-        }
+        #map { flex: 1; margin-bottom: 40px; }
 
         .sidebar-header {
             font-size: 18px;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 6px;
             color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
-        .sidebar-section {
-            margin-bottom: 24px;
+        .sidebar-sub {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 20px;
         }
+
+        .sidebar-section { margin-bottom: 24px; }
 
         .section-title {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #a0a8b8;
+            color: var(--text-dim);
             margin-bottom: 12px;
-            border-bottom: 1px solid #1e2735;
+            border-bottom: 1px solid var(--border);
             padding-bottom: 8px;
         }
 
-        .stat-item {
+        .stat-row {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            font-size: 14px;
+            padding: 7px 0;
+            font-size: 13px;
             border-bottom: 1px solid #151a25;
         }
 
-        .stat-label {
-            color: #a0a8b8;
-        }
+        .stat-label { color: var(--text-dim); }
+        .stat-value { color: #fff; font-weight: 600; }
 
-        .stat-value {
-            color: #fff;
-            font-weight: 600;
-        }
-
-        .zone-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-
-        .zone-sur { background-color: #06b6d4; }
-        .zone-oeste { background-color: #10b981; }
-        .zone-centro { background-color: #f59e0b; }
-        .zone-norte { background-color: #a855f7; }
-
-        .top-barrios {
-            list-style: none;
-        }
-
-        .top-barrios li {
-            padding: 10px;
-            background: #151a25;
-            margin-bottom: 6px;
-            border-radius: 3px;
+        /* Toggle filter */
+        .filter-toggle {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 2px solid var(--border);
+            background: transparent;
+            color: var(--text);
             font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
         }
 
-        .top-barrios .barrio-name {
-            color: #e0e0e0;
+        .filter-toggle:hover { border-color: var(--accent); }
+
+        .filter-toggle.active {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
-        .top-barrios .barrio-count {
-            color: #a0a8b8;
-            font-weight: 500;
+        .filter-toggle .toggle-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #334155;
+            transition: background 0.2s;
         }
+
+        .filter-toggle.active .toggle-dot { background: var(--accent); }
+
+        .filter-count {
+            font-size: 11px;
+            color: var(--text-dim);
+            padding-left: 4px;
+        }
+
+        /* Barrio list */
+        .barrio-list { list-style: none; }
+
+        .barrio-list li {
+            padding: 8px 10px;
+            background: #151a25;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-left: 3px solid transparent;
+        }
+
+        .barrio-list li:hover { background: #1a2030; }
+
+        .barrio-name { flex: 1; }
+        .barrio-metric {
+            font-weight: 600;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .barrio-count {
+            color: var(--text-dim);
+            font-size: 11px;
+            margin-left: 8px;
+            min-width: 30px;
+            text-align: right;
+        }
+
+        /* Legend */
+        .legend {
+            position: fixed;
+            bottom: 60px;
+            right: 20px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 14px;
+            font-size: 11px;
+            z-index: 950;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .legend-title {
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+        }
+
+        .legend-gradient {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .gradient-bar {
+            width: 120px;
+            height: 12px;
+            border-radius: 2px;
+            background: linear-gradient(to right, #10b981, #fbbf24, #ef4444);
+        }
+
+        .gradient-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 120px;
+            margin-left: 0;
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+            gap: 8px;
+        }
+
+        .legend-line { width: 20px; height: 3px; background: #ef4444; }
 
         #footer {
             position: fixed;
@@ -154,18 +214,14 @@
             left: 0;
             right: 0;
             height: 40px;
-            background: #0a0e1a;
-            border-top: 1px solid #1e2735;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 11px;
             color: #7a8290;
             z-index: 900;
-        }
-
-        #map {
-            margin-bottom: 40px;
         }
 
         .loading-spinner {
@@ -174,473 +230,491 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 2000;
-            background: #0f1419;
+            background: var(--panel);
             padding: 30px;
             border-radius: 8px;
-            border: 1px solid #1e2735;
+            border: 1px solid var(--border);
             text-align: center;
             display: none;
         }
 
-        .loading-spinner.active {
-            display: block;
-        }
+        .loading-spinner.active { display: block; }
 
         .spinner {
-            border: 3px solid #1e2735;
-            border-top: 3px solid #06b6d4;
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--accent);
             border-radius: 50%;
             width: 40px;
             height: 40px;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
             margin: 0 auto 15px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .leaflet-control-layers {
-            background-color: #0f1419 !important;
-            border: 1px solid #1e2735 !important;
+            background-color: var(--panel) !important;
+            border: 1px solid var(--border) !important;
             border-radius: 4px !important;
         }
 
         .leaflet-control-layers label {
-            color: #e0e0e0 !important;
+            color: var(--text) !important;
             font-size: 13px !important;
         }
 
-        .leaflet-control-layers input {
-            accent-color: #06b6d4;
-        }
+        .leaflet-control-layers input { accent-color: var(--accent); }
 
-        .legend {
-            position: fixed;
-            bottom: 60px;
-            left: 20px;
-            background: #0f1419;
-            border: 1px solid #1e2735;
-            border-radius: 4px;
-            padding: 15px;
-            max-width: 250px;
-            font-size: 12px;
-            z-index: 950;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            gap: 8px;
-        }
-
-        .legend-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .legend-label {
-            color: #e0e0e0;
-            font-size: 12px;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-        }
-
-        .legend-line {
-            width: 20px;
-            height: 3px;
-            background-color: #ef4444;
-        }
-
-        .legend-zone {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-        }
+        .popup-content { color: #333; font-size: 12px; min-width: 200px; }
+        .popup-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; color: #000; }
+        .popup-stat { display: flex; justify-content: space-between; padding: 3px 0; }
+        .popup-label { color: #666; }
+        .popup-value { font-weight: 600; color: #000; }
+        .popup-divider { border-top: 1px solid #ddd; margin: 6px 0; }
+        .popup-highlight { color: #059669; font-weight: 700; }
 
         @media (max-width: 768px) {
-            #map-container {
-                flex-direction: column;
-            }
-
-            #sidebar {
-                width: 100%;
-                height: auto;
-                max-height: 250px;
-                border-right: none;
-                border-bottom: 1px solid #1e2735;
-            }
-
-            #sidebar.collapsed {
-                transform: translateY(-250px);
-            }
-
-            .sidebar-toggle {
-                display: block;
-            }
-
-            .legend {
-                bottom: 80px;
-                left: 10px;
-                right: 10px;
-                max-width: none;
-            }
-        }
-
-        .popup-content {
-            color: #333;
-            font-size: 12px;
-        }
-
-        .popup-title {
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 8px;
-            color: #000;
-        }
-
-        .popup-stat {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-        }
-
-        .popup-label {
-            color: #666;
-        }
-
-        .popup-value {
-            font-weight: 500;
-            color: #000;
+            #sidebar { display: none; }
+            .legend { bottom: 50px; right: 10px; left: 10px; }
         }
     </style>
 </head>
 <body>
     <div id="map-container">
         <div id="sidebar">
-            <div class="sidebar-header">
-                CABA Barrios
+            <div class="sidebar-header">Mapa de Precios CABA</div>
+            <div class="sidebar-sub">Mediana USD/m² por barrio — Live Supabase</div>
+
+            <div class="sidebar-section">
+                <div class="section-title">Filtro de Precio</div>
+                <button class="filter-toggle" id="filter200k" onclick="toggle200k()">
+                    <span>Solo ≤ USD 200k</span>
+                    <span class="toggle-dot"></span>
+                </button>
+                <div class="filter-count" id="filterCount"></div>
             </div>
 
             <div class="sidebar-section">
                 <div class="section-title">Resumen</div>
-                <div class="stat-item">
-                    <span class="stat-label">Total Casas Target</span>
-                    <span class="stat-value" id="total-casas">920+</span>
+                <div class="stat-row">
+                    <span class="stat-label">Propiedades</span>
+                    <span class="stat-value" id="stat-total">—</span>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">Barrios Cubiertos</span>
-                    <span class="stat-value" id="total-barrios">30</span>
+                <div class="stat-row">
+                    <span class="stat-label">Barrios</span>
+                    <span class="stat-value" id="stat-barrios">—</span>
                 </div>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="section-title">Zonas</div>
-                <div class="stat-item">
-                    <span><span class="zone-indicator zone-sur"></span>Sur (Peri.)</span>
+                <div class="stat-row">
+                    <span class="stat-label">Mediana USD/m²</span>
+                    <span class="stat-value" id="stat-median">—</span>
                 </div>
-                <div class="stat-item">
-                    <span><span class="zone-indicator zone-oeste"></span>Oeste (Peri.)</span>
-                </div>
-                <div class="stat-item">
-                    <span><span class="zone-indicator zone-centro"></span>Centro (Inter.)</span>
-                </div>
-                <div class="stat-item">
-                    <span><span class="zone-indicator zone-norte"></span>Norte (Peri.)</span>
+                <div class="stat-row">
+                    <span class="stat-label">Precio mediano</span>
+                    <span class="stat-value" id="stat-price">—</span>
                 </div>
             </div>
 
             <div class="sidebar-section">
-                <div class="section-title">Top 5 Barrios</div>
-                <ul class="top-barrios" id="top-barrios-list">
-                    <!-- Populated by JS -->
-                </ul>
+                <div class="section-title" id="list-title">Top Barrios por Propiedades</div>
+                <ul class="barrio-list" id="barrio-list"></ul>
             </div>
         </div>
 
         <div id="map"></div>
-
-        <button class="sidebar-toggle" id="sidebar-toggle">Menu Datos</button>
     </div>
 
     <div id="footer">
-        Consultoría Moderna | CABA Market Study | OpenStreetMap + Overpass API
+        Consultoría Moderna | CABA Market Study | Supabase + OpenStreetMap
     </div>
 
     <div class="loading-spinner" id="loading-spinner">
         <div class="spinner"></div>
-        <p>Cargando líneas de tren...</p>
+        <p>Cargando datos de Supabase...</p>
     </div>
 
-    <div class="legend" id="legend">
-        <div class="legend-item">
-            <div class="legend-zone" style="background-color: #06b6d4;"></div>
-            <span class="legend-label">Sur (Periferia)</span>
+    <div class="legend">
+        <div class="legend-title">Mediana USD/m²</div>
+        <div class="gradient-bar"></div>
+        <div class="gradient-labels">
+            <span>≤$800</span>
+            <span>$1,200</span>
+            <span>≥$1,800</span>
         </div>
-        <div class="legend-item">
-            <div class="legend-zone" style="background-color: #10b981;"></div>
-            <span class="legend-label">Oeste (Periferia)</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-zone" style="background-color: #f59e0b;"></div>
-            <span class="legend-label">Centro (Interior)</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-zone" style="background-color: #a855f7;"></div>
-            <span class="legend-label">Norte (Periferia)</span>
-        </div>
-        <div class="legend-item" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #1e2735;">
+        <div class="legend-item" style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #1e2735;">
             <div class="legend-line"></div>
-            <span class="legend-label">Vía de Tren</span>
+            <span>Vía de Tren</span>
         </div>
         <div class="legend-item">
-            <div style="width: 20px; height: 20px; border: 2px solid #ef4444; border-radius: 50%; opacity: 0.3; background: rgba(239, 68, 68, 0.1);"></div>
-            <span class="legend-label">Zona Exclusión 300m</span>
+            <div style="width: 16px; height: 16px; border: 2px solid #ef4444; border-radius: 50%; opacity: 0.3; background: rgba(239,68,68,0.1);"></div>
+            <span>Exclusión 300m</span>
         </div>
     </div>
 
-    <!-- Leaflet JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-
-    <!-- Turf.js for buffer calculations -->
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
     <script>
-        // Barrio data
-        const BARRIOS = {
-            // Sur Zone
-            'Villa Lugano': { lat: -34.6345, lng: -58.4860, count: 138, zone: 'sur' },
-            'Pompeya': { lat: -34.6433, lng: -58.4183, count: 68, zone: 'sur' },
-            'Villa Soldati': { lat: -34.6549, lng: -58.4483, count: 51, zone: 'sur' },
-            'Barracas': { lat: -34.6418, lng: -58.3843, count: 61, zone: 'sur' },
-            'La Boca': { lat: -34.6345, lng: -58.3635, count: 20, zone: 'sur' },
-            'Parque Patricios': { lat: -34.6343, lng: -58.4050, count: 28, zone: 'sur' },
-            'Villa Riachuelo': { lat: -34.6583, lng: -58.4683, count: 11, zone: 'sur' },
-            'Constitución': { lat: -34.6333, lng: -58.3883, count: 13, zone: 'sur' },
-            // Oeste Zone
-            'Mataderos': { lat: -34.6519, lng: -58.5064, count: 72, zone: 'oeste' },
-            'Liniers': { lat: -34.6433, lng: -58.5220, count: 60, zone: 'oeste' },
-            'Flores': { lat: -34.6283, lng: -58.4633, count: 65, zone: 'oeste' },
-            'Floresta': { lat: -34.6283, lng: -58.4883, count: 26, zone: 'oeste' },
-            'Parque Avellaneda': { lat: -34.6433, lng: -58.4783, count: 45, zone: 'oeste' },
-            'Villa Luro': { lat: -34.6373, lng: -58.4943, count: 19, zone: 'oeste' },
-            'Monte Castro': { lat: -34.6183, lng: -58.5043, count: 19, zone: 'oeste' },
-            'Versalles': { lat: -34.6183, lng: -58.5243, count: 20, zone: 'oeste' },
-            'Villa Real': { lat: -34.6183, lng: -58.5183, count: 10, zone: 'oeste' },
-            'Villa Devoto': { lat: -34.5983, lng: -58.5113, count: 13, zone: 'oeste' },
-            'Villa del Parque': { lat: -34.6073, lng: -58.4883, count: 7, zone: 'oeste' },
-            // Centro Zone
-            'Boedo': { lat: -34.6283, lng: -58.4183, count: 21, zone: 'centro' },
-            'Almagro': { lat: -34.6083, lng: -58.4183, count: 7, zone: 'centro' },
-            'Balvanera': { lat: -34.6133, lng: -58.4033, count: 4, zone: 'centro' },
-            'Villa Crespo': { lat: -34.5983, lng: -58.4383, count: 4, zone: 'centro' },
-            'Chacarita': { lat: -34.5883, lng: -58.4483, count: 2, zone: 'centro' },
-            'Paternal': { lat: -34.5983, lng: -58.4683, count: 2, zone: 'centro' },
-            'San Cristóbal': { lat: -34.6233, lng: -58.4043, count: 3, zone: 'centro' },
-            // Norte Zone
-            'Saavedra': { lat: -34.5583, lng: -58.4883, count: 8, zone: 'norte' },
-            'Coghlan': { lat: -34.5683, lng: -58.4783, count: 1, zone: 'norte' }
+        // Supabase config
+        const SUPABASE_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
+
+        // Neighborhood coordinates (static — GPS data is ~0% in DB)
+        const BARRIO_COORDS = {
+            'Villa Lugano': [-34.6345, -58.4860],
+            'Pompeya': [-34.6433, -58.4183],
+            'Villa Soldati': [-34.6549, -58.4483],
+            'Barracas': [-34.6418, -58.3843],
+            'La Boca': [-34.6345, -58.3635],
+            'Parque Patricios': [-34.6343, -58.4050],
+            'Villa Riachuelo': [-34.6583, -58.4683],
+            'Constitución': [-34.6333, -58.3883],
+            'San Telmo': [-34.6218, -58.3700],
+            'Mataderos': [-34.6519, -58.5064],
+            'Liniers': [-34.6433, -58.5220],
+            'Flores': [-34.6283, -58.4633],
+            'Floresta': [-34.6283, -58.4883],
+            'Parque Avellaneda': [-34.6433, -58.4783],
+            'Villa Luro': [-34.6373, -58.4943],
+            'Monte Castro': [-34.6183, -58.5043],
+            'Versalles': [-34.6183, -58.5243],
+            'Villa Real': [-34.6183, -58.5183],
+            'Villa Devoto': [-34.5983, -58.5113],
+            'Villa del Parque': [-34.6073, -58.4883],
+            'Boedo': [-34.6283, -58.4183],
+            'Almagro': [-34.6083, -58.4183],
+            'Balvanera': [-34.6133, -58.4033],
+            'Villa Crespo': [-34.5983, -58.4383],
+            'Chacarita': [-34.5883, -58.4483],
+            'Paternal': [-34.5983, -58.4683],
+            'San Cristóbal': [-34.6233, -58.4043],
+            'Saavedra': [-34.5583, -58.4883],
+            'Coghlan': [-34.5683, -58.4783],
+            'Villa Urquiza': [-34.5733, -58.4883],
+            'Belgrano': [-34.5633, -58.4583],
+            'Núñez': [-34.5483, -58.4583],
+            'Palermo': [-34.5783, -58.4283],
+            'Caballito': [-34.6183, -58.4383],
+            'Vélez Sarsfield': [-34.6333, -58.4883],
+            'Parque Chacabuco': [-34.6383, -58.4333],
+            'Villa General Mitre': [-34.6083, -58.4683],
+            'Agronomía': [-34.5933, -58.4883],
+            'Villa Ortúzar': [-34.5833, -58.4683],
+            'Villa Pueyrredón': [-34.5833, -58.5033],
+            'Villa Santa Rita': [-34.6133, -58.4833],
+            'San Nicolás': [-34.6033, -58.3783],
+            'Retiro': [-34.5883, -58.3733],
+            'Recoleta': [-34.5883, -58.3933],
+            'Monserrat': [-34.6133, -58.3833],
+            'Puerto Madero': [-34.6183, -58.3633],
+            'Colegiales': [-34.5733, -58.4483],
+            'Nueva Pompeya': [-34.6483, -58.4233],
+            'Parque Chas': [-34.5833, -58.4833],
+            'Villa Gral. Mitre': [-34.6083, -58.4683],
         };
 
-        const ZONE_COLORS = {
-            'sur': '#06b6d4',
-            'oeste': '#10b981',
-            'centro': '#f59e0b',
-            'norte': '#a855f7'
-        };
+        let map, barrioLayer, railwayLayer, bufferLayer;
+        let allBarrioData = [];
+        let filtered = false;
+        let barrioCircles = {};
 
-        let map;
-        let barrios = {};
-        let railwayLayer;
-        let bufferLayer;
-        let layerControl;
-        let railwayData = null;
+        // Price heatmap color
+        function priceColor(medianUsdM2) {
+            // Green (cheap) → Yellow (mid) → Red (expensive)
+            // Scale: 600–1800
+            const min = 600, mid = 1200, max = 1800;
+            let r, g, b;
 
-        // Initialize map
-        function initMap() {
-            map = L.map('map').setView([-34.61, -58.45], 12);
+            if (medianUsdM2 <= min) {
+                r = 16; g = 185; b = 129; // #10b981
+            } else if (medianUsdM2 <= mid) {
+                const t = (medianUsdM2 - min) / (mid - min);
+                r = Math.round(16 + t * (251 - 16));
+                g = Math.round(185 + t * (191 - 185));
+                b = Math.round(129 + t * (36 - 129));
+            } else if (medianUsdM2 <= max) {
+                const t = (medianUsdM2 - mid) / (max - mid);
+                r = Math.round(251 + t * (239 - 251));
+                g = Math.round(191 + t * (68 - 191));
+                b = Math.round(36 + t * (68 - 36));
+            } else {
+                r = 239; g = 68; b = 68; // #ef4444
+            }
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 19
-            }).addTo(map);
-
-            // Create layer groups
-            const barrios_group = L.featureGroup();
-            railwayLayer = L.featureGroup();
-            bufferLayer = L.featureGroup();
-
-            // Add barrio bubbles
-            Object.entries(BARRIOS).forEach(([name, data]) => {
-                const radius = Math.max(8, Math.min(40, Math.sqrt(data.count) * 4));
-                const color = ZONE_COLORS[data.zone];
-
-                const circle = L.circleMarker([data.lat, data.lng], {
-                    radius: radius,
-                    fillColor: color,
-                    fillOpacity: 0.7,
-                    color: color,
-                    weight: 2,
-                    opacity: 0.9
-                }).bindPopup(createPopupContent(name, data));
-
-                circle.on('mouseover', function() {
-                    this.setStyle({ fillOpacity: 0.9, weight: 3 });
-                });
-                circle.on('mouseout', function() {
-                    this.setStyle({ fillOpacity: 0.7, weight: 2 });
-                });
-
-                barrios_group.addLayer(circle);
-                barrios[name] = { data, circle };
-            });
-
-            barrios_group.addTo(map);
-
-            // Layer control
-            layerControl = L.control.layers({}, {
-                'Barrios': barrios_group,
-                'Vías de Tren': railwayLayer,
-                'Zona de Exclusión 300m': bufferLayer
-            }, { position: 'topright', collapsed: false }).addTo(map);
-
-            // Populate top barrios
-            updateTopBarrios();
-
-            // Load railway data
-            loadRailwayData();
-
-            // Mobile sidebar toggle
-            document.getElementById('sidebar-toggle').addEventListener('click', function() {
-                document.getElementById('sidebar').classList.toggle('collapsed');
-            });
+            return `rgb(${r},${g},${b})`;
         }
 
-        function createPopupContent(name, data) {
+        function fmt(n) {
+            return n ? n.toLocaleString('es-AR') : '—';
+        }
+
+        // Fetch neighborhood aggregates from Supabase
+        async function fetchBarrioData(under200k = false) {
+            const priceFilter = under200k ? '&price=lte.200000' : '';
+            const url = `${SUPABASE_URL}/rest/v1/properties?select=neighborhood,price,price_per_sqm,total_area,covered_area,segment&is_active=eq.true&price_per_sqm=gt.0${priceFilter}&limit=5000`;
+
+            const resp = await fetch(url, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+            });
+
+            if (!resp.ok) throw new Error('Supabase fetch failed');
+            const props = await resp.json();
+
+            // Aggregate by neighborhood
+            const byBarrio = {};
+            props.forEach(p => {
+                const n = p.neighborhood;
+                if (!n) return;
+                if (!byBarrio[n]) byBarrio[n] = { prices: [], usdm2: [], areas: [], covAreas: [], segments: {} };
+                byBarrio[n].prices.push(p.price);
+                if (p.price_per_sqm) byBarrio[n].usdm2.push(p.price_per_sqm);
+                if (p.total_area) byBarrio[n].areas.push(p.total_area);
+                if (p.covered_area) byBarrio[n].covAreas.push(p.covered_area);
+                if (p.segment) byBarrio[n].segments[p.segment] = (byBarrio[n].segments[p.segment] || 0) + 1;
+            });
+
+            const median = arr => {
+                if (!arr.length) return 0;
+                const s = [...arr].sort((a, b) => a - b);
+                const m = Math.floor(s.length / 2);
+                return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+            };
+
+            return Object.entries(byBarrio).map(([name, d]) => ({
+                name,
+                count: d.prices.length,
+                medianUsdM2: Math.round(median(d.usdm2)),
+                avgUsdM2: Math.round(d.usdm2.reduce((a, b) => a + b, 0) / d.usdm2.length),
+                medianPrice: Math.round(median(d.prices)),
+                avgArea: Math.round(d.areas.reduce((a, b) => a + b, 0) / (d.areas.length || 1)),
+                minUsdM2: Math.round(Math.min(...d.usdm2)),
+                maxUsdM2: Math.round(Math.max(...d.usdm2)),
+                topSegment: Object.entries(d.segments).sort((a, b) => b[1] - a[1])[0]?.[0] || '—',
+                covRatio: d.covAreas.length > 0 && d.areas.length > 0
+                    ? Math.round((d.covAreas.reduce((a, b) => a + b, 0) / d.areas.reduce((a, b) => a + b, 0)) * 100)
+                    : null
+            })).filter(b => BARRIO_COORDS[b.name]).sort((a, b) => b.count - a.count);
+        }
+
+        function createPopup(b) {
+            const covLine = b.covRatio !== null ? `
+                <div class="popup-stat">
+                    <span class="popup-label">% Cubierto:</span>
+                    <span class="popup-value">${b.covRatio}%</span>
+                </div>` : '';
+
             return `
                 <div class="popup-content">
-                    <div class="popup-title">${name}</div>
+                    <div class="popup-title">${b.name}</div>
                     <div class="popup-stat">
-                        <span class="popup-label">Casas Target:</span>
-                        <span class="popup-value">${data.count}</span>
+                        <span class="popup-label">Propiedades:</span>
+                        <span class="popup-value">${b.count}</span>
+                    </div>
+                    <div class="popup-divider"></div>
+                    <div class="popup-stat">
+                        <span class="popup-label">Mediana USD/m²:</span>
+                        <span class="popup-value popup-highlight">$${fmt(b.medianUsdM2)}</span>
                     </div>
                     <div class="popup-stat">
-                        <span class="popup-label">Zona:</span>
-                        <span class="popup-value" style="text-transform: capitalize;">${data.zone}</span>
+                        <span class="popup-label">Rango USD/m²:</span>
+                        <span class="popup-value">$${fmt(b.minUsdM2)} – $${fmt(b.maxUsdM2)}</span>
+                    </div>
+                    <div class="popup-stat">
+                        <span class="popup-label">Precio mediano:</span>
+                        <span class="popup-value">$${fmt(b.medianPrice)}</span>
+                    </div>
+                    <div class="popup-divider"></div>
+                    <div class="popup-stat">
+                        <span class="popup-label">Área promedio:</span>
+                        <span class="popup-value">${b.avgArea} m²</span>
+                    </div>
+                    ${covLine}
+                    <div class="popup-stat">
+                        <span class="popup-label">Segmento top:</span>
+                        <span class="popup-value">${b.topSegment}</span>
                     </div>
                 </div>
             `;
         }
 
-        function updateTopBarrios() {
-            const sorted = Object.entries(BARRIOS)
-                .sort((a, b) => b[1].count - a[1].count)
-                .slice(0, 5);
+        function renderBarrios(data) {
+            allBarrioData = data;
+            barrioLayer.clearLayers();
+            barrioCircles = {};
 
-            const list = document.getElementById('top-barrios-list');
-            list.innerHTML = sorted.map(([name, data]) => `
-                <li>
-                    <span class="barrio-name">${name}</span>
-                    <span class="barrio-count">${data.count}</span>
-                </li>
-            `).join('');
+            data.forEach(b => {
+                const coords = BARRIO_COORDS[b.name];
+                if (!coords) return;
+
+                const radius = Math.max(10, Math.min(45, Math.sqrt(b.count) * 2.5));
+                const color = priceColor(b.medianUsdM2);
+
+                const circle = L.circleMarker(coords, {
+                    radius,
+                    fillColor: color,
+                    fillOpacity: 0.75,
+                    color: '#fff',
+                    weight: 1.5,
+                    opacity: 0.6
+                }).bindPopup(createPopup(b));
+
+                // Tooltip with name + median
+                circle.bindTooltip(`${b.name}: $${fmt(b.medianUsdM2)}/m²`, {
+                    direction: 'top',
+                    offset: [0, -radius],
+                    className: 'barrio-tooltip'
+                });
+
+                circle.on('mouseover', function() { this.setStyle({ fillOpacity: 0.95, weight: 3, opacity: 1 }); });
+                circle.on('mouseout', function() { this.setStyle({ fillOpacity: 0.75, weight: 1.5, opacity: 0.6 }); });
+
+                barrioLayer.addLayer(circle);
+                barrioCircles[b.name] = circle;
+            });
+
+            // Update sidebar stats
+            const totalProps = data.reduce((s, b) => s + b.count, 0);
+            const allMedians = data.map(b => b.medianUsdM2).sort((a, b) => a - b);
+            const globalMedian = allMedians[Math.floor(allMedians.length / 2)] || 0;
+            const allPrices = data.map(b => b.medianPrice).sort((a, b) => a - b);
+            const globalPrice = allPrices[Math.floor(allPrices.length / 2)] || 0;
+
+            document.getElementById('stat-total').textContent = fmt(totalProps);
+            document.getElementById('stat-barrios').textContent = data.length;
+            document.getElementById('stat-median').textContent = `$${fmt(globalMedian)}`;
+            document.getElementById('stat-price').textContent = `$${fmt(globalPrice)}`;
+
+            // Update barrio list
+            updateBarrioList(data);
         }
 
-        function loadRailwayData() {
+        function updateBarrioList(data) {
+            const list = document.getElementById('barrio-list');
+            const sorted = [...data].sort((a, b) => b.count - a.count).slice(0, 20);
+
+            list.innerHTML = sorted.map(b => {
+                const color = priceColor(b.medianUsdM2);
+                return `
+                    <li style="border-left-color: ${color};" onclick="flyToBarrio('${b.name.replace(/'/g, "\\'")}')">
+                        <span class="barrio-name">${b.name}</span>
+                        <span class="barrio-metric" style="color: ${color};">$${fmt(b.medianUsdM2)}/m²</span>
+                        <span class="barrio-count">${b.count}</span>
+                    </li>`;
+            }).join('');
+        }
+
+        function flyToBarrio(name) {
+            const circle = barrioCircles[name];
+            if (circle) {
+                map.flyTo(circle.getLatLng(), 14, { duration: 0.8 });
+                circle.openPopup();
+            }
+        }
+
+        // Toggle ≤200k filter
+        async function toggle200k() {
+            const btn = document.getElementById('filter200k');
+            filtered = !filtered;
+            btn.classList.toggle('active', filtered);
+
             const spinner = document.getElementById('loading-spinner');
+            spinner.querySelector('p').textContent = filtered ? 'Filtrando ≤ USD 200k...' : 'Cargando todos...';
             spinner.classList.add('active');
 
-            // Check sessionStorage first
+            try {
+                const data = await fetchBarrioData(filtered);
+                renderBarrios(data);
+
+                const totalAll = allBarrioData.reduce((s, b) => s + b.count, 0);
+                document.getElementById('filterCount').textContent = filtered
+                    ? `${fmt(totalAll)} propiedades ≤ USD 200k`
+                    : '';
+            } catch (e) {
+                console.error('Filter error:', e);
+            }
+
+            spinner.classList.remove('active');
+        }
+
+        // Railways (same as before)
+        function loadRailwayData() {
             const cached = sessionStorage.getItem('caba_railway_data');
             if (cached) {
                 try {
-                    railwayData = JSON.parse(cached);
-                    renderRailways();
-                    spinner.classList.remove('active');
+                    renderRailways(JSON.parse(cached));
                     return;
-                } catch (e) {
-                    console.log('Cache invalid, fetching fresh data');
-                }
+                } catch (e) { /* fetch fresh */ }
             }
 
-            // Fetch from Overpass API
-            const overpassUrl = 'https://overpass-api.de/api/interpreter';
             const query = `[out:json][timeout:25];
 area["name"="Buenos Aires"]["admin_level"="2"]->.searchArea;
-(
-  way["railway"="rail"](area.searchArea);
-  way["railway"="light_rail"](area.searchArea);
-);
+(way["railway"="rail"](area.searchArea);way["railway"="light_rail"](area.searchArea););
 out geom;`;
 
-            fetch(overpassUrl, {
-                method: 'POST',
-                body: query
-            })
-            .then(response => response.json())
-            .then(data => {
-                railwayData = data;
-                sessionStorage.setItem('caba_railway_data', JSON.stringify(data));
-                renderRailways();
-                spinner.classList.remove('active');
-            })
-            .catch(error => {
-                console.error('Overpass API error:', error);
-                spinner.classList.remove('active');
-                // Still show map even if railways fail
-            });
+            fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query })
+                .then(r => r.json())
+                .then(data => {
+                    sessionStorage.setItem('caba_railway_data', JSON.stringify(data));
+                    renderRailways(data);
+                })
+                .catch(e => console.error('Railway load failed:', e));
         }
 
-        function renderRailways() {
-            if (!railwayData || !railwayData.ways) return;
-
+        function renderRailways(data) {
+            if (!data || !data.elements) return;
             railwayLayer.clearLayers();
             bufferLayer.clearLayers();
 
-            const allCoords = [];
-
-            railwayData.ways.forEach(way => {
-                if (way.geometry && way.geometry.length > 0) {
-                    const coords = way.geometry.map(node => [node.lat, node.lon]);
-
-                    // Draw railway line
-                    L.polyline(coords, {
-                        color: '#ef4444',
-                        weight: 3,
-                        opacity: 0.7
-                    }).addTo(railwayLayer);
-
-                    allCoords.push(...coords);
+            data.elements.forEach(el => {
+                if (el.type === 'way' && el.geometry) {
+                    const coords = el.geometry.map(n => [n.lat, n.lon]);
+                    L.polyline(coords, { color: '#ef4444', weight: 3, opacity: 0.7 }).addTo(railwayLayer);
+                    coords.forEach(c => {
+                        L.circle(c, {
+                            radius: 300,
+                            fillColor: '#ef4444', fillOpacity: 0.12,
+                            color: '#ef4444', weight: 1, opacity: 0.2
+                        }).addTo(bufferLayer);
+                    });
                 }
             });
 
-            // Create buffer zones around all coordinates
-            if (allCoords.length > 0) {
-                allCoords.forEach(coord => {
-                    // 300m buffer approximated as circle
-                    L.circle([coord[0], coord[1]], {
-                        radius: 300,
-                        fillColor: '#ef4444',
-                        fillOpacity: 0.15,
-                        color: '#ef4444',
-                        weight: 1,
-                        opacity: 0.3
-                    }).addTo(bufferLayer);
-                });
-            }
-
             railwayLayer.addTo(map);
-            bufferLayer.addTo(map);
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', initMap);
+        // Init
+        async function init() {
+            map = L.map('map').setView([-34.61, -58.45], 12);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© OpenStreetMap',
+                maxZoom: 19
+            }).addTo(map);
+
+            barrioLayer = L.featureGroup().addTo(map);
+            railwayLayer = L.featureGroup();
+            bufferLayer = L.featureGroup();
+
+            L.control.layers({}, {
+                'Barrios (USD/m²)': barrioLayer,
+                'Vías de Tren': railwayLayer,
+                'Exclusión 300m': bufferLayer
+            }, { position: 'topright', collapsed: false }).addTo(map);
+
+            const spinner = document.getElementById('loading-spinner');
+            spinner.classList.add('active');
+
+            try {
+                const data = await fetchBarrioData(false);
+                renderBarrios(data);
+            } catch (e) {
+                console.error('Init error:', e);
+            }
+
+            spinner.classList.remove('active');
+            loadRailwayData();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
