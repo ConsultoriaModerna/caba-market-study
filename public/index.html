@@ -567,7 +567,7 @@
             if (allData.length === 0) return;
 
             const totalProperties = allData.length;
-            const avgPrice = (allData.reduce((sum, p) => sum + (Number(p.usd_m2) || 0), 0) / allData.length).toFixed(0);
+            const avgPrice = (allData.reduce((sum, p) => sum + (Number(p.price_per_sqm) || 0), 0) / allData.length).toFixed(0);
             const avgArea = (allData.reduce((sum, p) => sum + (Number(p.total_area) || 0), 0) / allData.length).toFixed(0);
 
             document.getElementById('totalProperties').textContent = totalProperties;
@@ -578,7 +578,7 @@
             const neighborhoods = Object.keys(neighborhoodData);
             const avgPrices = neighborhoods.map(n => {
                 const props = neighborhoodData[n];
-                return (props.reduce((sum, p) => sum + (Number(p.usd_m2) || 0), 0) / props.length).toFixed(0);
+                return (props.reduce((sum, p) => sum + (Number(p.price_per_sqm) || 0), 0) / props.length).toFixed(0);
             });
 
             const ctx = document.getElementById('priceChart').getContext('2d');
@@ -643,9 +643,9 @@
             tbody.innerHTML = '';
             neighborhoods.forEach(neighborhood => {
                 const props = neighborhoodData[neighborhood];
-                const avgPrice = (props.reduce((sum, p) => sum + (Number(p.usd_m2) || 0), 0) / props.length).toFixed(0);
+                const avgPrice = (props.reduce((sum, p) => sum + (Number(p.price_per_sqm) || 0), 0) / props.length).toFixed(0);
                 const avgArea = (props.reduce((sum, p) => sum + (Number(p.total_area) || 0), 0) / props.length).toFixed(0);
-                const prices = props.map(p => Number(p.usd_m2) || 0).sort((a, b) => a - b);
+                const prices = props.map(p => Number(p.price_per_sqm) || 0).sort((a, b) => a - b);
                 const minPrice = prices[0];
                 const maxPrice = prices[prices.length - 1];
 
@@ -683,7 +683,7 @@
             const props = neighborhoodData[neighborhood];
             const priceMap = {};
             props.forEach(p => {
-                const price = Math.round((Number(p.usd_m2) || 0) / 100) * 100;
+                const price = Math.round((Number(p.price_per_sqm) || 0) / 100) * 100;
                 priceMap[price] = (priceMap[price] || 0) + 1;
             });
 
@@ -741,8 +741,8 @@
             renovacionProps.forEach(property => {
                 // Use actual Supabase column names
                 const totalArea = Number(property.total_area) || 0;
-                const usdM2Actual = Number(property.usd_m2_actual) || 0;
-                const usdM2PostReno = Number(property.usd_m2_post_reno) || 0;
+                const usdM2Actual = Number(property.price_per_sqm) || 0;
+                const usdM2PostReno = Number((property.post_reno_value && property.total_area ? property.post_reno_value / property.total_area : 0)) || 0;
                 const renoBudget = Number(property.reno_budget) || 0;
 
                 const roi = renoBudget > 0 ? (((totalArea * (usdM2PostReno - usdM2Actual) - renoBudget) / renoBudget) * 100).toFixed(1) : 'N/A';
@@ -756,7 +756,7 @@
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td><strong>${property.property_name || 'N/A'}</strong></td>
+                    <td><strong>${property.title || 'N/A'}</strong></td>
                     <td>${totalArea}</td>
                     <td>$${usdM2Actual.toFixed(0)}</td>
                     <td>$${usdM2PostReno.toFixed(0)}</td>
