@@ -3,718 +3,550 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CABA Real Estate — Mapa de Precios</title>
+    <title>CABA — Property Explorer</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         :root {
-            --bg: #0a0e1a;
-            --panel: #0f1419;
-            --border: #1e2735;
-            --text: #e0e0e0;
-            --text-dim: #a0a8b8;
-            --accent: #06b6d4;
+            --bg: #0a0e1a; --panel: #0f1419; --card: #151a25;
+            --border: #1e2735; --text: #e0e0e0; --dim: #7a8999;
+            --accent: #06b6d4; --green: #10b981; --yellow: #fbbf24;
+            --red: #ef4444; --orange: #fb923c;
         }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+        #app { display: flex; height: 100vh; }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            overflow: hidden;
-        }
-
-        #map-container { display: flex; height: 100vh; }
-
+        /* Sidebar */
         #sidebar {
-            width: 320px;
+            width: 380px; min-width: 380px;
             background: var(--panel);
             border-right: 1px solid var(--border);
-            overflow-y: auto;
-            padding: 20px;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column;
+            overflow: hidden;
         }
-
-        #map { flex: 1; margin-bottom: 40px; }
-
         .sidebar-header {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 6px;
-            color: #fff;
-        }
-
-        .sidebar-sub {
-            font-size: 12px;
-            color: var(--text-dim);
-            margin-bottom: 20px;
-        }
-
-        .sidebar-section { margin-bottom: 24px; }
-
-        .section-title {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-dim);
-            margin-bottom: 12px;
+            padding: 16px 20px 12px;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
         }
+        .sidebar-header h1 { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+        .sidebar-header .sub { font-size: 11px; color: var(--dim); }
 
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 7px 0;
-            font-size: 13px;
-            border-bottom: 1px solid #151a25;
+        /* Filters */
+        #filters {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            overflow-y: auto;
+            max-height: 45vh;
         }
-
-        .stat-label { color: var(--text-dim); }
-        .stat-value { color: #fff; font-weight: 600; }
-
-        /* Toggle filter */
-        .filter-toggle {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 6px;
-            border: 2px solid var(--border);
-            background: transparent;
-            color: var(--text);
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
+        .filter-section { margin-bottom: 14px; }
+        .filter-label {
+            font-size: 10px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--dim); margin-bottom: 6px;
         }
-
-        .filter-toggle:hover { border-color: var(--accent); }
-
-        .filter-toggle.active {
-            background: rgba(6, 182, 212, 0.15);
-            border-color: var(--accent);
-            color: var(--accent);
+        .filter-row { display: flex; gap: 8px; align-items: center; }
+        .filter-input {
+            flex: 1; padding: 7px 10px; background: var(--card); border: 1px solid var(--border);
+            border-radius: 4px; color: var(--text); font-size: 12px; font-family: inherit;
         }
+        .filter-input:focus { outline: none; border-color: var(--accent); }
+        .filter-input::placeholder { color: #555; }
 
-        .filter-toggle .toggle-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #334155;
-            transition: background 0.2s;
+        /* Keyword chips */
+        .chip-group { display: flex; flex-wrap: wrap; gap: 4px; }
+        .chip {
+            padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 500;
+            cursor: pointer; border: 1px solid var(--border); background: transparent;
+            color: var(--dim); transition: all 0.15s; user-select: none;
         }
+        .chip:hover { border-color: var(--accent); color: var(--text); }
+        .chip.active { background: rgba(6,182,212,0.2); border-color: var(--accent); color: var(--accent); }
+        .chip.highlight { background: rgba(251,191,36,0.15); border-color: var(--yellow); color: var(--yellow); }
 
-        .filter-toggle.active .toggle-dot { background: var(--accent); }
+        /* Segment chips */
+        .seg-chip { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;
+            cursor: pointer; border: 1px solid var(--border); background: transparent;
+            color: var(--dim); transition: all 0.15s; }
+        .seg-chip.active { background: var(--accent); border-color: var(--accent); color: #000; }
 
-        .filter-count {
-            font-size: 11px;
-            color: var(--text-dim);
-            padding-left: 4px;
+        /* Stats bar */
+        .stats-bar {
+            padding: 8px 20px; background: var(--card);
+            border-bottom: 1px solid var(--border);
+            font-size: 11px; color: var(--dim);
+            display: flex; justify-content: space-between;
         }
+        .stats-bar strong { color: var(--accent); }
 
-        /* Barrio list */
-        .barrio-list { list-style: none; }
-
-        .barrio-list li {
-            padding: 8px 10px;
-            background: #151a25;
-            margin-bottom: 4px;
-            border-radius: 4px;
-            font-size: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: background 0.15s;
-            border-left: 3px solid transparent;
+        /* Property list */
+        #prop-list {
+            flex: 1; overflow-y: auto; padding: 8px 12px;
         }
-
-        .barrio-list li:hover { background: #1a2030; }
-
-        .barrio-name { flex: 1; }
-        .barrio-metric {
-            font-weight: 600;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 3px;
-            background: rgba(255,255,255,0.05);
+        .prop-card {
+            padding: 10px 12px; background: var(--card); border: 1px solid var(--border);
+            border-radius: 6px; margin-bottom: 6px; cursor: pointer;
+            transition: border-color 0.15s; border-left: 3px solid transparent;
         }
+        .prop-card:hover { border-color: var(--accent); }
+        .prop-card.selected { border-left-color: var(--accent); background: #1a2030; }
+        .prop-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .prop-addr { font-size: 11px; color: var(--dim); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .prop-metrics { display: flex; gap: 12px; font-size: 11px; flex-wrap: wrap; }
+        .prop-metric { display: flex; flex-direction: column; }
+        .prop-metric .val { font-weight: 700; font-size: 13px; }
+        .prop-metric .lbl { color: var(--dim); font-size: 9px; text-transform: uppercase; }
+        .prop-keywords { margin-top: 6px; display: flex; gap: 3px; flex-wrap: wrap; }
+        .prop-kw { font-size: 9px; padding: 2px 6px; background: rgba(255,255,255,0.05); border-radius: 8px; color: var(--dim); }
+        .prop-kw.match { background: rgba(251,191,36,0.15); color: var(--yellow); }
+        .prop-link { font-size: 10px; color: var(--accent); text-decoration: none; margin-top: 6px; display: inline-block; }
+        .prop-link:hover { text-decoration: underline; }
 
-        .barrio-count {
-            color: var(--text-dim);
-            font-size: 11px;
-            margin-left: 8px;
-            min-width: 30px;
-            text-align: right;
-        }
+        /* Map */
+        #map { flex: 1; }
+
+        /* Popup */
+        .popup-content { min-width: 240px; font-family: 'Inter', sans-serif; }
+        .popup-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #111; }
+        .popup-addr { font-size: 11px; color: #666; margin-bottom: 8px; }
+        .popup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 12px; }
+        .popup-grid dt { color: #888; }
+        .popup-grid dd { font-weight: 600; color: #111; margin: 0; }
+        .popup-kws { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 3px; }
+        .popup-kw { font-size: 10px; padding: 2px 6px; background: #f0f0f0; border-radius: 8px; color: #555; }
+        .popup-kw.match { background: #fef3c7; color: #92400e; }
+        .popup-link { display: inline-block; margin-top: 8px; font-size: 12px; color: #0891b2; font-weight: 600; text-decoration: none; }
+        .popup-link:hover { text-decoration: underline; }
 
         /* Legend */
         .legend {
-            position: fixed;
-            bottom: 60px;
-            right: 20px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 14px;
-            font-size: 11px;
-            z-index: 950;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            position: fixed; bottom: 20px; right: 20px; background: var(--panel);
+            border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px;
+            font-size: 10px; z-index: 950; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
+        .legend-title { font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--dim); margin-bottom: 8px; }
+        .gradient-bar { width: 120px; height: 10px; border-radius: 2px; background: linear-gradient(to right, #10b981, #fbbf24, #ef4444); margin-bottom: 4px; }
+        .gradient-labels { display: flex; justify-content: space-between; width: 120px; color: var(--dim); font-size: 9px; }
 
-        .legend-title {
-            font-weight: 600;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-dim);
-            margin-bottom: 10px;
+        /* Loading */
+        .loading-overlay {
+            position: fixed; inset: 0; z-index: 2000;
+            background: rgba(10,14,26,0.85); display: flex;
+            align-items: center; justify-content: center;
         }
-
-        .legend-gradient {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .gradient-bar {
-            width: 120px;
-            height: 12px;
-            border-radius: 2px;
-            background: linear-gradient(to right, #10b981, #fbbf24, #ef4444);
-        }
-
-        .gradient-labels {
-            display: flex;
-            justify-content: space-between;
-            width: 120px;
-            margin-left: 0;
-            font-size: 10px;
-            color: var(--text-dim);
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin-top: 8px;
-            gap: 8px;
-        }
-
-        .legend-line { width: 20px; height: 3px; background: #ef4444; }
-
-        #footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 40px;
-            background: var(--bg);
-            border-top: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            color: #7a8290;
-            z-index: 900;
-        }
-
-        .loading-spinner {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2000;
-            background: var(--panel);
-            padding: 30px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            text-align: center;
-            display: none;
-        }
-
-        .loading-spinner.active { display: block; }
-
-        .spinner {
-            border: 3px solid var(--border);
-            border-top: 3px solid var(--accent);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 15px;
-        }
-
+        .loading-overlay.hidden { display: none; }
+        .loading-box { text-align: center; }
+        .spinner { border: 3px solid var(--border); border-top: 3px solid var(--accent); border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .leaflet-control-layers {
-            background-color: var(--panel) !important;
-            border: 1px solid var(--border) !important;
-            border-radius: 4px !important;
-        }
-
-        .leaflet-control-layers label {
-            color: var(--text) !important;
-            font-size: 13px !important;
-        }
-
-        .leaflet-control-layers input { accent-color: var(--accent); }
-
-        .popup-content { color: #333; font-size: 12px; min-width: 200px; }
-        .popup-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; color: #000; }
-        .popup-stat { display: flex; justify-content: space-between; padding: 3px 0; }
-        .popup-label { color: #666; }
-        .popup-value { font-weight: 600; color: #000; }
-        .popup-divider { border-top: 1px solid #ddd; margin: 6px 0; }
-        .popup-highlight { color: #059669; font-weight: 700; }
-
-        @media (max-width: 768px) {
-            #sidebar { display: none; }
-            .legend { bottom: 50px; right: 10px; left: 10px; }
-        }
+        .marker-cluster-small { background-color: rgba(6,182,212,0.3); }
+        .marker-cluster-small div { background-color: rgba(6,182,212,0.6); color: #fff; }
+        .marker-cluster-medium { background-color: rgba(251,191,36,0.3); }
+        .marker-cluster-medium div { background-color: rgba(251,191,36,0.6); color: #000; }
+        .marker-cluster-large { background-color: rgba(239,68,68,0.3); }
+        .marker-cluster-large div { background-color: rgba(239,68,68,0.6); color: #fff; }
     </style>
 </head>
 <body>
-    <div id="map-container">
-        <div id="sidebar">
-            <div class="sidebar-header">Mapa de Precios CABA</div>
-            <div class="sidebar-sub">Mediana USD/m² por barrio — Live Supabase</div>
+<div id="app">
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <h1>CABA Property Explorer</h1>
+            <div class="sub">Propiedades geocodeadas — Live Supabase</div>
+        </div>
 
-            <div class="sidebar-section">
-                <div class="section-title">Filtro de Precio</div>
-                <button class="filter-toggle" id="filter200k" onclick="toggle200k()">
-                    <span>Solo ≤ USD 200k</span>
-                    <span class="toggle-dot"></span>
-                </button>
-                <div class="filter-count" id="filterCount"></div>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="section-title">Resumen</div>
-                <div class="stat-row">
-                    <span class="stat-label">Propiedades</span>
-                    <span class="stat-value" id="stat-total">—</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Barrios</span>
-                    <span class="stat-value" id="stat-barrios">—</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Mediana USD/m²</span>
-                    <span class="stat-value" id="stat-median">—</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Precio mediano</span>
-                    <span class="stat-value" id="stat-price">—</span>
+        <div id="filters">
+            <div class="filter-section">
+                <div class="filter-label">Precio USD</div>
+                <div class="filter-row">
+                    <input type="number" class="filter-input" id="f-price-min" placeholder="Min" step="10000">
+                    <span style="color:var(--dim)">—</span>
+                    <input type="number" class="filter-input" id="f-price-max" placeholder="Max (200k)" value="200000" step="10000">
                 </div>
             </div>
-
-            <div class="sidebar-section">
-                <div class="section-title" id="list-title">Top Barrios por Propiedades</div>
-                <ul class="barrio-list" id="barrio-list"></ul>
+            <div class="filter-section">
+                <div class="filter-label">Superficie m²</div>
+                <div class="filter-row">
+                    <input type="number" class="filter-input" id="f-area-min" placeholder="Min (120)" value="120" step="10">
+                    <span style="color:var(--dim)">—</span>
+                    <input type="number" class="filter-input" id="f-area-max" placeholder="Max" step="10">
+                </div>
+            </div>
+            <div class="filter-section">
+                <div class="filter-label">USD/m² máximo</div>
+                <div class="filter-row">
+                    <input type="number" class="filter-input" id="f-usdm2-max" placeholder="Ej: 1200" step="50">
+                </div>
+            </div>
+            <div class="filter-section">
+                <div class="filter-label">Ambientes mínimos</div>
+                <div class="filter-row">
+                    <input type="number" class="filter-input" id="f-amb-min" placeholder="Ej: 3" min="0" max="20">
+                </div>
+            </div>
+            <div class="filter-section">
+                <div class="filter-label">Keywords destacados</div>
+                <div class="chip-group" id="kw-chips"></div>
+            </div>
+            <div class="filter-section">
+                <div class="filter-label">Segmento</div>
+                <div class="chip-group" id="seg-chips"></div>
+            </div>
+            <div class="filter-section">
+                <div class="filter-label">Fuente</div>
+                <div class="chip-group" id="src-chips"></div>
+            </div>
+            <div style="margin-top:4px;">
+                <button onclick="applyFilters()" style="width:100%;padding:8px;background:var(--accent);color:#000;border:none;border-radius:4px;font-weight:700;font-size:12px;cursor:pointer;">Aplicar Filtros</button>
+                <button onclick="resetFilters()" style="width:100%;padding:6px;background:transparent;color:var(--dim);border:1px solid var(--border);border-radius:4px;font-size:11px;cursor:pointer;margin-top:4px;">Limpiar</button>
             </div>
         </div>
 
-        <div id="map"></div>
+        <div class="stats-bar" id="stats-bar">
+            <span>Cargando...</span>
+        </div>
+
+        <div id="prop-list"></div>
     </div>
 
-    <div id="footer">
-        Consultoría Moderna | CABA Market Study | Supabase + OpenStreetMap
-    </div>
+    <div id="map"></div>
+</div>
 
-    <div class="loading-spinner" id="loading-spinner">
+<div class="legend">
+    <div class="legend-title">USD/m²</div>
+    <div class="gradient-bar"></div>
+    <div class="gradient-labels"><span>≤$600</span><span>$1,200</span><span>≥$1,800</span></div>
+</div>
+
+<div class="loading-overlay" id="loading">
+    <div class="loading-box">
         <div class="spinner"></div>
-        <p>Cargando datos de Supabase...</p>
+        <div>Cargando propiedades...</div>
     </div>
+</div>
 
-    <div class="legend">
-        <div class="legend-title">Mediana USD/m²</div>
-        <div class="gradient-bar"></div>
-        <div class="gradient-labels">
-            <span>≤$800</span>
-            <span>$1,200</span>
-            <span>≥$1,800</span>
-        </div>
-        <div class="legend-item" style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #1e2735;">
-            <div class="legend-line"></div>
-            <span>Vía de Tren</span>
-        </div>
-        <div class="legend-item">
-            <div style="width: 16px; height: 16px; border: 2px solid #ef4444; border-radius: 50%; opacity: 0.3; background: rgba(239,68,68,0.1);"></div>
-            <span>Exclusión 300m</span>
-        </div>
-    </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script>
+const SB_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
+const HEADERS = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+const KEYWORDS = [
+    { kw: 'jardín', label: 'Jardín', star: true },
+    { kw: 'jardin', label: 'Jardín', alias: 'jardín', star: true },
+    { kw: 'terraza', label: 'Terraza', star: true },
+    { kw: 'patio', label: 'Patio' },
+    { kw: 'parrilla', label: 'Parrilla' },
+    { kw: 'quincho', label: 'Quincho' },
+    { kw: 'pileta', label: 'Pileta' },
+    { kw: 'luminoso', label: 'Luminoso' },
+    { kw: 'luminosa', label: 'Luminosa', alias: 'luminoso' },
+    { kw: 'cochera', label: 'Cochera' },
+    { kw: 'lote', label: 'Lote' },
+    { kw: 'refaccionar', label: 'A refacc.' },
+    { kw: 'reciclada', label: 'Reciclada' },
+    { kw: 'oportunidad', label: 'Oportunidad' },
+    { kw: 'escritura', label: 'Escritura' },
+];
+const SEGMENTS = ['cheap','refac','recic','general'];
+const SOURCES = ['zonaprop','mercadolibre'];
 
-    <script>
-        // Supabase config
-        const SUPABASE_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
+let map, markerCluster, railwayLayer, bufferLayer;
+let allProps = [];
+let filtered = [];
+let activeKws = new Set();
+let activeSegs = new Set();
+let activeSrcs = new Set();
+let selectedPropId = null;
 
-        // Neighborhood coordinates (static — GPS data is ~0% in DB)
-        const BARRIO_COORDS = {
-            'Villa Lugano': [-34.6345, -58.4860],
-            'Pompeya': [-34.6433, -58.4183],
-            'Villa Soldati': [-34.6549, -58.4483],
-            'Barracas': [-34.6418, -58.3843],
-            'La Boca': [-34.6345, -58.3635],
-            'Parque Patricios': [-34.6343, -58.4050],
-            'Villa Riachuelo': [-34.6583, -58.4683],
-            'Constitución': [-34.6333, -58.3883],
-            'San Telmo': [-34.6218, -58.3700],
-            'Mataderos': [-34.6519, -58.5064],
-            'Liniers': [-34.6433, -58.5220],
-            'Flores': [-34.6283, -58.4633],
-            'Floresta': [-34.6283, -58.4883],
-            'Parque Avellaneda': [-34.6433, -58.4783],
-            'Villa Luro': [-34.6373, -58.4943],
-            'Monte Castro': [-34.6183, -58.5043],
-            'Versalles': [-34.6183, -58.5243],
-            'Villa Real': [-34.6183, -58.5183],
-            'Villa Devoto': [-34.5983, -58.5113],
-            'Villa del Parque': [-34.6073, -58.4883],
-            'Boedo': [-34.6283, -58.4183],
-            'Almagro': [-34.6083, -58.4183],
-            'Balvanera': [-34.6133, -58.4033],
-            'Villa Crespo': [-34.5983, -58.4383],
-            'Chacarita': [-34.5883, -58.4483],
-            'Paternal': [-34.5983, -58.4683],
-            'San Cristóbal': [-34.6233, -58.4043],
-            'Saavedra': [-34.5583, -58.4883],
-            'Coghlan': [-34.5683, -58.4783],
-            'Villa Urquiza': [-34.5733, -58.4883],
-            'Belgrano': [-34.5633, -58.4583],
-            'Núñez': [-34.5483, -58.4583],
-            'Palermo': [-34.5783, -58.4283],
-            'Caballito': [-34.6183, -58.4383],
-            'Vélez Sarsfield': [-34.6333, -58.4883],
-            'Parque Chacabuco': [-34.6383, -58.4333],
-            'Villa General Mitre': [-34.6083, -58.4683],
-            'Agronomía': [-34.5933, -58.4883],
-            'Villa Ortúzar': [-34.5833, -58.4683],
-            'Villa Pueyrredón': [-34.5833, -58.5033],
-            'Villa Santa Rita': [-34.6133, -58.4833],
-            'San Nicolás': [-34.6033, -58.3783],
-            'Retiro': [-34.5883, -58.3733],
-            'Recoleta': [-34.5883, -58.3933],
-            'Monserrat': [-34.6133, -58.3833],
-            'Puerto Madero': [-34.6183, -58.3633],
-            'Colegiales': [-34.5733, -58.4483],
-            'Nueva Pompeya': [-34.6483, -58.4233],
-            'Parque Chas': [-34.5833, -58.4833],
-            'Villa Gral. Mitre': [-34.6083, -58.4683],
+// Color by USD/m²
+function priceColor(v) {
+    const lo = 600, mid = 1200, hi = 1800;
+    if (!v || v <= lo) return '#10b981';
+    if (v <= mid) {
+        const t = (v - lo) / (mid - lo);
+        return `rgb(${Math.round(16+t*235)},${Math.round(185+t*6)},${Math.round(129-t*93)})`;
+    }
+    if (v <= hi) {
+        const t = (v - mid) / (hi - mid);
+        return `rgb(${Math.round(251-t*12)},${Math.round(191-t*123)},${Math.round(36+t*32)})`;
+    }
+    return '#ef4444';
+}
+
+function fmt(n) { return n ? Number(n).toLocaleString('es-AR') : '—'; }
+
+// Init keyword chips
+function initChips() {
+    const kwContainer = document.getElementById('kw-chips');
+    const seen = new Set();
+    KEYWORDS.forEach(k => {
+        if (k.alias || seen.has(k.kw)) return;
+        seen.add(k.kw);
+        const chip = document.createElement('span');
+        chip.className = `chip${k.star ? ' highlight' : ''}`;
+        chip.textContent = k.label;
+        chip.dataset.kw = k.kw;
+        chip.onclick = () => {
+            chip.classList.toggle('active');
+            if (activeKws.has(k.kw)) activeKws.delete(k.kw); else activeKws.add(k.kw);
         };
+        kwContainer.appendChild(chip);
+    });
 
-        let map, barrioLayer, railwayLayer, bufferLayer;
-        let allBarrioData = [];
-        let filtered = false;
-        let barrioCircles = {};
+    const segContainer = document.getElementById('seg-chips');
+    SEGMENTS.forEach(s => {
+        const chip = document.createElement('span');
+        chip.className = 'seg-chip';
+        chip.textContent = s;
+        chip.onclick = () => {
+            chip.classList.toggle('active');
+            if (activeSegs.has(s)) activeSegs.delete(s); else activeSegs.add(s);
+        };
+        segContainer.appendChild(chip);
+    });
 
-        // Price heatmap color
-        function priceColor(medianUsdM2) {
-            // Green (cheap) → Yellow (mid) → Red (expensive)
-            // Scale: 600–1800
-            const min = 600, mid = 1200, max = 1800;
-            let r, g, b;
+    const srcContainer = document.getElementById('src-chips');
+    SOURCES.forEach(s => {
+        const chip = document.createElement('span');
+        chip.className = 'seg-chip';
+        chip.textContent = s === 'zonaprop' ? 'ZonaProp' : 'MercadoLibre';
+        chip.onclick = () => {
+            chip.classList.toggle('active');
+            if (activeSrcs.has(s)) activeSrcs.delete(s); else activeSrcs.add(s);
+        };
+        srcContainer.appendChild(chip);
+    });
+}
 
-            if (medianUsdM2 <= min) {
-                r = 16; g = 185; b = 129; // #10b981
-            } else if (medianUsdM2 <= mid) {
-                const t = (medianUsdM2 - min) / (mid - min);
-                r = Math.round(16 + t * (251 - 16));
-                g = Math.round(185 + t * (191 - 185));
-                b = Math.round(129 + t * (36 - 129));
-            } else if (medianUsdM2 <= max) {
-                const t = (medianUsdM2 - mid) / (max - mid);
-                r = Math.round(251 + t * (239 - 251));
-                g = Math.round(191 + t * (68 - 191));
-                b = Math.round(36 + t * (68 - 36));
-            } else {
-                r = 239; g = 68; b = 68; // #ef4444
-            }
+// Fetch properties with GPS from Supabase
+async function fetchProperties() {
+    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,bathrooms,neighborhood,address_text,latitude,longitude,geo_precision,permalink,keywords,segment,source,description';
+    const url = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&latitude=not.is.null&order=price_per_sqm.asc&limit=5000`;
+    const resp = await fetch(url, { headers: HEADERS });
+    if (!resp.ok) throw new Error('Fetch failed');
+    return resp.json();
+}
 
-            return `rgb(${r},${g},${b})`;
+// Apply filters
+function applyFilters() {
+    const pMin = Number(document.getElementById('f-price-min').value) || 0;
+    const pMax = Number(document.getElementById('f-price-max').value) || Infinity;
+    const aMin = Number(document.getElementById('f-area-min').value) || 0;
+    const aMax = Number(document.getElementById('f-area-max').value) || Infinity;
+    const uMax = Number(document.getElementById('f-usdm2-max').value) || Infinity;
+    const ambMin = Number(document.getElementById('f-amb-min').value) || 0;
+
+    filtered = allProps.filter(p => {
+        if (p.price < pMin || p.price > pMax) return false;
+        if (p.total_area < aMin || p.total_area > aMax) return false;
+        if (p.price_per_sqm > uMax) return false;
+        if (p.ambientes && p.ambientes < ambMin) return false;
+        if (activeSegs.size > 0 && !activeSegs.has(p.segment)) return false;
+        if (activeSrcs.size > 0 && !activeSrcs.has(p.source)) return false;
+        if (activeKws.size > 0) {
+            const pKws = (p.keywords || []).map(k => k.toLowerCase());
+            const match = [...activeKws].some(kw => pKws.includes(kw) || pKws.includes(kw.replace('í','i')));
+            if (!match) return false;
         }
+        return true;
+    });
 
-        function fmt(n) {
-            return n ? n.toLocaleString('es-AR') : '—';
+    renderMarkers();
+    renderList();
+    updateStats();
+}
+
+function resetFilters() {
+    document.getElementById('f-price-min').value = '';
+    document.getElementById('f-price-max').value = '200000';
+    document.getElementById('f-area-min').value = '120';
+    document.getElementById('f-area-max').value = '';
+    document.getElementById('f-usdm2-max').value = '';
+    document.getElementById('f-amb-min').value = '';
+    activeKws.clear(); activeSegs.clear(); activeSrcs.clear();
+    document.querySelectorAll('.chip.active, .seg-chip.active').forEach(c => c.classList.remove('active'));
+    applyFilters();
+}
+
+function updateStats() {
+    const bar = document.getElementById('stats-bar');
+    const avgM2 = filtered.length > 0 ? Math.round(filtered.reduce((s,p) => s + (Number(p.price_per_sqm)||0), 0) / filtered.length) : 0;
+    const medianPrice = filtered.length > 0 ? filtered.map(p=>p.price).sort((a,b)=>a-b)[Math.floor(filtered.length/2)] : 0;
+    bar.innerHTML = `<span><strong>${filtered.length}</strong> propiedades</span><span>Med. <strong>$${fmt(avgM2)}</strong>/m²</span><span>Precio med. <strong>$${fmt(medianPrice)}</strong></span>`;
+}
+
+// Render markers on map
+function renderMarkers() {
+    markerCluster.clearLayers();
+
+    filtered.forEach(p => {
+        const color = priceColor(p.price_per_sqm);
+        const icon = L.divIcon({
+            className: '',
+            html: `<div style="width:12px;height:12px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.6);box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
+            iconSize: [12, 12],
+            iconAnchor: [6, 6]
+        });
+
+        const marker = L.marker([p.latitude, p.longitude], { icon })
+            .bindPopup(() => createPopup(p), { maxWidth: 300 });
+
+        marker.on('click', () => selectProp(p.id));
+        marker.propId = p.id;
+        markerCluster.addLayer(marker);
+    });
+}
+
+function createPopup(p) {
+    const kwsHtml = (p.keywords || []).map(k => {
+        const isMatch = activeKws.has(k.toLowerCase()) || activeKws.has(k.toLowerCase().replace('i','í'));
+        return `<span class="popup-kw${isMatch ? ' match' : ''}">${k}</span>`;
+    }).join('');
+
+    const link = p.permalink ? `<a href="${p.permalink}" target="_blank" class="popup-link">Ver aviso original &rarr;</a>` : '';
+    const covRatio = p.covered_area && p.total_area ? `${Math.round(p.covered_area / p.total_area * 100)}%` : '—';
+
+    return `<div class="popup-content">
+        <div class="popup-title">${p.title || 'Sin título'}</div>
+        <div class="popup-addr">${p.address_text || p.neighborhood}</div>
+        <dl class="popup-grid">
+            <dt>Precio</dt><dd>USD $${fmt(p.price)}</dd>
+            <dt>USD/m²</dt><dd style="color:${priceColor(p.price_per_sqm)}">$${fmt(p.price_per_sqm)}</dd>
+            <dt>Superficie</dt><dd>${fmt(p.total_area)} m²</dd>
+            <dt>% Cubierto</dt><dd>${covRatio}</dd>
+            <dt>Ambientes</dt><dd>${p.ambientes || '—'}</dd>
+            <dt>Baños</dt><dd>${p.bathrooms || '—'}</dd>
+            <dt>Segmento</dt><dd>${p.segment || '—'}</dd>
+            <dt>Fuente</dt><dd>${p.source}</dd>
+        </dl>
+        ${kwsHtml ? `<div class="popup-kws">${kwsHtml}</div>` : ''}
+        ${link}
+    </div>`;
+}
+
+// Render sidebar list
+function renderList() {
+    const list = document.getElementById('prop-list');
+    const sorted = [...filtered].sort((a, b) => (a.price_per_sqm || 9999) - (b.price_per_sqm || 9999));
+
+    list.innerHTML = sorted.slice(0, 200).map(p => {
+        const color = priceColor(p.price_per_sqm);
+        const kwsHtml = (p.keywords || []).slice(0, 5).map(k => {
+            const isMatch = activeKws.has(k.toLowerCase()) || activeKws.has(k.toLowerCase().replace('i','í'));
+            return `<span class="prop-kw${isMatch ? ' match' : ''}">${k}</span>`;
+        }).join('');
+
+        return `<div class="prop-card" data-id="${p.id}" onclick="selectProp('${p.id}')">
+            <div class="prop-title">${p.title || 'Sin título'}</div>
+            <div class="prop-addr">${p.address_text || p.neighborhood}</div>
+            <div class="prop-metrics">
+                <div class="prop-metric"><span class="val">$${fmt(p.price)}</span><span class="lbl">Precio</span></div>
+                <div class="prop-metric"><span class="val" style="color:${color}">$${fmt(p.price_per_sqm)}</span><span class="lbl">USD/m²</span></div>
+                <div class="prop-metric"><span class="val">${fmt(p.total_area)}</span><span class="lbl">m²</span></div>
+                <div class="prop-metric"><span class="val">${p.ambientes || '—'}</span><span class="lbl">Amb</span></div>
+            </div>
+            ${kwsHtml ? `<div class="prop-keywords">${kwsHtml}</div>` : ''}
+            ${p.permalink ? `<a href="${p.permalink}" target="_blank" class="prop-link" onclick="event.stopPropagation()">Ver aviso &rarr;</a>` : ''}
+        </div>`;
+    }).join('');
+}
+
+// Select property
+function selectProp(id) {
+    selectedPropId = id;
+    document.querySelectorAll('.prop-card').forEach(c => c.classList.toggle('selected', c.dataset.id === id));
+
+    // Fly to marker
+    markerCluster.eachLayer(m => {
+        if (m.propId === id) {
+            map.flyTo(m.getLatLng(), 16, { duration: 0.6 });
+            setTimeout(() => m.openPopup(), 700);
         }
+    });
 
-        // Fetch neighborhood aggregates from Supabase
-        async function fetchBarrioData(under200k = false) {
-            const priceFilter = under200k ? '&price=lte.200000' : '';
-            const url = `${SUPABASE_URL}/rest/v1/properties?select=neighborhood,price,price_per_sqm,total_area,covered_area,segment&is_active=eq.true&price_per_sqm=gt.0${priceFilter}&limit=5000`;
+    // Scroll card into view
+    const card = document.querySelector(`.prop-card[data-id="${id}"]`);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
 
-            const resp = await fetch(url, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            });
+// Railways
+function loadRailways() {
+    const cached = sessionStorage.getItem('caba_railway_data');
+    if (cached) { renderRailways(JSON.parse(cached)); return; }
 
-            if (!resp.ok) throw new Error('Supabase fetch failed');
-            const props = await resp.json();
+    const query = `[out:json][timeout:25];area["name"="Buenos Aires"]["admin_level"="2"]->.a;(way["railway"="rail"](area.a);way["railway"="light_rail"](area.a););out geom;`;
+    fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query })
+        .then(r => r.json())
+        .then(d => { sessionStorage.setItem('caba_railway_data', JSON.stringify(d)); renderRailways(d); })
+        .catch(e => console.warn('Railways failed:', e));
+}
 
-            // Aggregate by neighborhood
-            const byBarrio = {};
-            props.forEach(p => {
-                const n = p.neighborhood;
-                if (!n) return;
-                if (!byBarrio[n]) byBarrio[n] = { prices: [], usdm2: [], areas: [], covAreas: [], segments: {} };
-                byBarrio[n].prices.push(p.price);
-                if (p.price_per_sqm) byBarrio[n].usdm2.push(p.price_per_sqm);
-                if (p.total_area) byBarrio[n].areas.push(p.total_area);
-                if (p.covered_area) byBarrio[n].covAreas.push(p.covered_area);
-                if (p.segment) byBarrio[n].segments[p.segment] = (byBarrio[n].segments[p.segment] || 0) + 1;
-            });
-
-            const median = arr => {
-                if (!arr.length) return 0;
-                const s = [...arr].sort((a, b) => a - b);
-                const m = Math.floor(s.length / 2);
-                return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-            };
-
-            return Object.entries(byBarrio).map(([name, d]) => ({
-                name,
-                count: d.prices.length,
-                medianUsdM2: Math.round(median(d.usdm2)),
-                avgUsdM2: Math.round(d.usdm2.reduce((a, b) => a + b, 0) / d.usdm2.length),
-                medianPrice: Math.round(median(d.prices)),
-                avgArea: Math.round(d.areas.reduce((a, b) => a + b, 0) / (d.areas.length || 1)),
-                minUsdM2: Math.round(Math.min(...d.usdm2)),
-                maxUsdM2: Math.round(Math.max(...d.usdm2)),
-                topSegment: Object.entries(d.segments).sort((a, b) => b[1] - a[1])[0]?.[0] || '—',
-                covRatio: d.covAreas.length > 0 && d.areas.length > 0
-                    ? Math.round((d.covAreas.reduce((a, b) => a + b, 0) / d.areas.reduce((a, b) => a + b, 0)) * 100)
-                    : null
-            })).filter(b => BARRIO_COORDS[b.name]).sort((a, b) => b.count - a.count);
+function renderRailways(data) {
+    if (!data?.elements) return;
+    data.elements.forEach(el => {
+        if (el.type === 'way' && el.geometry) {
+            const coords = el.geometry.map(n => [n.lat, n.lon]);
+            L.polyline(coords, { color: '#ef4444', weight: 2.5, opacity: 0.5 }).addTo(railwayLayer);
         }
+    });
+    railwayLayer.addTo(map);
+}
 
-        function createPopup(b) {
-            const covLine = b.covRatio !== null ? `
-                <div class="popup-stat">
-                    <span class="popup-label">% Cubierto:</span>
-                    <span class="popup-value">${b.covRatio}%</span>
-                </div>` : '';
+// Init
+async function init() {
+    map = L.map('map', { zoomControl: true }).setView([-34.62, -58.44], 12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OSM', maxZoom: 19
+    }).addTo(map);
 
-            return `
-                <div class="popup-content">
-                    <div class="popup-title">${b.name}</div>
-                    <div class="popup-stat">
-                        <span class="popup-label">Propiedades:</span>
-                        <span class="popup-value">${b.count}</span>
-                    </div>
-                    <div class="popup-divider"></div>
-                    <div class="popup-stat">
-                        <span class="popup-label">Mediana USD/m²:</span>
-                        <span class="popup-value popup-highlight">$${fmt(b.medianUsdM2)}</span>
-                    </div>
-                    <div class="popup-stat">
-                        <span class="popup-label">Rango USD/m²:</span>
-                        <span class="popup-value">$${fmt(b.minUsdM2)} – $${fmt(b.maxUsdM2)}</span>
-                    </div>
-                    <div class="popup-stat">
-                        <span class="popup-label">Precio mediano:</span>
-                        <span class="popup-value">$${fmt(b.medianPrice)}</span>
-                    </div>
-                    <div class="popup-divider"></div>
-                    <div class="popup-stat">
-                        <span class="popup-label">Área promedio:</span>
-                        <span class="popup-value">${b.avgArea} m²</span>
-                    </div>
-                    ${covLine}
-                    <div class="popup-stat">
-                        <span class="popup-label">Segmento top:</span>
-                        <span class="popup-value">${b.topSegment}</span>
-                    </div>
-                </div>
-            `;
-        }
+    markerCluster = L.markerClusterGroup({
+        maxClusterRadius: 40,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false
+    }).addTo(map);
 
-        function renderBarrios(data) {
-            allBarrioData = data;
-            barrioLayer.clearLayers();
-            barrioCircles = {};
+    railwayLayer = L.featureGroup();
+    bufferLayer = L.featureGroup();
 
-            data.forEach(b => {
-                const coords = BARRIO_COORDS[b.name];
-                if (!coords) return;
+    L.control.layers({}, {
+        'Propiedades': markerCluster,
+        'Vías de Tren': railwayLayer
+    }, { position: 'topright', collapsed: true }).addTo(map);
 
-                const radius = Math.max(10, Math.min(45, Math.sqrt(b.count) * 2.5));
-                const color = priceColor(b.medianUsdM2);
+    initChips();
 
-                const circle = L.circleMarker(coords, {
-                    radius,
-                    fillColor: color,
-                    fillOpacity: 0.75,
-                    color: '#fff',
-                    weight: 1.5,
-                    opacity: 0.6
-                }).bindPopup(createPopup(b));
+    try {
+        allProps = await fetchProperties();
+        allProps = allProps.map(p => ({
+            ...p,
+            price: Number(p.price) || 0,
+            price_per_sqm: Number(p.price_per_sqm) || 0,
+            total_area: Number(p.total_area) || 0,
+            covered_area: Number(p.covered_area) || 0,
+            ambientes: Number(p.ambientes) || 0,
+            bathrooms: Number(p.bathrooms) || 0,
+            latitude: Number(p.latitude),
+            longitude: Number(p.longitude)
+        }));
+        applyFilters();
+    } catch (e) {
+        console.error('Init error:', e);
+        document.getElementById('stats-bar').innerHTML = '<span style="color:var(--red)">Error cargando datos</span>';
+    }
 
-                // Tooltip with name + median
-                circle.bindTooltip(`${b.name}: $${fmt(b.medianUsdM2)}/m²`, {
-                    direction: 'top',
-                    offset: [0, -radius],
-                    className: 'barrio-tooltip'
-                });
+    document.getElementById('loading').classList.add('hidden');
+    loadRailways();
 
-                circle.on('mouseover', function() { this.setStyle({ fillOpacity: 0.95, weight: 3, opacity: 1 }); });
-                circle.on('mouseout', function() { this.setStyle({ fillOpacity: 0.75, weight: 1.5, opacity: 0.6 }); });
+    // Enter key applies filters
+    document.querySelectorAll('.filter-input').forEach(input => {
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
+    });
+}
 
-                barrioLayer.addLayer(circle);
-                barrioCircles[b.name] = circle;
-            });
-
-            // Update sidebar stats
-            const totalProps = data.reduce((s, b) => s + b.count, 0);
-            const allMedians = data.map(b => b.medianUsdM2).sort((a, b) => a - b);
-            const globalMedian = allMedians[Math.floor(allMedians.length / 2)] || 0;
-            const allPrices = data.map(b => b.medianPrice).sort((a, b) => a - b);
-            const globalPrice = allPrices[Math.floor(allPrices.length / 2)] || 0;
-
-            document.getElementById('stat-total').textContent = fmt(totalProps);
-            document.getElementById('stat-barrios').textContent = data.length;
-            document.getElementById('stat-median').textContent = `$${fmt(globalMedian)}`;
-            document.getElementById('stat-price').textContent = `$${fmt(globalPrice)}`;
-
-            // Update barrio list
-            updateBarrioList(data);
-        }
-
-        function updateBarrioList(data) {
-            const list = document.getElementById('barrio-list');
-            const sorted = [...data].sort((a, b) => b.count - a.count).slice(0, 20);
-
-            list.innerHTML = sorted.map(b => {
-                const color = priceColor(b.medianUsdM2);
-                return `
-                    <li style="border-left-color: ${color};" onclick="flyToBarrio('${b.name.replace(/'/g, "\\'")}')">
-                        <span class="barrio-name">${b.name}</span>
-                        <span class="barrio-metric" style="color: ${color};">$${fmt(b.medianUsdM2)}/m²</span>
-                        <span class="barrio-count">${b.count}</span>
-                    </li>`;
-            }).join('');
-        }
-
-        function flyToBarrio(name) {
-            const circle = barrioCircles[name];
-            if (circle) {
-                map.flyTo(circle.getLatLng(), 14, { duration: 0.8 });
-                circle.openPopup();
-            }
-        }
-
-        // Toggle ≤200k filter
-        async function toggle200k() {
-            const btn = document.getElementById('filter200k');
-            filtered = !filtered;
-            btn.classList.toggle('active', filtered);
-
-            const spinner = document.getElementById('loading-spinner');
-            spinner.querySelector('p').textContent = filtered ? 'Filtrando ≤ USD 200k...' : 'Cargando todos...';
-            spinner.classList.add('active');
-
-            try {
-                const data = await fetchBarrioData(filtered);
-                renderBarrios(data);
-
-                const totalAll = allBarrioData.reduce((s, b) => s + b.count, 0);
-                document.getElementById('filterCount').textContent = filtered
-                    ? `${fmt(totalAll)} propiedades ≤ USD 200k`
-                    : '';
-            } catch (e) {
-                console.error('Filter error:', e);
-            }
-
-            spinner.classList.remove('active');
-        }
-
-        // Railways (same as before)
-        function loadRailwayData() {
-            const cached = sessionStorage.getItem('caba_railway_data');
-            if (cached) {
-                try {
-                    renderRailways(JSON.parse(cached));
-                    return;
-                } catch (e) { /* fetch fresh */ }
-            }
-
-            const query = `[out:json][timeout:25];
-area["name"="Buenos Aires"]["admin_level"="2"]->.searchArea;
-(way["railway"="rail"](area.searchArea);way["railway"="light_rail"](area.searchArea););
-out geom;`;
-
-            fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query })
-                .then(r => r.json())
-                .then(data => {
-                    sessionStorage.setItem('caba_railway_data', JSON.stringify(data));
-                    renderRailways(data);
-                })
-                .catch(e => console.error('Railway load failed:', e));
-        }
-
-        function renderRailways(data) {
-            if (!data || !data.elements) return;
-            railwayLayer.clearLayers();
-            bufferLayer.clearLayers();
-
-            data.elements.forEach(el => {
-                if (el.type === 'way' && el.geometry) {
-                    const coords = el.geometry.map(n => [n.lat, n.lon]);
-                    L.polyline(coords, { color: '#ef4444', weight: 3, opacity: 0.7 }).addTo(railwayLayer);
-                    coords.forEach(c => {
-                        L.circle(c, {
-                            radius: 300,
-                            fillColor: '#ef4444', fillOpacity: 0.12,
-                            color: '#ef4444', weight: 1, opacity: 0.2
-                        }).addTo(bufferLayer);
-                    });
-                }
-            });
-
-            railwayLayer.addTo(map);
-        }
-
-        // Init
-        async function init() {
-            map = L.map('map').setView([-34.61, -58.45], 12);
-
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '© OpenStreetMap',
-                maxZoom: 19
-            }).addTo(map);
-
-            barrioLayer = L.featureGroup().addTo(map);
-            railwayLayer = L.featureGroup();
-            bufferLayer = L.featureGroup();
-
-            L.control.layers({}, {
-                'Barrios (USD/m²)': barrioLayer,
-                'Vías de Tren': railwayLayer,
-                'Exclusión 300m': bufferLayer
-            }, { position: 'topright', collapsed: false }).addTo(map);
-
-            const spinner = document.getElementById('loading-spinner');
-            spinner.classList.add('active');
-
-            try {
-                const data = await fetchBarrioData(false);
-                renderBarrios(data);
-            } catch (e) {
-                console.error('Init error:', e);
-            }
-
-            spinner.classList.remove('active');
-            loadRailwayData();
-        }
-
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
+document.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
