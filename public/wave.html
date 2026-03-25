@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wave Above the City — CABA Market Pulse</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1f2937;
+            --accent: #00d4ff;
+            --text-primary: #f0f4f8;
+            --text-secondary: #94a3b8;
+            --border: #1e293b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 1rem 1rem;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #00d4ff, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+        }
+
+        .nav-links {
+            text-align: center;
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.75rem;
+            margin: 0 0.8rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--accent);
+        }
+
+        /* Wave container */
+        #wave-container {
+            width: 100%;
+            padding: 1rem 0;
+            position: relative;
+        }
+
+        #wave-svg {
+            width: 100%;
+            display: block;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(167,139,250,0.15));
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.2rem;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #00d4ff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-card .label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+        }
+
+        /* Churn table */
+        .churn-section {
+            max-width: 1200px;
+            margin: 1rem auto;
+            padding: 0 2rem;
+        }
+
+        .churn-section h2 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .churn-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.6rem;
+        }
+
+        .churn-bar {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.8rem;
+            position: relative;
+            overflow: hidden;
+            cursor: default;
+            transition: border-color 0.3s;
+        }
+
+        .churn-bar:hover {
+            border-color: var(--accent);
+        }
+
+        .churn-bar .name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+        }
+
+        .churn-bar .numbers {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .churn-bar .numbers .churn {
+            color: #f472b6;
+            font-weight: 600;
+        }
+
+        .churn-bar .bg-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            opacity: 0.08;
+            transition: width 0.8s ease;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            font-size: 0.8rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 50;
+            min-width: 180px;
+        }
+
+        .tooltip .tt-name {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .tooltip .tt-row {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+        }
+
+        footer a { color: var(--accent); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Wave Above the City</h1>
+        <p>Market pulse — CABA casas en venta</p>
+    </header>
+
+    <nav class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/mapa.html">Mapa</a>
+        <a href="/wave.html" class="active">Wave</a>
+        <a href="/d3-analytics.html">Analytics</a>
+    </nav>
+
+    <div class="filters" id="filters">
+        <button class="filter-btn active" data-sort="total">Por volumen</button>
+        <button class="filter-btn" data-sort="churn">Por churn %</button>
+        <button class="filter-btn" data-sort="price">Por precio mediana</button>
+        <button class="filter-btn" data-sort="alpha">Alfabético</button>
+    </div>
+
+    <div id="wave-container">
+        <svg id="wave-svg"></svg>
+        <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="churn-section">
+        <h2>Churn por barrio — listings que desaparecieron esta semana</h2>
+        <div class="churn-grid" id="churn-grid"></div>
+    </div>
+
+    <footer>
+        <a href="https://github.com/ConsultoriaModerna/caba-market-study">CABA Market Study</a> — data live from Supabase
+    </footer>
+
+    <script>
+        const SUPABASE_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
+
+        const ZONE_MAP = {
+            'Norte': ['Belgrano', 'Belgrano R', 'Núñez', 'Saavedra', 'Coghlan', 'Villa Urquiza', 'Colegiales', 'Palermo'],
+            'Centro': ['Caballito', 'Almagro', 'Boedo', 'San Cristóbal', 'San Cristobal', 'Balvanera', 'Recoleta', 'San Telmo'],
+            'Oeste': ['Villa Devoto', 'Monte Castro', 'Floresta', 'Versalles', 'Villa Luro', 'Liniers', 'Villa Pueyrredón', 'Villa del Parque', 'Vélez Sarsfield'],
+            'Sur': ['Flores', 'Mataderos', 'Parque Chacabuco', 'Barracas', 'La Boca', 'Pompeya', 'Villa Lugano', 'Villa Soldati', 'Parque Patricios', 'Parque Avellaneda', 'Villa Riachuelo']
+        };
+
+        const ZONE_COLORS = {
+            'Norte': '#4ade80',
+            'Centro': '#60a5fa',
+            'Oeste': '#fb923c',
+            'Sur': '#f472b6',
+            'Otro': '#a78bfa'
+        };
+
+        function getZone(neighborhood) {
+            for (const [zone, barrios] of Object.entries(ZONE_MAP)) {
+                if (barrios.includes(neighborhood)) return zone;
+            }
+            return 'Otro';
+        }
+
+        async function fetchData() {
+            const url = `${SUPABASE_URL}/rest/v1/properties?select=neighborhood,price,total_area,covered_area,price_per_sqm,is_active,source,segment&neighborhood=not.is.null`;
+            const resp = await fetch(url, {
+                headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` }
+            });
+            return resp.json();
+        }
+
+        function processData(raw) {
+            const byBarrio = {};
+
+            for (const p of raw) {
+                const n = p.neighborhood;
+                if (!byBarrio[n]) byBarrio[n] = { name: n, total: 0, active: 0, inactive: 0, prices: [], areas: [], covered: [] };
+                byBarrio[n].total++;
+                if (p.is_active) byBarrio[n].active++;
+                else byBarrio[n].inactive++;
+                if (p.price_per_sqm > 0) byBarrio[n].prices.push(+p.price_per_sqm);
+                if (p.total_area > 0 && p.total_area < 2000) byBarrio[n].areas.push(+p.total_area);
+                if (p.covered_area > 0) byBarrio[n].covered.push(+p.covered_area);
+            }
+
+            return Object.values(byBarrio)
+                .filter(b => b.total >= 5)
+                .map(b => ({
+                    ...b,
+                    zone: getZone(b.name),
+                    churnPct: b.total > 0 ? +(b.inactive / b.total * 100).toFixed(1) : 0,
+                    medianPrice: median(b.prices),
+                    medianArea: median(b.areas),
+                    medianCovered: median(b.covered),
+                    coverRatio: b.covered.length > 0 ? +(median(b.covered) / median(b.areas)).toFixed(2) : null
+                }));
+        }
+
+        function median(arr) {
+            if (!arr.length) return 0;
+            const s = [...arr].sort((a, b) => a - b);
+            const mid = Math.floor(s.length / 2);
+            return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+        }
+
+        let currentSort = 'total';
+        let barrios = [];
+
+        function sortBarrios(data, sortBy) {
+            const sorted = [...data];
+            switch (sortBy) {
+                case 'total': sorted.sort((a, b) => b.total - a.total); break;
+                case 'churn': sorted.sort((a, b) => b.churnPct - a.churnPct); break;
+                case 'price': sorted.sort((a, b) => b.medianPrice - a.medianPrice); break;
+                case 'alpha': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
+            }
+            return sorted;
+        }
+
+        function renderWave(data) {
+            const svg = d3.select('#wave-svg');
+            svg.selectAll('*').remove();
+
+            const width = window.innerWidth;
+            const height = Math.min(420, window.innerHeight * 0.4);
+            svg.attr('viewBox', `0 0 ${width} ${height}`);
+
+            const maxTotal = d3.max(data, d => d.total);
+            const barW = Math.max(4, (width - 40) / data.length - 1);
+            const gap = 1;
+
+            // Wave baseline in the middle
+            const baseline = height * 0.55;
+
+            // Scale: bar height proportional to total listings
+            const yScale = d3.scaleLinear()
+                .domain([0, maxTotal])
+                .range([0, height * 0.45]);
+
+            // Churn portion goes below baseline, active above
+            const g = svg.append('g');
+
+            // Gradient defs
+            const defs = svg.append('defs');
+
+            data.forEach((d, i) => {
+                const color = ZONE_COLORS[d.zone] || ZONE_COLORS['Otro'];
+                const x = 20 + i * (barW + gap);
+                const activeH = yScale(d.active);
+                const inactiveH = yScale(d.inactive);
+
+                // Gradient for each bar
+                const gradId = `grad-${i}`;
+                const grad = defs.append('linearGradient')
+                    .attr('id', gradId)
+                    .attr('x1', '0%').attr('y1', '0%')
+                    .attr('x2', '0%').attr('y2', '100%');
+                grad.append('stop').attr('offset', '0%').attr('stop-color', color).attr('stop-opacity', 0.9);
+                grad.append('stop').attr('offset', '100%').attr('stop-color', color).attr('stop-opacity', 0.2);
+
+                // Active bar (goes UP from baseline)
+                g.append('rect')
+                    .attr('x', x)
+                    .attr('y', baseline - activeH)
+                    .attr('width', barW)
+                    .attr('height', activeH)
+                    .attr('fill', `url(#${gradId})`)
+                    .attr('rx', barW > 6 ? 2 : 0)
+                    .style('cursor', 'pointer')
+                    .on('mouseenter', (e) => showTooltip(e, d))
+                    .on('mousemove', (e) => moveTooltip(e))
+                    .on('mouseleave', hideTooltip);
+
+                // Inactive/churn bar (goes DOWN from baseline, darker)
+                if (inactiveH > 0) {
+                    g.append('rect')
+                        .attr('x', x)
+                        .attr('y', baseline)
+                        .attr('width', barW)
+                        .attr('height', inactiveH)
+                        .attr('fill', color)
+                        .attr('opacity', 0.25)
+                        .attr('rx', barW > 6 ? 2 : 0)
+                        .style('cursor', 'pointer')
+                        .on('mouseenter', (e) => showTooltip(e, d))
+                        .on('mousemove', (e) => moveTooltip(e))
+                        .on('mouseleave', hideTooltip);
+                }
+
+                // Glow line at the peak
+                g.append('rect')
+                    .attr('x', x)
+                    .attr('y', baseline - activeH - 1)
+                    .attr('width', barW)
+                    .attr('height', 2)
+                    .attr('fill', color)
+                    .attr('filter', 'blur(2px)')
+                    .attr('opacity', 0.7);
+            });
+
+            // Baseline
+            g.append('line')
+                .attr('x1', 10).attr('x2', width - 10)
+                .attr('y1', baseline).attr('y2', baseline)
+                .attr('stroke', '#334155')
+                .attr('stroke-width', 0.5);
+
+            // Zone legend
+            const legend = svg.append('g').attr('transform', `translate(30, ${height - 25})`);
+            const zones = ['Norte', 'Centro', 'Oeste', 'Sur'];
+            zones.forEach((z, i) => {
+                legend.append('circle').attr('cx', i * 100).attr('cy', 0).attr('r', 5).attr('fill', ZONE_COLORS[z]);
+                legend.append('text').attr('x', i * 100 + 10).attr('y', 4)
+                    .text(z).attr('fill', '#94a3b8').attr('font-size', '11px');
+            });
+
+            // Labels: "activas" above, "bajadas" below
+            svg.append('text')
+                .attr('x', width - 15).attr('y', baseline - 8)
+                .attr('text-anchor', 'end').attr('fill', '#475569').attr('font-size', '10px')
+                .text('activas');
+            svg.append('text')
+                .attr('x', width - 15).attr('y', baseline + 16)
+                .attr('text-anchor', 'end').attr('fill', '#475569').attr('font-size', '10px')
+                .text('bajadas');
+        }
+
+        function showTooltip(event, d) {
+            const tt = document.getElementById('tooltip');
+            tt.innerHTML = `
+                <div class="tt-name">${d.name} <span style="color:${ZONE_COLORS[d.zone]}">${d.zone}</span></div>
+                <div class="tt-row">${d.active} activas / ${d.inactive} bajadas (${d.churnPct}%)</div>
+                <div class="tt-row">Mediana: USD ${d.medianPrice.toLocaleString()}/m²</div>
+                ${d.medianArea ? `<div class="tt-row">Área mediana: ${d.medianArea} m²</div>` : ''}
+                ${d.coverRatio ? `<div class="tt-row">Ratio cubierto: ${Math.round(d.coverRatio * 100)}%</div>` : ''}
+            `;
+            tt.style.opacity = 1;
+        }
+
+        function moveTooltip(event) {
+            const tt = document.getElementById('tooltip');
+            tt.style.left = (event.pageX + 15) + 'px';
+            tt.style.top = (event.pageY - 10) + 'px';
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.opacity = 0;
+        }
+
+        function renderStats(data) {
+            const totalActive = data.reduce((s, d) => s + d.active, 0);
+            const totalInactive = data.reduce((s, d) => s + d.inactive, 0);
+            const avgChurn = totalInactive / (totalActive + totalInactive) * 100;
+            const allPrices = data.filter(d => d.medianPrice > 0).map(d => d.medianPrice);
+            const globalMedianPrice = median(allPrices);
+
+            document.getElementById('stats-grid').innerHTML = `
+                <div class="stat-card">
+                    <div class="value">${totalActive.toLocaleString()}</div>
+                    <div class="label">Propiedades activas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">${totalInactive}</div>
+                    <div class="label">Bajadas esta semana</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">${avgChurn.toFixed(1)}%</div>
+                    <div class="label">Churn semanal</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">${data.length}</div>
+                    <div class="label">Barrios con actividad</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">$${Math.round(globalMedianPrice).toLocaleString()}</div>
+                    <div class="label">Mediana USD/m²</div>
+                </div>
+            `;
+        }
+
+        function renderChurnGrid(data) {
+            const sorted = [...data].sort((a, b) => b.churnPct - a.churnPct);
+            const maxTotal = d3.max(data, d => d.total);
+
+            document.getElementById('churn-grid').innerHTML = sorted.map(d => {
+                const color = ZONE_COLORS[d.zone] || ZONE_COLORS['Otro'];
+                const fillW = (d.total / maxTotal * 100).toFixed(0);
+                return `
+                    <div class="churn-bar">
+                        <div class="bg-fill" style="width:${fillW}%;background:${color}"></div>
+                        <div class="name">${d.name}</div>
+                        <div class="numbers">
+                            ${d.active} activas / ${d.inactive} bajadas
+                            ${d.churnPct > 0 ? `— <span class="churn">${d.churnPct}% churn</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function render(data, sortBy) {
+            const sorted = sortBarrios(data, sortBy);
+            renderWave(sorted);
+            renderStats(data);
+            renderChurnGrid(data);
+        }
+
+        // Setup filter buttons
+        document.getElementById('filters').addEventListener('click', e => {
+            if (!e.target.classList.contains('filter-btn')) return;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentSort = e.target.dataset.sort;
+            render(barrios, currentSort);
+        });
+
+        // Resize handler
+        window.addEventListener('resize', () => render(barrios, currentSort));
+
+        // Init
+        (async () => {
+            const raw = await fetchData();
+            barrios = processData(raw);
+            render(barrios, currentSort);
+        })();
+    </script>
+</body>
+</html>
