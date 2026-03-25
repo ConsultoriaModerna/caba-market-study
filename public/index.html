@@ -819,11 +819,11 @@
                 <div class="filter-group">
                     <div class="filter-item">
                         <label class="filter-label">Precio Mínimo (USD)</label>
-                        <input type="number" class="filter-input" id="filterPriceMin" placeholder="Mínimo" value="0">
+                        <input type="number" class="filter-input" id="filterPriceMin" placeholder="Mínimo" value="50000">
                     </div>
                     <div class="filter-item">
                         <label class="filter-label">Precio Máximo (USD)</label>
-                        <input type="number" class="filter-input" id="filterPriceMax" placeholder="Máximo" value="999999">
+                        <input type="number" class="filter-input" id="filterPriceMax" placeholder="Máximo" value="300000">
                     </div>
                     <div class="filter-item">
                         <label class="filter-label">Moneda</label>
@@ -839,7 +839,36 @@
                         </select>
                     </div>
                     <div class="filter-item">
-                        <label class="filter-label">Resultados por página</label>
+                        <label class="filter-label">Sup. mínima (m²)</label>
+                        <input type="number" class="filter-input" id="filterAreaMin" placeholder="0" value="0">
+                    </div>
+                    <div class="filter-item">
+                        <label class="filter-label">Dormitorios mínimo</label>
+                        <select class="filter-select" id="filterBedrooms">
+                            <option value="0">Todos</option>
+                            <option value="2">2+</option>
+                            <option value="3">3+</option>
+                            <option value="4">4+</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label class="filter-label">Segmento</label>
+                        <select class="filter-select" id="filterSegment">
+                            <option value="">Todos</option>
+                            <option value="refac">A refaccionar</option>
+                            <option value="recic">Reciclada</option>
+                            <option value="general">General</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label class="filter-label">Espacio exterior</label>
+                        <select class="filter-select" id="filterExterior">
+                            <option value="">Indistinto</option>
+                            <option value="true">Con patio/terraza (20%+)</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label class="filter-label">Resultados</label>
                         <select class="filter-select" id="filterLimit">
                             <option value="20">20</option>
                             <option value="50" selected>50</option>
@@ -962,7 +991,7 @@
             });
 
             // Filter Changes
-            ['filterPriceMin', 'filterPriceMax', 'filterCurrency', 'filterNeighborhood', 'filterLimit'].forEach(id => {
+            ['filterPriceMin', 'filterPriceMax', 'filterCurrency', 'filterNeighborhood', 'filterLimit', 'filterAreaMin', 'filterBedrooms', 'filterSegment', 'filterExterior'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.addEventListener('change', () => {
@@ -1290,6 +1319,11 @@
                 const targetCurrency = document.getElementById('filterCurrency').value || 'USD';
                 const targetNeighborhood = document.getElementById('filterNeighborhood').value || null;
                 const resultLimit = parseInt(document.getElementById('filterLimit').value) || 50;
+                const minArea = parseInt(document.getElementById('filterAreaMin').value) || 0;
+                const minBedrooms = parseInt(document.getElementById('filterBedrooms').value) || 0;
+                const targetSegment = document.getElementById('filterSegment').value || null;
+                const hasExteriorVal = document.getElementById('filterExterior').value;
+                const hasExterior = hasExteriorVal === 'true' ? true : null;
 
                 const rpcUrl = `${SUPABASE_URL}/rest/v1/rpc/search_properties`;
                 const response = await fetch(rpcUrl, {
@@ -1305,7 +1339,12 @@
                         max_price: maxPrice,
                         target_currency: targetCurrency,
                         target_neighborhood: targetNeighborhood,
-                        result_limit: resultLimit
+                        result_limit: resultLimit,
+                        min_area: minArea,
+                        max_area: 99999,
+                        min_bedrooms: minBedrooms,
+                        target_segment: targetSegment,
+                        has_exterior: hasExterior
                     })
                 });
 
@@ -1388,33 +1427,41 @@
             const resultsHtml = results.map(prop => {
                 const totalAreaStr = prop.total_area ? `${prop.total_area}` : 'N/A';
                 const coveredAreaStr = prop.covered_area ? `${prop.covered_area}` : '';
-                const areaDisplay = coveredAreaStr ? `${coveredAreaStr} (cubierto) / ${totalAreaStr} (total)` : totalAreaStr;
+                const areaDisplay = coveredAreaStr ? `${coveredAreaStr} cub. / ${totalAreaStr} tot.` : `${totalAreaStr} tot.`;
+                const exteriorPct = prop.covered_ratio ? Math.round((1 - prop.covered_ratio) * 100) : null;
 
-                const bedroomBaths = [];
-                if (prop.bedrooms) bedroomBaths.push(`${prop.bedrooms} dorm.`);
-                if (prop.bathrooms) bedroomBaths.push(`${prop.bathrooms} baño${prop.bathrooms > 1 ? 's' : ''}`);
+                const features = [];
+                if (prop.bedrooms) features.push(`${prop.bedrooms} dorm.`);
+                if (prop.bathrooms) features.push(`${prop.bathrooms} baño${prop.bathrooms > 1 ? 's' : ''}`);
+                if (prop.cocheras) features.push(`${prop.cocheras} coch.`);
+                if (exteriorPct && exteriorPct >= 10) features.push(`${exteriorPct}% exterior`);
 
-                const descriptionPreview = prop.description ? highlightKeywords(prop.description.substring(0, 300), selectedKeywords) : 'Sin descripción disponible';
+                const segBadge = prop.segment === 'refac' ? '<span style="background:rgba(249,115,22,0.15);color:#fb923c;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;">A REFACCIONAR</span>' :
+                    prop.segment === 'recic' ? '<span style="background:rgba(74,222,128,0.15);color:#4ade80;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;">RECICLADA</span>' : '';
+
+                const descriptionPreview = prop.description ? highlightKeywords(prop.description.substring(0, 300), selectedKeywords) : '<span style="opacity:0.4;">Sin descripción</span>';
+
+                const usdM2 = prop.price_per_sqm ? `$${Math.round(prop.price_per_sqm).toLocaleString()}/m²` : '';
 
                 return `
                     <div class="property-card">
                         <div class="property-info" style="flex: 1;">
-                            <div class="property-title">${prop.title || 'Sin título'}</div>
+                            <div class="property-title">${prop.title || 'Sin título'} ${segBadge}</div>
                             <div class="property-meta">
                                 <div class="property-meta-item">📍 ${prop.neighborhood}</div>
                                 <div class="property-meta-item">📐 ${areaDisplay} m²</div>
-                                ${bedroomBaths.length > 0 ? `<div class="property-meta-item">🏠 ${bedroomBaths.join(' • ')}</div>` : ''}
+                                ${features.length > 0 ? `<div class="property-meta-item">🏠 ${features.join(' · ')}</div>` : ''}
                                 ${prop.address_text ? `<div class="property-meta-item" style="color: var(--text-secondary); font-size: 0.85rem;">📮 ${prop.address_text}</div>` : ''}
                             </div>
                             <div style="margin-top: 0.75rem; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4;">
                                 ${descriptionPreview}${prop.description && prop.description.length > 300 ? '...' : ''}
                             </div>
-                            ${prop.source ? `<div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">Fuente: ${prop.source}</div>` : ''}
                         </div>
-                        <div class="property-price" style="min-width: 150px; text-align: right;">
-                            <div class="property-price-main">${prop.currency} ${prop.price.toLocaleString()}</div>
+                        <div class="property-price" style="min-width: 160px; text-align: right;">
+                            <div class="property-price-main">${prop.currency} ${prop.price?.toLocaleString()}</div>
+                            ${usdM2 ? `<div style="font-size:0.8rem;color:var(--accent);margin-top:2px;">${usdM2}</div>` : ''}
                             <div style="margin-top: 0.5rem; font-size: 0.85rem;">
-                                ${prop.rank ? `<div style="color: var(--accent); margin-bottom: 0.25rem;">⭐ Relevancia: ${prop.rank}</div>` : ''}
+                                <div style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:4px;">${prop.source || ''}</div>
                                 ${prop.permalink ? `<a href="${prop.permalink}" target="_blank" style="color: var(--blue); text-decoration: none; font-size: 0.9rem;">Ver anuncio →</a>` : ''}
                             </div>
                         </div>
