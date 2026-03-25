@@ -456,38 +456,27 @@
         }
 
         async function fetchData() {
-            const url = `${SUPABASE_URL}/rest/v1/properties?select=neighborhood,price,total_area,covered_area,price_per_sqm,is_active,source,segment&neighborhood=not.is.null&canonical_id=is.null`;
+            // Use pre-aggregated view to avoid 1000 row limit
+            const url = `${SUPABASE_URL}/rest/v1/barrio_stats?select=*`;
             const resp = await fetch(url, {
-                headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}`, 'Range': '0-9999' }
+                headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` }
             });
             return resp.json();
         }
 
         function processData(raw) {
-            const byBarrio = {};
-
-            for (const p of raw) {
-                const n = p.neighborhood;
-                if (!byBarrio[n]) byBarrio[n] = { name: n, total: 0, active: 0, inactive: 0, prices: [], areas: [], covered: [] };
-                byBarrio[n].total++;
-                if (p.is_active) byBarrio[n].active++;
-                else byBarrio[n].inactive++;
-                if (p.price_per_sqm > 0) byBarrio[n].prices.push(+p.price_per_sqm);
-                if (p.total_area > 0 && p.total_area < 2000) byBarrio[n].areas.push(+p.total_area);
-                if (p.covered_area > 0) byBarrio[n].covered.push(+p.covered_area);
-            }
-
-            return Object.values(byBarrio)
-                .filter(b => b.total >= 5)
-                .map(b => ({
-                    ...b,
-                    zone: getZone(b.name),
-                    churnPct: b.total > 0 ? +(b.inactive / b.total * 100).toFixed(1) : 0,
-                    medianPrice: median(b.prices),
-                    medianArea: median(b.areas),
-                    medianCovered: median(b.covered),
-                    coverRatio: b.covered.length > 0 ? +(median(b.covered) / median(b.areas)).toFixed(2) : null
-                }));
+            return raw.map(b => ({
+                name: b.name,
+                total: b.total,
+                active: b.active,
+                inactive: b.inactive,
+                zone: getZone(b.name),
+                churnPct: b.total > 0 ? +(b.inactive / b.total * 100).toFixed(1) : 0,
+                medianPrice: +b.median_price || 0,
+                medianArea: +b.median_area || 0,
+                medianCovered: +b.avg_covered || 0,
+                coverRatio: (b.avg_covered && b.median_area) ? +(b.avg_covered / b.median_area).toFixed(2) : null
+            }));
         }
 
         function median(arr) {

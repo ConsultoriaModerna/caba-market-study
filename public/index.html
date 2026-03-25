@@ -1070,15 +1070,19 @@
 
         async function fetchProperties() {
             try {
-                const url = `${SUPABASE_URL}/rest/v1/properties?select=id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,segment,source,slug,keywords,covered_ratio&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast`;
-                const response = await fetch(url, {
-                    headers: {
-                        apikey: ANON_KEY,
-                        Authorization: `Bearer ${ANON_KEY}`,
-                        Range: '0-9999'
-                    }
-                });
-                allProperties = await response.json();
+                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,segment,source,slug,keywords,covered_ratio';
+                const base = `${SUPABASE_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast`;
+                const headers = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
+
+                // Paginate in chunks of 1000
+                allProperties = [];
+                for (let offset = 0; offset < 20000; offset += 1000) {
+                    const response = await fetch(base + `&limit=1000&offset=${offset}`, { headers });
+                    const chunk = await response.json();
+                    if (!chunk.length) break;
+                    allProperties.push(...chunk);
+                    if (chunk.length < 1000) break;
+                }
             } catch (error) {
                 console.error('Error fetching properties:', error);
                 allProperties = [];

@@ -357,11 +357,18 @@ function initChips() {
 
 // Fetch properties with GPS from Supabase
 async function fetchProperties() {
-    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,bathrooms,neighborhood,address_text,latitude,longitude,geo_precision,permalink,keywords,segment,source,description';
-    const url = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&latitude=not.is.null&order=price_per_sqm.asc`;
-    const resp = await fetch(url, { headers: {...HEADERS, 'Range': '0-9999'} });
-    if (!resp.ok) throw new Error('Fetch failed');
-    return resp.json();
+    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,bathrooms,bedrooms,neighborhood,address_text,latitude,longitude,geo_precision,permalink,keywords,segment,source,description,covered_ratio';
+    const base = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&latitude=not.is.null&order=price_per_sqm.asc`;
+    let all = [];
+    for (let offset = 0; offset < 20000; offset += 1000) {
+        const resp = await fetch(base + `&limit=1000&offset=${offset}`, { headers: HEADERS });
+        if (!resp.ok) throw new Error('Fetch failed');
+        const chunk = await resp.json();
+        if (!chunk.length) break;
+        all.push(...chunk);
+        if (chunk.length < 1000) break;
+    }
+    return all;
 }
 
 // Apply filters
