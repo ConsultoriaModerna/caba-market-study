@@ -886,8 +886,16 @@
 
     <!-- TAB 3: OPORTUNIDADES -->
     <div class="tab-content" id="tab-opportunities">
-        <div class="opportunities-list" id="opportunitiesList">
-            <div class="empty-state">Cargando oportunidades...</div>
+        <div style="max-width:1400px;margin:0 auto;padding:1rem 2rem;">
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+                <button class="opp-filter active" data-opp="value" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Mejor valor (USD/m²)</button>
+                <button class="opp-filter" data-opp="gap" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Mayor gap refac</button>
+                <button class="opp-filter" data-opp="exterior" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Con exterior</button>
+                <button class="opp-filter" data-opp="drops" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Price drops</button>
+            </div>
+            <div class="opportunities-list" id="opportunitiesList">
+                <div class="empty-state">Cargando oportunidades...</div>
+            </div>
         </div>
     </div>
 
@@ -1240,37 +1248,105 @@
             });
         }
 
+        // Compute P75 USD/m² across all neighborhoods
+        function getNeighborhoodP75() {
+            const byBarrio = {};
+            allProperties.forEach(p => {
+                if (!p.neighborhood || !p.price_per_sqm || p.price_per_sqm < 100 || p.price_per_sqm > 10000) return;
+                if (!byBarrio[p.neighborhood]) byBarrio[p.neighborhood] = [];
+                byBarrio[p.neighborhood].push(+p.price_per_sqm);
+            });
+            const medians = Object.values(byBarrio).map(arr => {
+                const s = arr.sort((a, b) => a - b);
+                return s[Math.floor(s.length / 2)];
+            }).sort((a, b) => a - b);
+            return medians[Math.floor(medians.length * 0.75)] || 1500;
+        }
+
+        let oppMode = 'value';
+
         function populateOpportunities() {
             const container = document.getElementById('opportunitiesList');
+            const p75 = getNeighborhoodP75();
 
-            if (allOpportunities.length === 0) {
-                container.innerHTML = '<div class="empty-state">No hay oportunidades registradas</div>';
+            let ranked;
+            if (oppMode === 'value') {
+                ranked = allProperties
+                    .filter(p => p.price_per_sqm > 100 && p.price_per_sqm < 10000 && p.currency === 'USD')
+                    .sort((a, b) => a.price_per_sqm - b.price_per_sqm)
+                    .slice(0, 30);
+            } else if (oppMode === 'gap') {
+                ranked = allProperties
+                    .filter(p => p.segment === 'refac' && p.price_per_sqm > 100 && p.price_per_sqm < p75)
+                    .map(p => ({ ...p, _gap: Math.round((p75 - p.price_per_sqm) / p.price_per_sqm * 100) }))
+                    .sort((a, b) => b._gap - a._gap)
+                    .slice(0, 30);
+            } else if (oppMode === 'exterior') {
+                ranked = allProperties
+                    .filter(p => p.covered_ratio && p.covered_ratio > 0 && p.covered_ratio < 0.7 && p.price_per_sqm > 100)
+                    .sort((a, b) => a.price_per_sqm - b.price_per_sqm)
+                    .slice(0, 30);
+            } else {
+                // Price drops from opportunity_events
+                ranked = allOpportunities.slice(0, 30).map(opp => {
+                    const p = allProperties.find(x => x.id === opp.property_id);
+                    return p ? { ...p, _drop: opp } : null;
+                }).filter(Boolean);
+            }
+
+            if (!ranked.length) {
+                container.innerHTML = '<div class="empty-state">No hay oportunidades en este filtro</div>';
                 return;
             }
 
-            container.innerHTML = allOpportunities.map(opp => {
-                const property = allProperties.find(p => p.id === opp.property_id);
-                const price = property ? convertToUSD(property) : 'N/A';
-                const neighborhood = property ? property.neighborhood : 'N/A';
-                const pricePerSqm = property ? property.price_per_sqm : 'N/A';
-                const severityClass = `severity-${opp.severity || 'low'}`;
+            container.innerHTML = ranked.map(p => {
+                const price = convertToUSD(p);
+                const usdM2 = p.price_per_sqm ? `$${Math.round(p.price_per_sqm).toLocaleString()}/m²` : '';
+                const gapPct = p.price_per_sqm < p75 ? `+${Math.round((p75 - p.price_per_sqm) / p.price_per_sqm * 100)}%` : '';
+                const exteriorPct = p.covered_ratio ? `${Math.round((1 - p.covered_ratio) * 100)}% ext.` : '';
+                const segBadge = p.segment === 'refac' ? '<span style="background:rgba(249,115,22,0.15);color:#fb923c;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;">REFAC</span> ' :
+                    p.segment === 'recic' ? '<span style="background:rgba(74,222,128,0.15);color:#4ade80;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;">RECIC</span> ' : '';
+
+                const features = [];
+                if (p.bedrooms) features.push(`${p.bedrooms}d`);
+                if (p.bathrooms) features.push(`${p.bathrooms}b`);
+                if (p.total_area) features.push(`${p.total_area}m²`);
+                if (exteriorPct) features.push(exteriorPct);
 
                 return `
-                    <div class="opportunity-card">
-                        <div class="opportunity-header">
-                            <div class="severity-badge ${severityClass}">${(opp.severity || 'baja').toUpperCase()}</div>
-                            <div class="opportunity-title">${opp.title || 'Sin título'}</div>
+                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+                        <div style="flex:1;min-width:200px;">
+                            <div style="font-weight:600;font-size:0.95rem;">${segBadge}${p.title || 'Sin título'}</div>
+                            <div style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.2rem;">📍 ${p.neighborhood} ${features.length ? '· ' + features.join(' · ') : ''}</div>
+                            ${p._drop ? `<div style="color:var(--red);font-size:0.8rem;margin-top:0.2rem;">📉 ${p._drop.title || 'Price drop detectado'}</div>` : ''}
                         </div>
-                        <div class="opportunity-details">
-                            <div class="opportunity-details-item">📍 ${neighborhood}</div>
-                            <div class="opportunity-details-item">💵 $${typeof price === 'number' ? price.toLocaleString() : price}</div>
-                            <div class="opportunity-details-item">📐 $${typeof pricePerSqm === 'number' ? pricePerSqm : pricePerSqm}/m²</div>
+                        <div style="text-align:right;min-width:140px;">
+                            <div style="font-size:1.1rem;font-weight:700;">USD ${price?.toLocaleString()}</div>
+                            <div style="color:var(--accent);font-size:0.85rem;">${usdM2}</div>
+                            ${gapPct ? `<div style="color:var(--green);font-size:0.85rem;font-weight:600;">Gap: ${gapPct}</div>` : ''}
+                            ${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.8rem;">Ver anuncio →</a>` : ''}
                         </div>
-                        ${opp.details && opp.details.description ? `<div class="opportunity-body">${opp.details.description}</div>` : ''}
                     </div>
                 `;
             }).join('');
         }
+
+        // Opportunity filter buttons
+        document.addEventListener('click', e => {
+            if (!e.target.classList.contains('opp-filter')) return;
+            document.querySelectorAll('.opp-filter').forEach(b => {
+                b.style.background = 'var(--bg-tertiary)';
+                b.style.borderColor = 'var(--border)';
+                b.style.color = 'var(--text-secondary)';
+                b.classList.remove('active');
+            });
+            e.target.classList.add('active');
+            e.target.style.background = 'rgba(0,212,255,0.12)';
+            e.target.style.borderColor = 'var(--accent)';
+            e.target.style.color = 'var(--text-primary)';
+            oppMode = e.target.dataset.opp;
+            populateOpportunities();
+        });
 
         function populateFilterNeighborhoods() {
             const neighborhoods = [...new Set(allProperties.map(p => p.neighborhood))].sort();
