@@ -155,6 +155,12 @@
         <div class="sidebar-header">
             <h1>CABA Property Explorer</h1>
             <div class="sub">Propiedades geocodeadas — Live Supabase</div>
+            <div style="margin-top:6px;font-size:11px;">
+                <a href="/" style="color:var(--dim);text-decoration:none;margin-right:8px;">Dashboard</a>
+                <a href="/mapa.html" style="color:var(--accent);text-decoration:none;margin-right:8px;">Mapa</a>
+                <a href="/wave.html" style="color:var(--dim);text-decoration:none;margin-right:8px;">Wave</a>
+                <a href="/d3-analytics.html" style="color:var(--dim);text-decoration:none;">Analytics</a>
+            </div>
         </div>
 
         <div id="filters">
@@ -331,8 +337,8 @@ function initChips() {
 // Fetch properties with GPS from Supabase
 async function fetchProperties() {
     const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,bathrooms,neighborhood,address_text,latitude,longitude,geo_precision,permalink,keywords,segment,source,description';
-    const url = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&latitude=not.is.null&order=price_per_sqm.asc&limit=5000`;
-    const resp = await fetch(url, { headers: HEADERS });
+    const url = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&latitude=not.is.null&order=price_per_sqm.asc`;
+    const resp = await fetch(url, { headers: {...HEADERS, 'Range': '0-9999'} });
     if (!resp.ok) throw new Error('Fetch failed');
     return resp.json();
 }
