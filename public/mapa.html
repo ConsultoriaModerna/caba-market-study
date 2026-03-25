@@ -458,14 +458,21 @@ function renderList() {
             return `<span class="prop-kw${isMatch ? ' match' : ''}">${k}</span>`;
         }).join('');
 
+        const segBadge = p.segment === 'refac' ? '<span style="background:rgba(249,115,22,0.2);color:#fb923c;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600;margin-left:4px;">REFAC</span>' :
+            p.segment === 'recic' ? '<span style="background:rgba(74,222,128,0.2);color:#4ade80;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600;margin-left:4px;">RECIC</span>' : '';
+        const covInfo = p.covered_area ? ` (${p.covered_area} cub.)` : '';
+        const dormInfo = p.bedrooms ? `${p.bedrooms}d` : '';
+        const bathInfo = p.bathrooms ? `${p.bathrooms}b` : '';
+        const dbStr = [dormInfo, bathInfo].filter(Boolean).join('/');
+
         return `<div class="prop-card" data-id="${p.id}" onclick="selectProp('${p.id}')">
-            <div class="prop-title">${p.title || 'Sin título'}</div>
+            <div class="prop-title">${p.title || 'Sin título'}${segBadge}</div>
             <div class="prop-addr">${p.address_text || p.neighborhood}</div>
             <div class="prop-metrics">
                 <div class="prop-metric"><span class="val">$${fmt(p.price)}</span><span class="lbl">Precio</span></div>
                 <div class="prop-metric"><span class="val" style="color:${color}">$${fmt(p.price_per_sqm)}</span><span class="lbl">USD/m²</span></div>
-                <div class="prop-metric"><span class="val">${fmt(p.total_area)}</span><span class="lbl">m²</span></div>
-                <div class="prop-metric"><span class="val">${p.ambientes || '—'}</span><span class="lbl">Amb</span></div>
+                <div class="prop-metric"><span class="val">${fmt(p.total_area)}${covInfo}</span><span class="lbl">m²</span></div>
+                <div class="prop-metric"><span class="val">${dbStr || p.ambientes || '—'}</span><span class="lbl">${dbStr ? 'Dorm/Baño' : 'Amb'}</span></div>
             </div>
             ${kwsHtml ? `<div class="prop-keywords">${kwsHtml}</div>` : ''}
             ${p.permalink ? `<a href="${p.permalink}" target="_blank" class="prop-link" onclick="event.stopPropagation()">Ver aviso &rarr;</a>` : ''}
