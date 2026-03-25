@@ -703,6 +703,10 @@
                 <div class="kpi-label">Oportunidades</div>
                 <div class="kpi-value" id="kpi-opportunities">-</div>
             </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Con datos de superficie</div>
+                <div class="kpi-value" id="kpi-covered-data">-</div>
+            </div>
         </div>
 
         <div class="insights-grid">
@@ -735,6 +739,11 @@
                 <div class="insight-icon">📊</div>
                 <div class="insight-title">Brecha de Precios</div>
                 <div class="insight-content" id="insight-spread"></div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon">🏡</div>
+                <div class="insight-title">Espacio Exterior</div>
+                <div class="insight-content" id="insight-covered"></div>
             </div>
         </div>
 
@@ -990,7 +999,7 @@
 
         async function fetchProperties() {
             try {
-                const url = `${SUPABASE_URL}/rest/v1/properties?select=id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,segment,source,slug,keywords&is_active=eq.true&order=price_per_sqm.asc.nullslast`;
+                const url = `${SUPABASE_URL}/rest/v1/properties?select=id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,segment,source,slug,keywords,covered_ratio&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast`;
                 const response = await fetch(url, {
                     headers: {
                         apikey: ANON_KEY,
@@ -1073,6 +1082,17 @@
             document.getElementById('insight-refac').innerHTML = `${refacCount} propiedades marcadas con oportunidades de refacción. Potencial de inversión identificado.`;
             document.getElementById('insight-concentration').innerHTML = `${topBarrio ? topBarrio.name : 'N/A'} concentra la mayor oferta con ${topBarrio ? topBarrio.count : 0} propiedades.`;
             document.getElementById('insight-spread').innerHTML = `Brecha de ${spread}x entre los barrios más caros y más económicos.`;
+
+            // Covered ratio stats
+            const withCovered = allProperties.filter(p => p.covered_ratio && p.covered_ratio > 0);
+            document.getElementById('kpi-covered-data').textContent = withCovered.length;
+            if (withCovered.length > 0) {
+                const withExterior = withCovered.filter(p => p.covered_ratio < 0.8);
+                const avgRatio = Math.round(withCovered.reduce((s, p) => s + Number(p.covered_ratio), 0) / withCovered.length * 100);
+                document.getElementById('insight-covered').innerHTML = `${withCovered.length} propiedades con datos de sup. cubierta. Promedio: ${avgRatio}% cubierto. <strong>${withExterior.length} tienen 20%+ de espacio exterior</strong> (patio, terraza, jardín).`;
+            } else {
+                document.getElementById('insight-covered').innerHTML = 'Datos de superficie cubierta en proceso de enriquecimiento.';
+            }
 
             // Charts
             renderNeighborhoodChart(neighborhoodArray);

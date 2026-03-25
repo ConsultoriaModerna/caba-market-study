@@ -455,7 +455,7 @@
         }
 
         async function fetchData() {
-            const url = `${SUPABASE_URL}/rest/v1/properties?select=neighborhood,price,total_area,covered_area,price_per_sqm,is_active,source,segment&neighborhood=not.is.null`;
+            const url = `${SUPABASE_URL}/rest/v1/properties?select=neighborhood,price,total_area,covered_area,price_per_sqm,is_active,source,segment&neighborhood=not.is.null&canonical_id=is.null`;
             const resp = await fetch(url, {
                 headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}`, 'Range': '0-9999' }
             });
@@ -771,7 +771,7 @@
         ]);
 
         async function fetchWordData() {
-            const url = `${SUPABASE_URL}/rest/v1/properties?select=description,segment&description=not.is.null`;
+            const url = `${SUPABASE_URL}/rest/v1/properties?select=description,segment&description=not.is.null&canonical_id=is.null`;
             const resp = await fetch(url, {
                 headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}`, 'Range': '0-9999' }
             });
