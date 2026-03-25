@@ -990,11 +990,12 @@
 
         async function fetchProperties() {
             try {
-                const url = `${SUPABASE_URL}/rest/v1/properties?select=id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,segment,source,slug,keywords&is_active=eq.true&order=price_per_sqm.asc.nullslast&limit=5000`;
+                const url = `${SUPABASE_URL}/rest/v1/properties?select=id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,segment,source,slug,keywords&is_active=eq.true&order=price_per_sqm.asc.nullslast`;
                 const response = await fetch(url, {
                     headers: {
                         apikey: ANON_KEY,
-                        Authorization: `Bearer ${ANON_KEY}`
+                        Authorization: `Bearer ${ANON_KEY}`,
+                        Range: '0-9999'
                     }
                 });
                 allProperties = await response.json();
