@@ -671,6 +671,13 @@
         </div>
     </header>
 
+    <nav style="text-align:center;padding:0.5rem;border-bottom:1px solid var(--border);background:var(--bg-secondary);">
+        <a href="/" style="color:var(--accent);text-decoration:none;font-size:0.75rem;margin:0 0.8rem;">Dashboard</a>
+        <a href="/mapa.html" style="color:var(--text-secondary);text-decoration:none;font-size:0.75rem;margin:0 0.8rem;">Mapa</a>
+        <a href="/wave.html" style="color:var(--text-secondary);text-decoration:none;font-size:0.75rem;margin:0 0.8rem;">Wave</a>
+        <a href="/d3-analytics.html" style="color:var(--text-secondary);text-decoration:none;font-size:0.75rem;margin:0 0.8rem;">Analytics</a>
+    </nav>
+
     <div class="tabs">
         <button class="tab-button active" data-tab="overview">📊 Overview</button>
         <button class="tab-button" data-tab="search">🔍 Super Search</button>
@@ -1112,7 +1119,7 @@
             }
 
             neighborhoodChart = new Chart(ctx, {
-                type: 'barh',
+                type: 'bar',
                 data: {
                     labels: top25.map(n => n.name),
                     datasets: [{
