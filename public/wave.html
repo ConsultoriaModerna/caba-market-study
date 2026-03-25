@@ -340,7 +340,7 @@
             <button class="wc-filter" data-wc="recic">Recicladas</button>
             <button class="wc-filter" data-wc="general">General</button>
         </div>
-        <svg id="wordcloud-svg" style="width:100%;height:400px;display:block;"></svg>
+        <svg id="wordcloud-svg" style="width:100%;height:500px;display:block;"></svg>
     </div>
 
     <!-- AI ANALYSIS -->
@@ -681,26 +681,40 @@
         let allWords = [];
         let wcFilter = 'all';
 
+        const WORD_ICONS = {
+            'patio': '🌿', 'terraza': '🌅', 'living': '🛋️', 'comedor': '🍽️',
+            'cocina': '👨‍🍳', 'parrilla': '🔥', 'jardin': '🌳', 'jardín': '🌳',
+            'cochera': '🚗', 'quincho': '🏕️', 'lavadero': '🧺', 'suite': '🛏️',
+            'dormitorios': '🛏️', 'dormitorio': '🛏️', 'baño': '🚿', 'toilette': '🚽',
+            'placard': '👔', 'pileta': '🏊', 'piscina': '🏊', 'pisos': '🏗️',
+            'planta': '📐', 'plantas': '📐', 'amplio': '↔️', 'luminoso': '☀️',
+            'frente': '🏠', 'lote': '📏', 'metros': '📏', 'ideal': '💡',
+            'excelente': '⭐', 'barrio': '🏘️', 'zona': '📍', 'villa': '🏘️',
+            'espacio': '🔲', 'espacios': '🔲', 'acceso': '🚪', 'servicios': '⚡',
+            'expensas': '💸', 'oficina': '💼', 'salida': '🚪', 'aire': '❄️',
+            'alta': '📈', 'baja': '📉', 'propio': '🔑', 'completo': '✅',
+            'venta': '🏷️', 'principal': '🏛️', 'piso': '🏢', 'suite': '👑',
+        };
+
         function renderWordCloud(words, filter) {
             const svg = d3.select('#wordcloud-svg');
             svg.selectAll('*').remove();
 
             const rect = svg.node().getBoundingClientRect();
             const width = rect.width || 800;
-            const height = 400;
+            const height = 500;
             svg.attr('viewBox', `0 0 ${width} ${height}`);
 
             const filtered = words.map(w => ({
                 ...w,
                 freq: filter === 'all' ? w.total : w[filter]
-            })).filter(w => w.freq > 0).slice(0, 60);
+            })).filter(w => w.freq > 0).slice(0, 50);
 
             if (!filtered.length) return;
 
             const maxFreq = d3.max(filtered, d => d.freq);
-            const fontSize = d3.scaleSqrt().domain([1, maxFreq]).range([10, 48]);
+            const fontSize = d3.scaleSqrt().domain([1, maxFreq]).range([11, 42]);
 
-            // Color by dominant segment
             function wordColor(w) {
                 const refacRatio = w.refac / (w.total || 1);
                 const recicRatio = w.recic / (w.total || 1);
@@ -709,18 +723,49 @@
                 return '#60a5fa';
             }
 
-            // Simple spiral placement
-            const placed = [];
             const g = svg.append('g').attr('transform', `translate(${width/2}, ${height/2})`);
+
+            // Golden angle spiral for even distribution
+            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
 
             filtered.forEach((w, i) => {
                 const size = fontSize(w.freq);
-                const angle = i * 0.7;
-                const radius = Math.sqrt(i) * 28;
+                const angle = i * goldenAngle;
+                const radius = 18 + Math.sqrt(i) * 38;
                 const x = Math.cos(angle) * radius;
-                const y = Math.sin(angle) * radius;
+                const y = Math.sin(angle) * radius * 0.7;
+                const icon = WORD_ICONS[w.word] || '';
 
-                g.append('text')
+                const group = g.append('g')
+                    .style('cursor', 'default')
+                    .on('mouseenter', function(e) {
+                        d3.select(this).select('.wc-word').attr('fill', '#fff').attr('opacity', 1);
+                        showTooltip(e, {
+                            name: w.word,
+                            _custom: `Aparece en ${w.total} propiedades<br>Refac: ${w.refac} | Recic: ${w.recic} | General: ${w.general}`
+                        });
+                    })
+                    .on('mousemove', (e) => moveTooltip(e))
+                    .on('mouseleave', function() {
+                        d3.select(this).select('.wc-word')
+                            .attr('fill', wordColor(w))
+                            .attr('opacity', 0.2 + (w.freq / maxFreq) * 0.8);
+                        hideTooltip();
+                    });
+
+                // Icon (emoji)
+                if (icon) {
+                    group.append('text')
+                        .attr('x', x - size * 0.05)
+                        .attr('y', y - size * 0.7)
+                        .attr('text-anchor', 'middle')
+                        .attr('font-size', Math.max(12, size * 0.5) + 'px')
+                        .text(icon);
+                }
+
+                // Word
+                group.append('text')
+                    .attr('class', 'wc-word')
                     .attr('x', x)
                     .attr('y', y)
                     .attr('text-anchor', 'middle')
@@ -728,23 +773,8 @@
                     .attr('font-size', size + 'px')
                     .attr('font-weight', size > 24 ? '600' : '400')
                     .attr('fill', wordColor(w))
-                    .attr('opacity', 0.15 + (w.freq / maxFreq) * 0.85)
-                    .style('cursor', 'default')
-                    .text(w.word)
-                    .on('mouseenter', function() {
-                        d3.select(this).attr('fill', '#fff').attr('opacity', 1);
-                        showTooltip({ pageX: 0, pageY: 0 }, {
-                            name: w.word,
-                            active: w.total, inactive: 0, churnPct: 0,
-                            medianPrice: 0, zone: '',
-                            _custom: `Aparece en ${w.total} propiedades<br>Refac: ${w.refac} | Recic: ${w.recic} | General: ${w.general}`
-                        });
-                    })
-                    .on('mousemove', (e) => moveTooltip(e))
-                    .on('mouseleave', function() {
-                        d3.select(this).attr('fill', wordColor(w)).attr('opacity', 0.15 + (w.freq / maxFreq) * 0.85);
-                        hideTooltip();
-                    });
+                    .attr('opacity', 0.2 + (w.freq / maxFreq) * 0.8)
+                    .text(w.word);
             });
         }
 
