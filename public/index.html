@@ -683,6 +683,7 @@
         <button class="tab-button active" data-tab="overview">📊 Overview</button>
         <button class="tab-button" data-tab="search">🔍 Super Search</button>
         <button class="tab-button" data-tab="opportunities">⭐ Oportunidades</button>
+        <button class="tab-button" data-tab="hunter">🎯 Hunter</button>
     </div>
 
     <!-- TAB 1: OVERVIEW -->
@@ -896,6 +897,38 @@
             <div class="opportunities-list" id="opportunitiesList">
                 <div class="empty-state">Cargando oportunidades...</div>
             </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: HUNTER -->
+    <div class="tab-content" id="tab-hunter">
+        <div style="max-width:1400px;margin:0 auto;padding:1rem 2rem;">
+
+            <!-- ANOMALY DETECTOR -->
+            <div style="margin-bottom:2rem;">
+                <h2 style="font-size:1.2rem;font-weight:600;margin-bottom:0.3rem;">Anomaly Detector</h2>
+                <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:1rem;">Propiedades con USD/m² significativamente por debajo de la mediana de su barrio. Oportunidades o red flags.</p>
+                <div id="anomaly-list" class="opportunities-list"></div>
+            </div>
+
+            <!-- COMPARABLES -->
+            <div>
+                <h2 style="font-size:1.2rem;font-weight:600;margin-bottom:0.3rem;">Comparables</h2>
+                <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.8rem;">Selecciona una propiedad para ver las más similares en su barrio con distinto estado.</p>
+                <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+                    <select id="comp-neighborhood" style="padding:0.5rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:inherit;font-size:0.85rem;">
+                        <option value="">Barrio...</option>
+                    </select>
+                    <select id="comp-segment" style="padding:0.5rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:inherit;font-size:0.85rem;">
+                        <option value="refac">A refaccionar</option>
+                        <option value="general">General</option>
+                        <option value="recic">Reciclada</option>
+                    </select>
+                    <button id="comp-go" style="padding:0.5rem 1.2rem;background:var(--accent);color:#000;border:none;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer;">Buscar</button>
+                </div>
+                <div id="comp-results"></div>
+            </div>
+
         </div>
     </div>
 
@@ -1558,6 +1591,187 @@
         function showLoading(show) {
             document.getElementById('loadingIndicator').classList.toggle('active', show);
         }
+
+        // ── HUNTER TAB ──
+
+        function getBarrioStats() {
+            const stats = {};
+            allProperties.forEach(p => {
+                if (!p.neighborhood || !p.price_per_sqm || p.price_per_sqm < 100 || p.price_per_sqm > 10000) return;
+                if (!stats[p.neighborhood]) stats[p.neighborhood] = { prices: [], bySegment: {} };
+                stats[p.neighborhood].prices.push(+p.price_per_sqm);
+                const seg = p.segment || 'general';
+                if (!stats[p.neighborhood].bySegment[seg]) stats[p.neighborhood].bySegment[seg] = [];
+                stats[p.neighborhood].bySegment[seg].push(+p.price_per_sqm);
+            });
+
+            for (const [n, s] of Object.entries(stats)) {
+                const sorted = s.prices.sort((a, b) => a - b);
+                s.median = sorted[Math.floor(sorted.length / 2)];
+                const mean = sorted.reduce((a, b) => a + b, 0) / sorted.length;
+                s.stddev = Math.sqrt(sorted.reduce((a, b) => a + (b - mean) ** 2, 0) / sorted.length);
+                s.count = sorted.length;
+                for (const [seg, arr] of Object.entries(s.bySegment)) {
+                    const ss = arr.sort((a, b) => a - b);
+                    s.bySegment[seg] = { median: ss[Math.floor(ss.length / 2)], count: ss.length };
+                }
+            }
+            return stats;
+        }
+
+        function populateAnomalies() {
+            const stats = getBarrioStats();
+            const anomalies = allProperties
+                .filter(p => {
+                    if (!p.neighborhood || !p.price_per_sqm || p.price_per_sqm < 100) return false;
+                    const s = stats[p.neighborhood];
+                    if (!s || s.count < 10 || s.stddev === 0) return false;
+                    const zScore = (p.price_per_sqm - s.median) / s.stddev;
+                    return zScore < -1.5;
+                })
+                .map(p => {
+                    const s = stats[p.neighborhood];
+                    const discount = Math.round((1 - p.price_per_sqm / s.median) * 100);
+                    const zScore = ((p.price_per_sqm - s.median) / s.stddev).toFixed(1);
+                    return { ...p, _discount: discount, _zScore: zScore, _barrioMedian: s.median };
+                })
+                .sort((a, b) => a._zScore - b._zScore)
+                .slice(0, 25);
+
+            const container = document.getElementById('anomaly-list');
+            if (!anomalies.length) {
+                container.innerHTML = '<div class="empty-state">No se detectaron anomalias</div>';
+                return;
+            }
+
+            container.innerHTML = anomalies.map(p => {
+                const segBadge = p.segment === 'refac' ? '<span style="background:rgba(249,115,22,0.15);color:#fb923c;padding:2px 6px;border-radius:10px;font-size:0.65rem;font-weight:600;">REFAC</span> ' :
+                    p.segment === 'recic' ? '<span style="background:rgba(74,222,128,0.15);color:#4ade80;padding:2px 6px;border-radius:10px;font-size:0.65rem;font-weight:600;">RECIC</span> ' : '';
+                const features = [];
+                if (p.total_area) features.push(`${p.total_area}m²`);
+                if (p.bedrooms) features.push(`${p.bedrooms}d`);
+                if (p.covered_ratio && p.covered_ratio < 0.8) features.push(`${Math.round((1-p.covered_ratio)*100)}% ext.`);
+
+                return `
+                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;border-left:3px solid var(--red);">
+                        <div style="flex:1;min-width:200px;">
+                            <div style="font-weight:600;font-size:0.95rem;">${segBadge}${p.title || 'Sin título'}</div>
+                            <div style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.2rem;">📍 ${p.neighborhood} ${features.length ? '· ' + features.join(' · ') : ''}</div>
+                        </div>
+                        <div style="text-align:right;min-width:180px;">
+                            <div style="font-size:1.1rem;font-weight:700;">USD ${convertToUSD(p)?.toLocaleString()}</div>
+                            <div style="color:var(--red);font-size:0.9rem;font-weight:600;">$${Math.round(p.price_per_sqm)}/m² <span style="font-size:0.75rem;opacity:0.7;">(${p._zScore}σ)</span></div>
+                            <div style="color:var(--green);font-size:0.8rem;">${p._discount}% debajo de mediana ($${p._barrioMedian})</div>
+                            ${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.8rem;">Ver anuncio →</a>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function initComparables() {
+            const select = document.getElementById('comp-neighborhood');
+            const barrios = [...new Set(allProperties.map(p => p.neighborhood))].filter(Boolean).sort();
+            barrios.forEach(n => {
+                const opt = document.createElement('option');
+                opt.value = n;
+                opt.textContent = n;
+                select.appendChild(opt);
+            });
+
+            document.getElementById('comp-go').addEventListener('click', runComparables);
+        }
+
+        function runComparables() {
+            const neighborhood = document.getElementById('comp-neighborhood').value;
+            const segment = document.getElementById('comp-segment').value;
+            const container = document.getElementById('comp-results');
+
+            if (!neighborhood) {
+                container.innerHTML = '<div class="empty-state">Selecciona un barrio</div>';
+                return;
+            }
+
+            const inBarrio = allProperties.filter(p =>
+                p.neighborhood === neighborhood && p.price_per_sqm > 100 && p.price_per_sqm < 10000
+            );
+
+            const target = inBarrio.filter(p => p.segment === segment).sort((a, b) => a.price_per_sqm - b.price_per_sqm);
+            const others = inBarrio.filter(p => p.segment !== segment);
+
+            if (!target.length) {
+                container.innerHTML = `<div class="empty-state">No hay propiedades "${segment}" en ${neighborhood}</div>`;
+                return;
+            }
+
+            // For each target property, find top 3 comparables (different segment, similar area)
+            const results = target.slice(0, 10).map(prop => {
+                const comps = others
+                    .filter(c => c.total_area > 0 && prop.total_area > 0)
+                    .map(c => ({
+                        ...c,
+                        _areaDiff: Math.abs(c.total_area - prop.total_area) / prop.total_area,
+                        _priceDiff: Math.round(c.price_per_sqm - prop.price_per_sqm),
+                        _priceDiffPct: Math.round((c.price_per_sqm - prop.price_per_sqm) / prop.price_per_sqm * 100)
+                    }))
+                    .filter(c => c._areaDiff < 0.3)
+                    .sort((a, b) => a._areaDiff - b._areaDiff)
+                    .slice(0, 3);
+
+                return { property: prop, comparables: comps };
+            }).filter(r => r.comparables.length > 0);
+
+            if (!results.length) {
+                container.innerHTML = `<div class="empty-state">No hay comparables para ${segment} en ${neighborhood} (necesita propiedades de distinto segmento con area similar)</div>`;
+                return;
+            }
+
+            container.innerHTML = results.map(r => {
+                const p = r.property;
+                const avgCompPrice = Math.round(r.comparables.reduce((s, c) => s + c.price_per_sqm, 0) / r.comparables.length);
+                const upside = Math.round((avgCompPrice - p.price_per_sqm) / p.price_per_sqm * 100);
+                const upsideColor = upside > 20 ? 'var(--green)' : upside > 0 ? 'var(--yellow)' : 'var(--red)';
+
+                return `
+                    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:0.8rem;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+                            <div>
+                                <div style="font-weight:600;">${p.title || 'Sin título'}</div>
+                                <div style="font-size:0.8rem;color:var(--text-secondary);">${p.total_area}m² · $${Math.round(p.price_per_sqm)}/m² · USD ${convertToUSD(p)?.toLocaleString()}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:1.2rem;font-weight:700;color:${upsideColor};">${upside > 0 ? '+' : ''}${upside}%</div>
+                                <div style="font-size:0.7rem;color:var(--text-secondary);">vs comparables ($${avgCompPrice}/m²)</div>
+                            </div>
+                        </div>
+                        <div style="margin-top:0.6rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+                            ${r.comparables.map(c => {
+                                const segColor = c.segment === 'recic' ? '#4ade80' : c.segment === 'refac' ? '#fb923c' : '#60a5fa';
+                                return `<div style="flex:1;min-width:150px;background:var(--bg-tertiary);border-radius:8px;padding:0.6rem;font-size:0.8rem;">
+                                    <div style="color:${segColor};font-weight:600;font-size:0.7rem;text-transform:uppercase;">${c.segment}</div>
+                                    <div>$${Math.round(c.price_per_sqm)}/m² · ${c.total_area}m²</div>
+                                    <div style="color:var(--text-secondary);font-size:0.7rem;">USD ${convertToUSD(c)?.toLocaleString()}</div>
+                                    ${c.permalink ? `<a href="${c.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.7rem;">Ver →</a>` : ''}
+                                </div>`;
+                            }).join('')}
+                        </div>
+                        ${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.8rem;display:block;margin-top:0.5rem;">Ver propiedad →</a>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Init Hunter tab on first visit
+        let hunterInited = false;
+        const origSwitchTab = switchTab;
+        switchTab = function(tabName) {
+            origSwitchTab(tabName);
+            if (tabName === 'hunter' && !hunterInited && allProperties.length > 0) {
+                hunterInited = true;
+                populateAnomalies();
+                initComparables();
+            }
+        };
     </script>
 </body>
 </html>
