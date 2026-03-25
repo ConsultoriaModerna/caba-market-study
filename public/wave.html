@@ -457,7 +457,7 @@
         async function fetchData() {
             const url = `${SUPABASE_URL}/rest/v1/properties?select=neighborhood,price,total_area,covered_area,price_per_sqm,is_active,source,segment&neighborhood=not.is.null`;
             const resp = await fetch(url, {
-                headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` }
+                headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}`, 'Range': '0-9999' }
             });
             return resp.json();
         }
@@ -771,9 +771,9 @@
         ]);
 
         async function fetchWordData() {
-            const url = `${SUPABASE_URL}/rest/v1/properties?select=description,segment&description=not.is.null&limit=3000`;
+            const url = `${SUPABASE_URL}/rest/v1/properties?select=description,segment&description=not.is.null`;
             const resp = await fetch(url, {
-                headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` }
+                headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}`, 'Range': '0-9999' }
             });
             const props = await resp.json();
 
