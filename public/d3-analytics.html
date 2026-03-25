@@ -218,11 +218,16 @@
 </head>
 <body>
   <div class="container">
-    <a href="index.html" class="nav-back">&#8592; Back to Dashboard</a>
+    <nav style="text-align:center;margin-bottom:16px;">
+      <a href="/" style="color:var(--text-muted);text-decoration:none;font-size:0.75rem;margin:0 8px;">Dashboard</a>
+      <a href="/mapa.html" style="color:var(--text-muted);text-decoration:none;font-size:0.75rem;margin:0 8px;">Mapa</a>
+      <a href="/wave.html" style="color:var(--text-muted);text-decoration:none;font-size:0.75rem;margin:0 8px;">Wave</a>
+      <a href="/d3-analytics.html" style="color:var(--accent);text-decoration:none;font-size:0.75rem;margin:0 8px;">Analytics</a>
+    </nav>
 
     <header>
       <h1>D3 Analytics</h1>
-      <p>Visualizaciones interactivas — CABA Market Study (6,489 casas)</p>
+      <p id="header-subtitle">Visualizaciones interactivas — CABA Market Study</p>
     </header>
 
     <!-- SECTION 1: Planetary Chart -->
@@ -309,39 +314,72 @@
       'Villa Urquiza': 'norte'
     };
 
-    const barrios = [
-      {name:"Villa Devoto",n:442,avg_price:517912,avg_usd_m2:2415,median_usd_m2:1630,avg_area:300},
-      {name:"Villa Lugano",n:306,avg_price:215163,avg_usd_m2:1132,median_usd_m2:889,avg_area:243},
-      {name:"Flores",n:305,avg_price:306832,avg_usd_m2:1296,median_usd_m2:1206,avg_area:255},
-      {name:"Liniers",n:302,avg_price:269542,avg_usd_m2:2452,median_usd_m2:1218,avg_area:222},
-      {name:"Mataderos",n:284,avg_price:251767,avg_usd_m2:4423,median_usd_m2:1058,avg_area:230},
-      {name:"Villa Urquiza",n:208,avg_price:400524,avg_usd_m2:7766,median_usd_m2:1692,avg_area:248},
-      {name:"Saavedra",n:188,avg_price:365675,avg_usd_m2:1761,median_usd_m2:1686,avg_area:228},
-      {name:"Parque Chacabuco",n:182,avg_price:277014,avg_usd_m2:4133,median_usd_m2:1198,avg_area:237},
-      {name:"Villa Pueyrredon",n:181,avg_price:341957,avg_usd_m2:1590,median_usd_m2:1432,avg_area:240},
-      {name:"Barracas",n:175,avg_price:255686,avg_usd_m2:3895,median_usd_m2:1000,avg_area:251},
-      {name:"Belgrano",n:157,avg_price:1578442,avg_usd_m2:3272,median_usd_m2:2789,avg_area:493},
-      {name:"Caballito",n:155,avg_price:487950,avg_usd_m2:1862,median_usd_m2:1658,avg_area:303},
-      {name:"Floresta",n:149,avg_price:289920,avg_usd_m2:1263,median_usd_m2:1189,avg_area:254},
-      {name:"Parque Avellaneda",n:145,avg_price:218469,avg_usd_m2:1026,median_usd_m2:932,avg_area:246},
-      {name:"Monte Castro",n:144,avg_price:276318,avg_usd_m2:1390,median_usd_m2:1250,avg_area:231},
-      {name:"Boedo",n:143,avg_price:273779,avg_usd_m2:1272,median_usd_m2:1128,avg_area:241},
-      {name:"Villa Luro",n:140,avg_price:307065,avg_usd_m2:1315,median_usd_m2:1251,avg_area:254},
-      {name:"Villa del Parque",n:133,avg_price:371467,avg_usd_m2:3323,median_usd_m2:1394,avg_area:276},
-      {name:"Belgrano R",n:116,avg_price:1831853,avg_usd_m2:3595,median_usd_m2:2586,avg_area:537},
-      {name:"Pompeya",n:113,avg_price:170003,avg_usd_m2:698,median_usd_m2:650,avg_area:258},
-      {name:"Nunez",n:103,avg_price:613891,avg_usd_m2:2490,median_usd_m2:2172,avg_area:288},
-      {name:"Almagro",n:100,avg_price:397644,avg_usd_m2:1427,median_usd_m2:1399,avg_area:299},
-      {name:"Versalles",n:99,avg_price:272255,avg_usd_m2:1229,median_usd_m2:1098,avg_area:244},
-      {name:"Palermo",n:89,avg_price:1099722,avg_usd_m2:8626,median_usd_m2:2438,avg_area:359},
-      {name:"Parque Patricios",n:88,avg_price:227153,avg_usd_m2:984,median_usd_m2:904,avg_area:249}
-    ].map(d => ({ ...d, zona: neighborhoodZones[d.name] || 'centro' }));
+    const SB_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
+    const SB_HEADERS = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Range': '0-9999' };
 
-    const gapMatrix = [
-      {range:"150-200k", refac:876, recic:1090, general:1038},
-      {range:"200-300k", refac:1184, recic:1360, general:1242},
-      {range:"300k+", refac:1377, recic:1750, general:1689}
-    ];
+    let barrios = [];
+    let gapMatrix = [];
+
+    function getMedian(arr) {
+      if (!arr.length) return 0;
+      const s = [...arr].sort((a, b) => a - b);
+      const mid = Math.floor(s.length / 2);
+      return s.length % 2 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
+    }
+
+    async function loadLiveData() {
+      const url = SB_URL + '/rest/v1/properties?select=neighborhood,price,price_per_sqm,total_area,segment,currency&is_active=eq.true&canonical_id=is.null&currency=eq.USD&price=gt.0&neighborhood=not.is.null';
+      const resp = await fetch(url, { headers: SB_HEADERS });
+      const props = await resp.json();
+
+      // Build barrios from live data
+      const byBarrio = {};
+      props.forEach(p => {
+        const n = p.neighborhood;
+        if (!byBarrio[n]) byBarrio[n] = { name: n, prices: [], usdm2: [], areas: [] };
+        if (p.price > 0) byBarrio[n].prices.push(+p.price);
+        if (p.price_per_sqm > 0 && p.price_per_sqm < 10000) byBarrio[n].usdm2.push(+p.price_per_sqm);
+        if (p.total_area > 0 && p.total_area < 2000) byBarrio[n].areas.push(+p.total_area);
+      });
+
+      barrios = Object.values(byBarrio)
+        .filter(b => b.usdm2.length >= 5)
+        .map(b => ({
+          name: b.name,
+          n: b.usdm2.length,
+          avg_price: Math.round(b.prices.reduce((s,v) => s+v, 0) / b.prices.length),
+          median_usd_m2: getMedian(b.usdm2),
+          avg_area: Math.round(b.areas.reduce((s,v) => s+v, 0) / (b.areas.length || 1)),
+          zona: neighborhoodZones[b.name] || 'centro'
+        }))
+        .sort((a, b) => b.n - a.n)
+        .slice(0, 30);
+
+      // Build gap matrix from live data
+      const ranges = [
+        { label: '100-150k', min: 100000, max: 150000 },
+        { label: '150-200k', min: 150000, max: 200000 },
+        { label: '200-300k', min: 200000, max: 300000 },
+        { label: '300k+', min: 300000, max: 9999999 }
+      ];
+
+      gapMatrix = ranges.map(r => {
+        const inRange = props.filter(p => p.price >= r.min && p.price < r.max && p.price_per_sqm > 0 && p.price_per_sqm < 10000);
+        const refacPrices = inRange.filter(p => p.segment === 'refac').map(p => +p.price_per_sqm);
+        const recicPrices = inRange.filter(p => p.segment === 'recic').map(p => +p.price_per_sqm);
+        const generalPrices = inRange.filter(p => p.segment === 'general').map(p => +p.price_per_sqm);
+        return {
+          range: r.label,
+          refac: getMedian(refacPrices) || 0,
+          recic: getMedian(recicPrices) || 0,
+          general: getMedian(generalPrices) || 0
+        };
+      }).filter(r => r.refac > 0 && r.recic > 0);
+
+      document.getElementById('header-subtitle').textContent =
+        'Visualizaciones interactivas — CABA Market Study (' + props.length.toLocaleString() + ' casas, live)';
+    }
 
     const tooltip = d3.select('#tooltip');
 
@@ -637,9 +675,12 @@
         '<div style="text-align:center"><span class="viability-badge ' + viabilityClass + '">' + viability + '</span></div>';
     }
 
-    drawPlanetaryChart();
-    drawGapChart();
-    updateCalculator();
+    (async function() {
+      await loadLiveData();
+      drawPlanetaryChart();
+      drawGapChart();
+      updateCalculator();
+    })();
 
     ['calc-range', 'calc-price', 'calc-m2', 'calc-safety', 'calc-split'].forEach(function(id) {
       document.getElementById(id).addEventListener('input', updateCalculator);
