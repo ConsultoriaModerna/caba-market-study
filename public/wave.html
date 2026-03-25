@@ -255,6 +255,74 @@
             color: var(--text-primary);
         }
 
+        /* Gap to Convergence */
+        .gap-section {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .gap-section h2 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.3rem;
+        }
+        .gap-section .subtitle {
+            font-size: 0.75rem;
+            color: #475569;
+            margin-bottom: 1rem;
+        }
+        .gap-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 0.7rem;
+        }
+        .gap-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+        .gap-card:hover { border-color: var(--accent); }
+        .gap-card .gap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.5rem;
+        }
+        .gap-card .gap-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .gap-card .gap-upside {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .gap-card .gap-upside.high { color: #4ade80; }
+        .gap-card .gap-upside.mid { color: #fbbf24; }
+        .gap-card .gap-upside.low { color: #94a3b8; }
+        .gap-card .gap-bar-bg {
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            margin: 0.5rem 0;
+            overflow: hidden;
+        }
+        .gap-card .gap-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.8s ease;
+        }
+        .gap-card .gap-details {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
         /* AI Analysis */
         .ai-analysis {
             background: linear-gradient(135deg, rgba(0,212,255,0.04), rgba(167,139,250,0.04));
@@ -329,6 +397,13 @@
     <div class="churn-section">
         <h2>Churn por barrio — listings que desaparecieron esta semana</h2>
         <div class="churn-grid" id="churn-grid"></div>
+    </div>
+
+    <!-- GAP TO CONVERGENCE -->
+    <div class="gap-section">
+        <h2>Gap to Convergence — potencial de apreciación por barrio</h2>
+        <p class="subtitle">Distancia al P75 de CABA (USD/m²). Los barrios con mayor gap + mayor churn son el sweet spot.</p>
+        <div class="gap-grid" id="gap-grid"></div>
     </div>
 
     <!-- WORD CLOUD -->
@@ -551,6 +626,7 @@
                 <div class="tt-row">Mediana: USD ${d.medianPrice.toLocaleString()}/m²</div>
                 ${d.medianArea ? `<div class="tt-row">Área mediana: ${d.medianArea} m²</div>` : ''}
                 ${d.coverRatio ? `<div class="tt-row">Ratio cubierto: ${Math.round(d.coverRatio * 100)}%</div>` : ''}
+                ${d._gapPct ? `<div class="tt-row" style="color:#4ade80;">Gap to P75: +${d._gapPct}%</div>` : ''}
             `;
             tt.style.opacity = 1;
         }
@@ -616,11 +692,57 @@
             }).join('');
         }
 
+        function renderGapGrid(data) {
+            const prices = data.filter(d => d.medianPrice > 0).map(d => d.medianPrice).sort((a, b) => a - b);
+            const p75 = prices[Math.floor(prices.length * 0.75)] || 1;
+            const maxPrice = prices[prices.length - 1] || 1;
+
+            const withGap = data
+                .filter(d => d.medianPrice > 0 && d.total >= 10)
+                .map(d => {
+                    const gap = p75 - d.medianPrice;
+                    const gapPct = d.medianPrice < p75 ? +((gap / d.medianPrice) * 100).toFixed(0) : 0;
+                    // Score: gap upside * sqrt(churn signal) * log(volume)
+                    const score = gapPct > 0 ? gapPct * Math.sqrt(1 + d.churnPct) * Math.log2(1 + d.total) : 0;
+                    return { ...d, gap, gapPct, p75, score };
+                })
+                .sort((a, b) => b.score - a.score);
+
+            const maxScore = withGap[0]?.score || 1;
+
+            document.getElementById('gap-grid').innerHTML = withGap.slice(0, 24).map(d => {
+                const color = ZONE_COLORS[d.zone] || ZONE_COLORS['Otro'];
+                const upsideClass = d.gapPct >= 60 ? 'high' : d.gapPct >= 30 ? 'mid' : 'low';
+                const barPct = Math.min(100, (d.medianPrice / maxPrice * 100)).toFixed(0);
+                const gapBarPct = Math.min(100, ((d.medianPrice + d.gap) / maxPrice * 100)).toFixed(0);
+
+                return `
+                    <div class="gap-card">
+                        <div class="gap-header">
+                            <span class="gap-name" style="color:${color}">${d.name}</span>
+                            <span class="gap-upside ${upsideClass}">+${d.gapPct}%</span>
+                        </div>
+                        <div class="gap-bar-bg">
+                            <div class="gap-bar-fill" style="width:${barPct}%;background:${color};"></div>
+                        </div>
+                        <div class="gap-bar-bg" style="margin-top:-0.3rem;">
+                            <div class="gap-bar-fill" style="width:${gapBarPct}%;background:${color};opacity:0.25;"></div>
+                        </div>
+                        <div class="gap-details">
+                            <span>$${d.medianPrice}/m² → $${d.p75}/m²</span>
+                            <span>${d.total} props, ${d.churnPct}% churn</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         function render(data, sortBy) {
             const sorted = sortBarrios(data, sortBy);
             renderWave(sorted);
             renderStats(data);
             renderChurnGrid(data);
+            renderGapGrid(data);
         }
 
         // Setup filter buttons
@@ -827,8 +949,11 @@
                 <h3>El ADN de las descripciones</h3>
                 <p>Las palabras más frecuentes en las descripciones revelan qué vende: <span class="highlight">${topWords.join(', ')}</span>. Las propiedades "a refaccionar" enfatizan <em>lote, metros, servicios</em> (el potencial), mientras que las recicladas hablan de <em>cocina, comedor, living, amplio</em> (el resultado). Este patrón sugiere que el mercado valora la narrativa de transformación.</p>
 
-                <h3>Oportunidad detectada</h3>
-                <p>Con ${churnRate}% de listings desapareciendo semanalmente, las oportunidades tienen ventana corta. Los barrios del sur (Mataderos, Parque Chacabuco, Flores) combinan <span class="highlight">volumen alto + precio bajo + churn moderado</span> — el sweet spot para encontrar propiedades a refaccionar con margen de ganancia.</p>
+                <h3>Gap to Convergence</h3>
+                <p>La brecha de <span class="metric">${(expensive[0]?.medianPrice / (cheapest[0]?.medianPrice || 1)).toFixed(1)}x</span> entre barrios es la oportunidad central. Buenos Aires muestra señales de un proceso similar al de Ciudad de México: demanda externa en USD presionando precios en barrios accesibles. Los barrios del sur y oeste con <span class="highlight">gap alto + churn activo</span> son los que primero capturan esa convergencia.</p>
+
+                <h3>Sweet spot</h3>
+                <p>Con ${churnRate}% de listings desapareciendo semanalmente, las oportunidades tienen ventana corta. ${highChurn.length > 0 ? '<span class="highlight">' + highChurn[0].name + '</span> lidera en rotación — ' : ''}los barrios que combinan <span class="highlight">volumen + precio bajo + demanda real</span> son el target para comprar, refaccionar, y capturar el gap antes de que la convergencia lo cierre.</p>
 
                 <p style="margin-top: 1rem; font-size: 0.75rem; color: #475569;">Análisis generado sobre ${totalActive + totalInactive} propiedades y ${words.length} patrones léxicos. Datos actualizados en tiempo real desde Supabase.</p>
             `;
