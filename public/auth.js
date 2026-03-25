@@ -18,34 +18,44 @@
   }
 
   function showGate() {
-    document.body.style.visibility = 'hidden';
+    // Stop page from rendering
+    document.documentElement.style.overflow = 'hidden';
+
     const overlay = document.createElement('div');
     overlay.id = 'auth-gate';
+    Object.assign(overlay.style, {
+      position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
+      background: '#0a0e1a', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: '999999', fontFamily: "'Inter', system-ui, sans-serif"
+    });
     overlay.innerHTML = `
-      <div style="position:fixed;inset:0;background:#0a0e1a;display:flex;align-items:center;justify-content:center;z-index:99999;font-family:'Inter',sans-serif;">
-        <div style="text-align:center;">
-          <div style="font-size:2rem;margin-bottom:1rem;">🏠</div>
-          <div style="color:#94a3b8;font-size:0.85rem;margin-bottom:1.5rem;">CABA Market Study</div>
-          <input id="auth-input" type="password" placeholder="Password"
-            style="background:#111827;border:1px solid #334155;color:#f0f4f8;padding:0.7rem 1.2rem;border-radius:8px;font-size:1rem;text-align:center;outline:none;width:220px;font-family:'Inter',sans-serif;"
-          >
-          <div id="auth-error" style="color:#ef4444;font-size:0.8rem;margin-top:0.8rem;opacity:0;">&nbsp;</div>
-        </div>
+      <div style="text-align:center;">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">🏠</div>
+        <div style="color:#94a3b8;font-size:0.9rem;margin-bottom:1.5rem;">CABA Market Study</div>
+        <input id="auth-input" type="password" placeholder="Password" autofocus
+          style="background:#111827;border:1px solid #334155;color:#f0f4f8;padding:0.8rem 1.5rem;border-radius:8px;font-size:1.1rem;text-align:center;outline:none;width:240px;font-family:inherit;"
+        >
+        <div id="auth-error" style="color:#ef4444;font-size:0.8rem;margin-top:0.8rem;height:1.2em;"></div>
       </div>
     `;
-    document.body.appendChild(overlay);
+    document.documentElement.appendChild(overlay);
 
-    const input = document.getElementById('auth-input');
-    input.focus();
-    input.addEventListener('keydown', async (e) => {
+    setTimeout(() => {
+      const input = document.getElementById('auth-input');
+      if (input) input.focus();
+    }, 100);
+
+    document.addEventListener('keydown', async function handler(e) {
       if (e.key !== 'Enter') return;
+      const input = document.getElementById('auth-input');
+      if (!input || !input.value) return;
       const hash = await sha256(input.value);
       if (hash === PASS_HASH) {
         localStorage.setItem(SESSION_KEY, JSON.stringify({ hash: PASS_HASH, ts: Date.now() }));
         overlay.remove();
-        document.body.style.visibility = 'visible';
+        document.documentElement.style.overflow = '';
+        document.removeEventListener('keydown', handler);
       } else {
-        document.getElementById('auth-error').style.opacity = 1;
         document.getElementById('auth-error').textContent = 'Incorrect';
         input.value = '';
         input.style.borderColor = '#ef4444';
@@ -55,10 +65,6 @@
   }
 
   if (!isAuthenticated()) {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', showGate);
-    } else {
-      showGate();
-    }
+    showGate();
   }
 })();
