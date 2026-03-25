@@ -199,7 +199,7 @@
                 </div>
             </div>
             <div class="filter-section">
-                <div class="filter-label">Keywords destacados</div>
+                <div class="filter-label">Filtrar por keyword <span style="font-weight:400;text-transform:none;opacity:0.6;">(click = toggle)</span></div>
                 <div class="chip-group" id="kw-chips"></div>
             </div>
             <div class="filter-section">
@@ -291,44 +291,65 @@ function priceColor(v) {
 
 function fmt(n) { return n ? Number(n).toLocaleString('es-AR') : '—'; }
 
-// Init keyword chips
+// Count how many props have each keyword
+function countKeywords() {
+    const counts = {};
+    allProps.forEach(p => {
+        (p.keywords || []).forEach(k => {
+            const kl = k.toLowerCase();
+            counts[kl] = (counts[kl] || 0) + 1;
+        });
+    });
+    return counts;
+}
+
+// Init keyword chips with counts
 function initChips() {
+    const kwCounts = countKeywords();
     const kwContainer = document.getElementById('kw-chips');
     const seen = new Set();
     KEYWORDS.forEach(k => {
         if (k.alias || seen.has(k.kw)) return;
         seen.add(k.kw);
+        const count = kwCounts[k.kw] || kwCounts[k.label?.toLowerCase()] || 0;
         const chip = document.createElement('span');
         chip.className = `chip${k.star ? ' highlight' : ''}`;
-        chip.textContent = k.label;
+        chip.innerHTML = `${k.label} <span style="opacity:0.5;font-size:9px;">${count}</span>`;
         chip.dataset.kw = k.kw;
         chip.onclick = () => {
             chip.classList.toggle('active');
             if (activeKws.has(k.kw)) activeKws.delete(k.kw); else activeKws.add(k.kw);
+            applyFilters();
         };
         kwContainer.appendChild(chip);
     });
 
     const segContainer = document.getElementById('seg-chips');
+    const segCounts = {};
+    allProps.forEach(p => { segCounts[p.segment] = (segCounts[p.segment] || 0) + 1; });
     SEGMENTS.forEach(s => {
         const chip = document.createElement('span');
         chip.className = 'seg-chip';
-        chip.textContent = s;
+        chip.innerHTML = `${s} <span style="opacity:0.5;font-size:9px;">${segCounts[s] || 0}</span>`;
         chip.onclick = () => {
             chip.classList.toggle('active');
             if (activeSegs.has(s)) activeSegs.delete(s); else activeSegs.add(s);
+            applyFilters();
         };
         segContainer.appendChild(chip);
     });
 
     const srcContainer = document.getElementById('src-chips');
+    const srcCounts = {};
+    allProps.forEach(p => { srcCounts[p.source] = (srcCounts[p.source] || 0) + 1; });
     SOURCES.forEach(s => {
         const chip = document.createElement('span');
         chip.className = 'seg-chip';
-        chip.textContent = s === 'zonaprop' ? 'ZonaProp' : 'MercadoLibre';
+        chip.innerHTML = `${s === 'zonaprop' ? 'ZonaProp' : 'MercadoLibre'} <span style="opacity:0.5;font-size:9px;">${srcCounts[s] || 0}</span>`;
         chip.onclick = () => {
             chip.classList.toggle('active');
             if (activeSrcs.has(s)) activeSrcs.delete(s); else activeSrcs.add(s);
+            applyFilters();
         };
         srcContainer.appendChild(chip);
     });
