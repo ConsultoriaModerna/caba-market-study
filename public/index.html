@@ -663,6 +663,23 @@
     </style>
 </head>
 <body>
+    <!-- TAB 5: INMOBILIARIAS -->
+    <div class="tab-content" id="tab-publishers">
+        <div style="max-width:1400px;margin:0 auto;padding:1rem 2rem;">
+            <h2 style="font-size:1.2rem;font-weight:600;margin-bottom:0.3rem;">Inmobiliarias — Publisher Intelligence</h2>
+            <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:1rem;">Perfiles de publicadores agrupados por telefono. Click para ver su inventario.</p>
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+                <button class="pub-sort active" data-pubsort="listings" style="background:rgba(0,212,255,0.12);border:1px solid var(--accent);color:var(--text-primary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Por volumen</button>
+                <button class="pub-sort" data-pubsort="cheap" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Mas economicas</button>
+                <button class="pub-sort" data-pubsort="focused" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Mas focalizadas</button>
+                <button class="pub-sort" data-pubsort="refac" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Con refaccionar</button>
+            </div>
+            <div id="publisher-stats" style="margin-bottom:1rem;"></div>
+            <div id="publisher-list" class="opportunities-list"></div>
+            <div id="publisher-detail" style="display:none;margin-top:1rem;"></div>
+        </div>
+    </div>
+
     <!-- PROPERTY DETAIL MODAL -->
     <div id="propModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);overflow-y:auto;" onclick="if(event.target===this)closePropModal()">
         <div id="propModalContent" style="max-width:800px;margin:40px auto;background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;padding:0;overflow:hidden;"></div>
@@ -683,6 +700,7 @@
         <button class="tab-button" data-tab="search">🔍 Super Search</button>
         <button class="tab-button" data-tab="opportunities">⭐ Oportunidades</button>
         <button class="tab-button" data-tab="hunter">🎯 Hunter</button>
+        <button class="tab-button" data-tab="publishers">🏢 Inmobiliarias</button>
     </div>
 
     <!-- TAB 1: OVERVIEW -->
@@ -891,6 +909,7 @@
                 <button class="opp-filter active" data-opp="value" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Mejor valor (USD/m²)</button>
                 <button class="opp-filter" data-opp="gap" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Mayor gap refac</button>
                 <button class="opp-filter" data-opp="exterior" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Con exterior</button>
+                <button class="opp-filter" data-opp="score" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Opportunity Score</button>
                 <button class="opp-filter" data-opp="drops" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Price drops</button>
             </div>
             <div class="opportunities-list" id="opportunitiesList">
@@ -1317,6 +1336,18 @@
                     .filter(p => p.price_per_sqm > 100 && p.price_per_sqm < 10000 && p.currency === 'USD')
                     .sort((a, b) => a.price_per_sqm - b.price_per_sqm)
                     .slice(0, 30);
+            } else if (oppMode === 'score') {
+                const stats = getBarrioStats();
+                const allPricesArr = Object.values(stats).map(s => s.median).filter(Boolean).sort((a, b) => a - b);
+                const globalP75 = allPricesArr[Math.floor(allPricesArr.length * 0.75)] || 1500;
+                ranked = allProperties
+                    .filter(p => p.price_per_sqm > 100 && p.price_per_sqm < 10000 && p.currency === 'USD')
+                    .map(p => {
+                        const bs = stats[p.neighborhood];
+                        return { ...p, _score: computeOpportunityScore(p, bs?.median || 0, globalP75) };
+                    })
+                    .sort((a, b) => b._score - a._score)
+                    .slice(0, 30);
             } else if (oppMode === 'gap') {
                 ranked = allProperties
                     .filter(p => p.segment === 'refac' && p.price_per_sqm > 100 && p.price_per_sqm < p75)
@@ -1366,6 +1397,7 @@
                             <div style="font-size:1.1rem;font-weight:700;">USD ${price?.toLocaleString()}</div>
                             <div style="color:var(--accent);font-size:0.85rem;">${usdM2}</div>
                             ${gapPct ? `<div style="color:var(--green);font-size:0.85rem;font-weight:600;">Gap: ${gapPct}</div>` : ''}
+                            ${p._score ? `<div style="display:inline-block;background:${scoreColor(p._score)}22;color:${scoreColor(p._score)};padding:2px 8px;border-radius:10px;font-size:0.8rem;font-weight:700;margin-top:2px;">Score: ${p._score}</div>` : ''}
                             ${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.8rem;">Ver anuncio →</a>` : ''}
                         </div>
                     </div>
@@ -1729,6 +1761,181 @@
 
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closePropModal(); });
 
+        // ── OPPORTUNITY SCORE ──
+
+        function computeOpportunityScore(p, barrioMedian, barrioP75) {
+            let score = 0;
+            const psm = p.price_per_sqm;
+            if (psm > 0 && barrioMedian > 0) {
+                const discount = (barrioMedian - psm) / barrioMedian;
+                score += Math.min(25, Math.max(0, Math.round(discount * 50)));
+            }
+            if (psm > 0 && barrioP75 > 0 && psm < barrioP75) {
+                const gap = (barrioP75 - psm) / psm;
+                score += Math.min(20, Math.round(gap * 20));
+            }
+            if (p.covered_ratio && p.covered_ratio < 1) {
+                score += Math.min(15, Math.round((1 - p.covered_ratio) * 30));
+            }
+            if (p.segment === 'refac') score += 15;
+            else if (p.segment === 'general') score += 5;
+            if (p.description?.length > 30) score += 5;
+            if (p.latitude) score += 5;
+            if (p.contact_phone) score += 5;
+            const days = p.first_seen_at ? Math.round((Date.now() - new Date(p.first_seen_at).getTime()) / 86400000) : 10;
+            score += Math.max(0, 10 - days);
+            return Math.min(100, score);
+        }
+
+        function scoreColor(s) {
+            if (s >= 70) return '#4ade80';
+            if (s >= 45) return '#fbbf24';
+            return '#94a3b8';
+        }
+
+        // ── PUBLISHERS TAB ──
+
+        let publisherData = [];
+        let pubSortMode = 'listings';
+        let publishersInited = false;
+
+        function buildPublisherProfiles() {
+            const byPhone = {};
+            allProperties.forEach(p => {
+                if (!p.contact_phone || p.contact_phone.length < 10) return;
+                if (!byPhone[p.contact_phone]) byPhone[p.contact_phone] = [];
+                byPhone[p.contact_phone].push(p);
+            });
+
+            publisherData = Object.entries(byPhone)
+                .filter(([_, props]) => props.length >= 3)
+                .map(([phone, props]) => {
+                    const active = props.filter(p => p.is_active !== false);
+                    const barrios = [...new Set(props.map(p => p.neighborhood).filter(Boolean))];
+                    const prices = props.map(p => +p.price_per_sqm).filter(v => v > 100 && v < 10000);
+                    const sorted = [...prices].sort((a, b) => a - b);
+                    const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
+                    const refac = props.filter(p => p.segment === 'refac').length;
+                    const recic = props.filter(p => p.segment === 'recic').length;
+
+                    return {
+                        phone, props, barrios,
+                        total: props.length,
+                        active: active.length,
+                        median_usd_m2: median,
+                        avg_price: Math.round(props.reduce((s, p) => s + (+p.price || 0), 0) / props.length),
+                        refac, recic,
+                        focus: barrios.length <= 3 ? 'hyper-focused' : barrios.length <= 8 ? 'focused' : 'broad'
+                    };
+                });
+        }
+
+        function renderPublishers() {
+            const sorted = [...publisherData];
+            if (pubSortMode === 'listings') sorted.sort((a, b) => b.total - a.total);
+            else if (pubSortMode === 'cheap') sorted.sort((a, b) => a.median_usd_m2 - b.median_usd_m2);
+            else if (pubSortMode === 'focused') sorted.sort((a, b) => a.barrios.length - b.barrios.length);
+            else if (pubSortMode === 'refac') sorted.sort((a, b) => b.refac - a.refac);
+
+            const total = publisherData.length;
+            const totalListings = publisherData.reduce((s, p) => s + p.total, 0);
+            document.getElementById('publisher-stats').innerHTML = `
+                <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+                    <span style="background:var(--bg-tertiary);padding:0.3rem 0.8rem;border-radius:8px;font-size:0.8rem;">${total} inmobiliarias detectadas</span>
+                    <span style="background:var(--bg-tertiary);padding:0.3rem 0.8rem;border-radius:8px;font-size:0.8rem;">${totalListings} listings cubiertos</span>
+                    <span style="background:var(--bg-tertiary);padding:0.3rem 0.8rem;border-radius:8px;font-size:0.8rem;">${sorted.filter(p => p.refac > 0).length} con props a refaccionar</span>
+                </div>
+            `;
+
+            document.getElementById('publisher-list').innerHTML = sorted.slice(0, 30).map(pub => {
+                const focusColor = pub.focus === 'hyper-focused' ? '#4ade80' : pub.focus === 'focused' ? '#fbbf24' : '#94a3b8';
+                const topBarrios = pub.barrios.slice(0, 4).join(', ') + (pub.barrios.length > 4 ? ` +${pub.barrios.length - 4}` : '');
+
+                return `
+                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="showPublisherDetail('${pub.phone.replace(/'/g, '')}')">
+                        <div style="flex:1;min-width:200px;">
+                            <div style="font-weight:600;font-size:0.95rem;">📞 ${pub.phone}
+                                <span style="background:${focusColor}22;color:${focusColor};padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;margin-left:4px;">${pub.focus.toUpperCase()}</span>
+                            </div>
+                            <div style="color:var(--text-secondary);font-size:0.8rem;margin-top:2px;">📍 ${topBarrios}</div>
+                            <div style="color:var(--text-secondary);font-size:0.75rem;margin-top:2px;">
+                                ${pub.total} listings · ${pub.refac} refac · ${pub.recic} recic
+                            </div>
+                        </div>
+                        <div style="text-align:right;min-width:120px;">
+                            <div style="font-size:1.1rem;font-weight:700;color:var(--accent);">$${pub.median_usd_m2?.toLocaleString()}/m²</div>
+                            <div style="font-size:0.75rem;color:var(--text-secondary);">mediana</div>
+                            <div style="font-size:0.8rem;margin-top:2px;">USD ${pub.avg_price?.toLocaleString()} prom.</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showPublisherDetail(phone) {
+            const pub = publisherData.find(p => p.phone === phone);
+            if (!pub) return;
+
+            const detail = document.getElementById('publisher-detail');
+            detail.style.display = 'block';
+
+            // Compute scores for each property
+            const barrioStats = getBarrioStats();
+            const allPrices = Object.values(barrioStats).map(s => s.median).filter(Boolean).sort((a, b) => a - b);
+            const p75 = allPrices[Math.floor(allPrices.length * 0.75)] || 1500;
+
+            const scored = pub.props.map(p => {
+                const bs = barrioStats[p.neighborhood];
+                const score = computeOpportunityScore(p, bs?.median || 0, p75);
+                return { ...p, _score: score };
+            }).sort((a, b) => b._score - a._score);
+
+            detail.innerHTML = `
+                <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;padding:1.2rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                        <h3 style="font-size:1rem;">📞 ${pub.phone} — ${pub.total} propiedades</h3>
+                        <button onclick="document.getElementById('publisher-detail').style.display='none'" style="background:none;border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.8rem;">Cerrar</button>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+                        <span style="background:var(--bg-tertiary);padding:0.3rem 0.6rem;border-radius:6px;font-size:0.75rem;">📍 ${pub.barrios.join(', ')}</span>
+                    </div>
+                    ${scored.map(p => {
+                        const sColor = scoreColor(p._score);
+                        return `<div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="openPropModal('${p.id}')">
+                            <div style="flex:1;min-width:200px;">
+                                <div style="font-size:0.9rem;">${sourceBadge(p.source)} ${p.title || 'Sin titulo'}</div>
+                                <div style="color:var(--text-secondary);font-size:0.75rem;">📍 ${p.neighborhood} · ${p.total_area || '?'}m² · ${p.bedrooms || '?'}d/${p.bathrooms || '?'}b</div>
+                            </div>
+                            <div style="text-align:right;min-width:140px;">
+                                <span style="background:${sColor}22;color:${sColor};padding:2px 8px;border-radius:10px;font-size:0.8rem;font-weight:700;">${p._score}</span>
+                                <div style="font-size:0.85rem;margin-top:2px;">USD ${convertToUSD(p)?.toLocaleString()}</div>
+                                <div style="font-size:0.75rem;color:var(--accent);">$${p.price_per_sqm ? Math.round(p.price_per_sqm) : '?'}/m²</div>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            `;
+
+            detail.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Publisher sort buttons
+        document.addEventListener('click', e => {
+            if (!e.target.classList.contains('pub-sort')) return;
+            document.querySelectorAll('.pub-sort').forEach(b => {
+                b.style.background = 'var(--bg-tertiary)';
+                b.style.borderColor = 'var(--border)';
+                b.style.color = 'var(--text-secondary)';
+                b.classList.remove('active');
+            });
+            e.target.classList.add('active');
+            e.target.style.background = 'rgba(0,212,255,0.12)';
+            e.target.style.borderColor = 'var(--accent)';
+            e.target.style.color = 'var(--text-primary)';
+            pubSortMode = e.target.dataset.pubsort;
+            renderPublishers();
+        });
+
         // ── HUNTER TAB ──
 
         function getBarrioStats() {
@@ -1898,7 +2105,7 @@
             }).join('');
         }
 
-        // Init Hunter tab on first visit
+        // Init tabs on first visit
         let hunterInited = false;
         const origSwitchTab = switchTab;
         switchTab = function(tabName) {
@@ -1907,6 +2114,11 @@
                 hunterInited = true;
                 populateAnomalies();
                 initComparables();
+            }
+            if (tabName === 'publishers' && !publishersInited && allProperties.length > 0) {
+                publishersInited = true;
+                buildPublisherProfiles();
+                renderPublishers();
             }
         };
     </script>
