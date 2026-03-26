@@ -696,11 +696,11 @@
     </header>
 
     <div class="tabs">
-        <button class="tab-button active" data-tab="overview">📊 Overview</button>
-        <button class="tab-button" data-tab="search">🔍 Super Search</button>
-        <button class="tab-button" data-tab="opportunities">⭐ Oportunidades</button>
-        <button class="tab-button" data-tab="hunter">🎯 Hunter</button>
-        <button class="tab-button" data-tab="publishers">🏢 Inmobiliarias</button>
+        <button class="tab-button active" data-tab="overview" title="Resumen del mercado: KPIs, barrios por precio, distribucion por zona">📊 Overview</button>
+        <button class="tab-button" data-tab="search" title="Busqueda full-text en descripciones con filtros avanzados (area, dormitorios, segmento, exterior)">🔍 Super Search</button>
+        <button class="tab-button" data-tab="opportunities" title="Propiedades rankeadas por valor, gap de refaccion, espacio exterior, y Opportunity Score">⭐ Oportunidades</button>
+        <button class="tab-button" data-tab="hunter" title="Anomaly Detector: propiedades con precio anomalo vs su barrio. Comparables: analisis cruzado por segmento">🎯 Hunter</button>
+        <button class="tab-button" data-tab="publishers" title="Perfiles de inmobiliarias agrupadas por telefono. Ver su inventario, especializacion por barrio, y nivel de foco">🏢 Inmobiliarias</button>
     </div>
 
     <!-- TAB 1: OVERVIEW -->
@@ -1238,6 +1238,10 @@
                 neighborhoodChart.destroy();
             }
 
+            // Set canvas height based on number of barrios
+            const canvas = document.getElementById('neighborhoodChart');
+            canvas.parentElement.style.height = Math.max(500, top25.length * 28) + 'px';
+
             neighborhoodChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -1255,15 +1259,27 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const n = top25[ctx.dataIndex];
+                                    return `$${n.medianPrice}/m² — ${n.count} propiedades`;
+                                }
+                            }
+                        }
                     },
                     scales: {
                         x: {
-                            ticks: { color: 'rgba(241, 245, 249, 0.6)' },
-                            grid: { color: 'rgba(51, 65, 85, 0.3)' }
+                            ticks: { color: 'rgba(241, 245, 249, 0.6)', callback: v => '$' + v.toLocaleString() },
+                            grid: { color: 'rgba(51, 65, 85, 0.15)' }
                         },
                         y: {
-                            ticks: { color: 'rgba(241, 245, 249, 0.6)' }
+                            ticks: {
+                                color: 'rgba(241, 245, 249, 0.8)',
+                                font: { size: 12 },
+                                autoSkip: false
+                            }
                         }
                     }
                 }
@@ -1818,8 +1834,12 @@
                     const refac = props.filter(p => p.segment === 'refac').length;
                     const recic = props.filter(p => p.segment === 'recic').length;
 
+                    // Find publisher name from any property that has it
+                    const nameEntry = props.find(p => p.contact_name);
+                    const name = nameEntry?.contact_name || null;
+
                     return {
-                        phone, props, barrios,
+                        phone, props, barrios, name,
                         total: props.length,
                         active: active.length,
                         median_usd_m2: median,
@@ -1854,9 +1874,10 @@
                 return `
                     <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="showPublisherDetail('${pub.phone.replace(/'/g, '')}')">
                         <div style="flex:1;min-width:200px;">
-                            <div style="font-weight:600;font-size:0.95rem;">📞 ${pub.phone}
+                            <div style="font-weight:600;font-size:0.95rem;">${pub.name ? pub.name : '📞 ' + pub.phone}
                                 <span style="background:${focusColor}22;color:${focusColor};padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;margin-left:4px;">${pub.focus.toUpperCase()}</span>
                             </div>
+                            ${pub.name ? `<div style="color:var(--text-secondary);font-size:0.75rem;">📞 ${pub.phone}</div>` : ''}
                             <div style="color:var(--text-secondary);font-size:0.8rem;margin-top:2px;">📍 ${topBarrios}</div>
                             <div style="color:var(--text-secondary);font-size:0.75rem;margin-top:2px;">
                                 ${pub.total} listings · ${pub.refac} refac · ${pub.recic} recic
