@@ -622,8 +622,8 @@
       var range = document.getElementById('calc-range').value;
       var price = parseFloat(document.getElementById('calc-price').value) || 0;
       var m2 = parseFloat(document.getElementById('calc-m2').value) || 1;
-      var safetyPct = parseInt(document.getElementById('calc-safety').value) / 100;
-      var splitPct = parseInt(document.getElementById('calc-split').value) / 100;
+      var safetyPct = (parseInt(document.getElementById('calc-safety').value) || 33) / 100;
+      var splitPct = (parseInt(document.getElementById('calc-split').value) || 60) / 100;
 
       document.getElementById('safety-display').textContent =
         Math.round(safetyPct*100) + '% — se reserva como margen';

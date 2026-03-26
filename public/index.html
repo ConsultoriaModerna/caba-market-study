@@ -1425,7 +1425,7 @@
                 if (exteriorPct) features.push(exteriorPct);
 
                 return `
-                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="openPropModal('${p.id}')"">
+                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="openPropModal('${p.id}')">
                         <div style="flex:1;min-width:200px;">
                             <div style="font-weight:600;font-size:0.95rem;">${sourceBadge(p.source)} ${segBadge}${p.title || 'Sin título'}</div>
                             <div style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.2rem;">📍 ${p.neighborhood} ${features.length ? '· ' + features.join(' · ') : ''}</div>
@@ -1634,7 +1634,7 @@
                 const usdM2Cub = prop.price_per_covered_sqm ? `$${Math.round(prop.price_per_covered_sqm).toLocaleString()}/m² cub.` : '';
 
                 return `
-                    <div class="property-card" style="cursor:pointer;" onclick="openPropModal('${prop.id}')"
+                    <div class="property-card" style="cursor:pointer;" onclick="openPropModal('${prop.id}')">
                         <div class="property-info" style="flex: 1;">
                             <div class="property-title">${sourceBadge(prop.source)} ${prop.title || 'Sin título'} ${segBadge}</div>
                             <div class="property-meta">
@@ -1898,7 +1898,7 @@
                 const topBarrios = pub.barrios.slice(0, 4).join(', ') + (pub.barrios.length > 4 ? ` +${pub.barrios.length - 4}` : '');
 
                 return `
-                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="showPublisherDetail('${pub.phone.replace(/'/g, '')}')">
+                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="showPublisherDetail('${pub.phone.replace(/[^0-9+ ]/g, '')}')">
                         <div style="flex:1;min-width:200px;">
                             <div style="font-weight:600;font-size:0.95rem;">${pub.name ? pub.name : '📞 ' + pub.phone}
                                 <span style="background:${focusColor}22;color:${focusColor};padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;margin-left:4px;">${pub.focus.toUpperCase()}</span>
@@ -2044,7 +2044,7 @@
                 if (p.covered_ratio && p.covered_ratio < 0.8) features.push(`${Math.round((1-p.covered_ratio)*100)}% ext.`);
 
                 return `
-                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;border-left:3px solid var(--red);cursor:pointer;" onclick="openPropModal('${p.id}')"
+                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;border-left:3px solid var(--red);cursor:pointer;" onclick="openPropModal('${p.id}')">
                         <div style="flex:1;min-width:200px;">
                             <div style="font-weight:600;font-size:0.95rem;">${sourceBadge(p.source)} ${segBadge}${p.title || 'Sin título'}</div>
                             <div style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.2rem;">📍 ${p.neighborhood} ${features.length ? '· ' + features.join(' · ') : ''}</div>
