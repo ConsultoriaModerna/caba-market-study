@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CABA Market Study — Estado del Proyecto</title>
+<style>
+  :root { --bg: #0a0e1a; --s: #111827; --s2: #1a1f3a; --b: #1e293b; --t: #e2e8f0; --tm: #94a3b8; --a: #00d4ff; --g: #4ade80; --y: #eab308; --r: #ef4444; --o: #fb923c; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--t); line-height: 1.7; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 2rem; color: var(--a); margin-bottom: 8px; }
+  h2 { font-size: 1.3rem; color: var(--a); margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--b); }
+  h3 { font-size: 1rem; color: var(--g); margin: 20px 0 8px; }
+  .subtitle { color: var(--tm); font-size: 0.9rem; margin-bottom: 32px; }
+  .card { background: var(--s); border: 1px solid var(--b); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kpi { background: var(--s2); border-radius: 8px; padding: 16px; text-align: center; }
+  .kpi .num { font-size: 1.8rem; font-weight: 700; color: var(--a); }
+  .kpi .label { font-size: 0.75rem; color: var(--tm); text-transform: uppercase; letter-spacing: 0.5px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { text-align: left; color: var(--tm); font-weight: 500; padding: 8px 12px; border-bottom: 1px solid var(--b); }
+  td { padding: 8px 12px; border-bottom: 1px solid #0f172a; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
+  .tag-ok { background: #065f46; color: #6ee7b7; }
+  .tag-warn { background: #713f12; color: #fbbf24; }
+  .tag-err { background: #7f1d1d; color: #fca5a5; }
+  .tag-info { background: #1e3a5f; color: #93c5fd; }
+  .tag-dead { background: #374151; color: #9ca3af; }
+  .bar { height: 8px; border-radius: 4px; background: var(--b); overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .note { background: #1a1a2e; border-left: 3px solid var(--y); padding: 12px 16px; margin: 12px 0; font-size: 0.85rem; color: var(--tm); }
+  .section-label { font-size: 0.7rem; color: var(--tm); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  a { color: var(--a); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .two-col { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+
+<h1>CABA Market Study</h1>
+<p class="subtitle">Estado del Proyecto — 20 marzo 2026, 22:50 ART</p>
+
+<!-- KPIs -->
+<div class="grid4" style="margin-bottom: 24px;">
+  <div class="kpi"><div class="num">7,929</div><div class="label">Propiedades</div></div>
+  <div class="kpi"><div class="num" style="color: var(--g)">106</div><div class="label">Barrios</div></div>
+  <div class="kpi"><div class="num" style="color: var(--o)">129</div><div class="label">Oportunidades</div></div>
+  <div class="kpi"><div class="num" style="color: var(--y)">19,923</div><div class="label">Snapshots Precio</div></div>
+</div>
+
+<!-- ===================== INFRAESTRUCTURA ===================== -->
+<h2>1. Infraestructura</h2>
+
+<div class="grid2">
+  <div class="card">
+    <h3>Supabase (PostgreSQL)</h3>
+    <p style="font-size: 0.85rem; color: var(--tm); margin-bottom: 12px;">Proyecto: <strong>inmofindr</strong> &middot; ID: ysynltkotzizayjtoujf &middot; Plan: Free</p>
+    <table>
+      <tr><th>Tabla</th><th>Filas</th><th>Cols</th><th>Estado</th></tr>
+      <tr><td>properties</td><td>7,929</td><td>51</td><td><span class="tag tag-ok">activa</span></td></tr>
+      <tr><td>price_snapshots</td><td>19,923</td><td>7</td><td><span class="tag tag-ok">activa</span></td></tr>
+      <tr><td>opportunity_events</td><td>129</td><td>9</td><td><span class="tag tag-ok">activa</span></td></tr>
+      <tr><td>keyword_catalog</td><td>48</td><td>6</td><td><span class="tag tag-ok">activa</span></td></tr>
+      <tr><td>neighborhoods</td><td>39</td><td>9</td><td><span class="tag tag-ok">activa</span></td></tr>
+      <tr><td>scrape_runs</td><td>3</td><td>12</td><td><span class="tag tag-ok">activa</span></td></tr>
+      <tr><td>ml_tokens</td><td>1</td><td>8</td><td><span class="tag tag-ok">activa</span></td></tr>
+      <tr><td>zone_stats</td><td>0</td><td>8</td><td><span class="tag tag-dead">vacía</span></td></tr>
+      <tr><td>profiles</td><td>0</td><td>6</td><td><span class="tag tag-dead">vacía</span></td></tr>
+      <tr><td>agent_config</td><td>0</td><td>24</td><td><span class="tag tag-dead">vacía</span></td></tr>
+      <tr><td>alerts</td><td>0</td><td>12</td><td><span class="tag tag-dead">vacía</span></td></tr>
+      <tr><td>saved_searches</td><td>0</td><td>10</td><td><span class="tag tag-dead">vacía</span></td></tr>
+      <tr><td>favorites</td><td>0</td><td>6</td><td><span class="tag tag-dead">vacía</span></td></tr>
+      <tr><td>agent_messages</td><td>0</td><td>11</td><td><span class="tag tag-dead">vacía</span></td></tr>
+    </table>
+    <div class="note" style="margin-top: 12px;">
+      ⚠️ 7 tablas vacías (zone_stats, profiles, agent_config, alerts, saved_searches, favorites, agent_messages).
+      Creadas para features futuras pero nunca usadas. Candidatas a limpiar.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Views SQL</h3>
+    <table>
+      <tr><th>View</th><th>Estado</th></tr>
+      <tr><td>v_neighborhood_stats</td><td><span class="tag tag-ok">activa</span></td></tr>
+      <tr><td>v_market_segments</td><td><span class="tag tag-ok">activa</span></td></tr>
+      <tr><td>v_renovation_analysis</td><td><span class="tag tag-ok">activa</span></td></tr>
+      <tr><td>price_drops</td><td><span class="tag tag-ok">activa</span></td></tr>
+    </table>
+
+    <h3 style="margin-top: 20px;">pg_cron Jobs (4)</h3>
+    <table>
+      <tr><th>Job</th><th>Schedule</th><th>Estado</th></tr>
+      <tr><td>refresh-meli-token</td><td>Cada 5h</td><td><span class="tag tag-ok">funciona</span></td></tr>
+      <tr><td>weekly-scrape-meli</td><td>Lunes 9am</td><td><span class="tag tag-err">roto (403)</span></td></tr>
+      <tr><td>detect-price-drops</td><td>Lunes 9:30am</td><td><span class="tag tag-ok">funciona</span></td></tr>
+      <tr><td>cleanup-stale</td><td>1° del mes</td><td><span class="tag tag-ok">funciona</span></td></tr>
+    </table>
+
+    <h3 style="margin-top: 20px;">RLS Policies</h3>
+    <p style="font-size: 0.85rem; color: var(--tm);">properties: anon SELECT ✅, service_role ALL ✅<br>
+    opportunity_events: public SELECT/INSERT/UPDATE ✅<br>
+    price_snapshots: 2 policies ✅</p>
+  </div>
+</div>
+
+<!-- Edge Functions -->
+<div class="card">
+  <h3>Edge Functions (8)</h3>
+  <table>
+    <tr><th>Función</th><th>Versión</th><th>JWT</th><th>Estado</th><th>Nota</th></tr>
+    <tr><td>meli-oauth</td><td>v13</td><td>✅ sí</td><td><span class="tag tag-ok">activa</span></td><td>Flujo OAuth de MercadoLibre</td></tr>
+    <tr><td>meli-oauth-callback</td><td>v15</td><td>❌ no</td><td><span class="tag tag-ok">activa</span></td><td>Callback del OAuth</td></tr>
+    <tr><td>meli-refresh-token</td><td>v16</td><td>❌ no</td><td><span class="tag tag-ok">activa</span></td><td>Refresh automático del token ML</td></tr>
+    <tr><td>meli-search</td><td>v18</td><td>❌ no</td><td><span class="tag tag-ok">activa</span></td><td>Búsqueda proxy para ML API</td></tr>
+    <tr><td>meli-explore</td><td>v5</td><td>❌ no</td><td><span class="tag tag-info">legacy</span></td><td>Exploración ML (versión antigua)</td></tr>
+    <tr><td>scrape-meli</td><td>v5</td><td>❌ no</td><td><span class="tag tag-err">roto (403)</span></td><td>ML bloquea IPs de AWS/cloud</td></tr>
+    <tr><td>detect-price-drops</td><td>v2</td><td>❌ no</td><td><span class="tag tag-ok">activa</span></td><td>Detecta cambios de precio y oportunidades</td></tr>
+    <tr><td>test-ml-api</td><td>v2</td><td>❌ no</td><td><span class="tag tag-info">diagnóstico</span></td><td>Confirma bloqueo ML desde cloud</td></tr>
+  </table>
+</div>
+
+<!-- ===================== REPOS ===================== -->
+<h2>2. Repositorios GitHub</h2>
+
+<div class="grid2">
+  <div class="card">
+    <h3>ConsultoriaModerna/caba-market-study</h3>
+    <p style="font-size: 0.85rem; color: var(--g); margin-bottom: 8px;">REPO PRINCIPAL ✅</p>
+    <table>
+      <tr><th>Archivo</th><th>Descripción</th></tr>
+      <tr><td>public/index.html</td><td>Dashboard principal (22KB)</td></tr>
+      <tr><td>public/d3-analytics.html</td><td>Analytics D3.js (28KB)</td></tr>
+      <tr><td>public/mapa.html</td><td>Mapa interactivo (21KB)</td></tr>
+      <tr><td>scripts/scrape-meli.mjs</td><td>Scraper ML API (local)</td></tr>
+      <tr><td>scripts/refresh-ml-token.mjs</td><td>Refresh token manual</td></tr>
+      <tr><td>docs/ANALYSIS.md</td><td>Análisis del mercado</td></tr>
+      <tr><td>docs/METHODOLOGY.md</td><td>Metodología del estudio</td></tr>
+      <tr><td>docs/NICHE-FRAMEWORK.md</td><td>Framework de nichos</td></tr>
+      <tr><td>docs/ENRICHMENT-LEVELS.md</td><td>Niveles de enriquecimiento</td></tr>
+      <tr><td>.github/workflows/</td><td>Scrape workflow (no funciona)</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>ConsultoriaModerna/meli-search</h3>
+    <p style="font-size: 0.85rem; color: var(--y); margin-bottom: 8px;">REPO LEGACY — scraping HTML</p>
+    <table>
+      <tr><th>Archivo</th><th>Descripción</th></tr>
+      <tr><td>api/scrape.js</td><td>HTML scraper ML (12KB)</td></tr>
+      <tr><td>api/ml-proxy.js</td><td>Proxy API ML</td></tr>
+      <tr><td>api/ml-scraper-proxy.js</td><td>Proxy ScraperAPI</td></tr>
+      <tr><td>public/</td><td>Dashboard viejo (descartado)</td></tr>
+      <tr><td>src/</td><td>Frontend viejo (descartado)</td></tr>
+    </table>
+    <div class="note">
+      ⚠️ Desplegado en Vercel pero ML ahora bloquea Vercel también (redirige a account-verification).
+      Único valor: el código de scrape.js como referencia.
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DATOS ===================== -->
+<h2>3. Datos — Calidad y Cobertura</h2>
+
+<div class="card">
+  <h3>Fuentes de datos</h3>
+  <table>
+    <tr><th>Fuente</th><th>Segmento</th><th>Total</th><th>Último scrape</th><th>Método</th></tr>
+    <tr><td>ZonaProp</td><td>general</td><td>3,462</td><td>18 mar</td><td>API + enrichment</td></tr>
+    <tr><td>ZonaProp</td><td>cheap</td><td>558</td><td>18 mar</td><td>API + enrichment</td></tr>
+    <tr><td>ZonaProp</td><td>refac</td><td>227</td><td>18 mar</td><td>API + enrichment</td></tr>
+    <tr><td>ZonaProp</td><td>recic</td><td>323</td><td>18 mar</td><td>API + enrichment</td></tr>
+    <tr><td style="color: var(--a)">MercadoLibre</td><td>general</td><td>3,060</td><td style="color: var(--g)">Hoy ✅</td><td>Chrome HTML scrape</td></tr>
+    <tr><td>MercadoLibre</td><td>cheap</td><td>210</td><td>19 mar</td><td>API local</td></tr>
+    <tr><td>MercadoLibre</td><td>refac</td><td>56</td><td style="color: var(--g)">Hoy</td><td>Chrome HTML scrape</td></tr>
+    <tr><td>MercadoLibre</td><td>recic</td><td>33</td><td style="color: var(--g)">Hoy</td><td>Chrome HTML scrape</td></tr>
+    <tr><td colspan="2" style="font-weight: 600;">TOTAL</td><td style="font-weight: 600;">7,929</td><td></td><td></td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>Completitud de campos (7,437 propiedades activas)</h3>
+  <div class="grid3" style="margin-top: 12px;">
+    <div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+        <span>Keywords</span><span style="color: var(--g)">5,795 (78%)</span>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width: 78%; background: var(--g);"></div></div>
+    </div>
+    <div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+        <span>Full-text search</span><span style="color: var(--g)">7,437 (100%)</span>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width: 100%; background: var(--g);"></div></div>
+    </div>
+    <div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+        <span>Permalink</span><span style="color: var(--g)">5,997 (81%)</span>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width: 81%; background: var(--g);"></div></div>
+    </div>
+    <div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+        <span>Descripción</span><span style="color: var(--r)">0 (0%)</span>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width: 0%; background: var(--r);"></div></div>
+    </div>
+    <div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+        <span>Coordenadas GPS</span><span style="color: var(--r)">1 (0%)</span>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width: 0%; background: var(--r);"></div></div>
+    </div>
+    <div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+        <span>Dirección</span><span style="color: var(--r)">28 (0.4%)</span>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width: 0.4%; background: var(--r);"></div></div>
+    </div>
+    <div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+        <span>Thumbnail</span><span style="color: var(--r)">0 (0%)</span>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width: 0%; background: var(--r);"></div></div>
+    </div>
+  </div>
+  <div class="note" style="margin-top: 16px;">
+    🔴 <strong>Gaps críticos:</strong> Descripción (0%), Coordenadas GPS (0%), Dirección (0.4%), Thumbnail (0%).
+    Estos campos se llenan visitando cada aviso individual — necesario para el Super Searcher y la orientación solar.
+  </div>
+</div>
+
+<!-- ===================== QUÉ FUNCIONA / QUÉ NO ===================== -->
+<h2>4. Qué Funciona y Qué No</h2>
+
+<div class="grid2">
+  <div class="card" style="border-color: #065f46;">
+    <h3 style="color: var(--g);">✅ Funciona</h3>
+    <ul style="font-size: 0.85rem; color: var(--tm); list-style: none; padding: 0;">
+      <li style="padding: 6px 0;">✅ Scraping ML vía Chrome (IP residencial) — 1,440 casas hoy</li>
+      <li style="padding: 6px 0;">✅ Token refresh automático (pg_cron → edge function)</li>
+      <li style="padding: 6px 0;">✅ Detección de price drops y oportunidades (129 detectadas)</li>
+      <li style="padding: 6px 0;">✅ Cleanup de propiedades inactivas (mensual)</li>
+      <li style="padding: 6px 0;">✅ Dashboard D3 estático con datos de ZonaProp</li>
+      <li style="padding: 6px 0;">✅ Dashboard React nuevo con Supabase en vivo (caba-dashboard.jsx)</li>
+      <li style="padding: 6px 0;">✅ 4 SQL views analíticas funcionando</li>
+      <li style="padding: 6px 0;">✅ Full-text search habilitado (tsvector en 100% propiedades)</li>
+    </ul>
+  </div>
+  <div class="card" style="border-color: #7f1d1d;">
+    <h3 style="color: var(--r);">❌ No Funciona / Pendiente</h3>
+    <ul style="font-size: 0.85rem; color: var(--tm); list-style: none; padding: 0;">
+      <li style="padding: 6px 0;">❌ scrape-meli edge function → ML bloquea cloud IPs (403)</li>
+      <li style="padding: 6px 0;">❌ meli-search Vercel scraper → ML bloquea ahora también</li>
+      <li style="padding: 6px 0;">❌ GitHub Actions workflow → nunca configurados los secrets</li>
+      <li style="padding: 6px 0;">❌ Scraping automatizado sin intervención manual</li>
+      <li style="padding: 6px 0;">❌ Descripciones individuales (0% completado)</li>
+      <li style="padding: 6px 0;">❌ Coordenadas GPS / geocoding (0% completado)</li>
+      <li style="padding: 6px 0;">❌ Orientación solar (requiere GPS primero)</li>
+      <li style="padding: 6px 0;">❌ Super Searcher en texto completo (requiere descripciones)</li>
+      <li style="padding: 6px 0;">❌ Dashboard JSX no se abre como HTML nativo</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===================== SCHEMA ===================== -->
+<h2>5. Schema: Tabla Properties (51 columnas)</h2>
+<div class="card" style="font-size: 0.8rem;">
+  <div class="grid3">
+    <div>
+      <p class="section-label">Identificación</p>
+      <code>id</code> text PK<br>
+      <code>title</code> text<br>
+      <code>slug</code> text<br>
+      <code>source</code> text (zonaprop/mercadolibre)<br>
+      <code>segment</code> text (general/cheap/refac/recic)
+    </div>
+    <div>
+      <p class="section-label">Precio</p>
+      <code>price</code> numeric<br>
+      <code>currency</code> text (USD/ARS)<br>
+      <code>price_per_sqm</code> numeric<br>
+      <code>price_history</code> jsonb<br>
+      <code>gap_vs_reciclada</code> numeric
+    </div>
+    <div>
+      <p class="section-label">Operación</p>
+      <code>operation</code> text (venta/alquiler)<br>
+      <code>property_type</code> text (casa/depto/...)<br>
+      <code>is_active</code> boolean
+    </div>
+    <div>
+      <p class="section-label">Características</p>
+      <code>total_area</code> numeric<br>
+      <code>covered_area</code> numeric<br>
+      <code>covered_ratio</code> numeric<br>
+      <code>ambientes</code> integer<br>
+      <code>bedrooms</code> integer<br>
+      <code>bathrooms</code> integer<br>
+      <code>cocheras</code> integer
+    </div>
+    <div>
+      <p class="section-label">Ubicación</p>
+      <code>neighborhood</code> text<br>
+      <code>city</code> text<br>
+      <code>state</code> text<br>
+      <code>address</code> text<br>
+      <code>address_text</code> text<br>
+      <code>latitude</code> numeric<br>
+      <code>longitude</code> numeric<br>
+      <code>geo_precision</code> text
+    </div>
+    <div>
+      <p class="section-label">Contenido</p>
+      <code>description</code> text 🔴 vacío<br>
+      <code>permalink</code> text<br>
+      <code>thumbnail</code> text<br>
+      <code>images</code> jsonb<br>
+      <code>photos</code> jsonb<br>
+      <code>attributes</code> jsonb<br>
+      <code>keywords</code> text[]<br>
+      <code>fts</code> tsvector
+    </div>
+    <div>
+      <p class="section-label">Renovación</p>
+      <code>post_reno_value</code> numeric<br>
+      <code>reno_gap</code> numeric<br>
+      <code>reno_budget</code> numeric<br>
+      <code>max_reno_usd_m2</code> numeric
+    </div>
+    <div>
+      <p class="section-label">Restricciones</p>
+      <code>constraints</code> text[]<br>
+      <code>constraint_level</code> text
+    </div>
+    <div>
+      <p class="section-label">Contacto & Meta</p>
+      <code>contact_phone</code> text<br>
+      <code>contact_name</code> text<br>
+      <code>enrichment_level</code> integer<br>
+      <code>enriched_at</code> timestamp<br>
+      <code>created_at</code> / <code>updated_at</code><br>
+      <code>first_seen_at</code> / <code>last_seen_at</code><br>
+      <code>scraped_at</code> timestamp
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DECISIONES ===================== -->
+<h2>6. Decisiones Pendientes</h2>
+<div class="card">
+  <table>
+    <tr><th>#</th><th>Decisión</th><th>Opciones</th><th>Impacto</th></tr>
+    <tr><td>1</td><td>Scraping individual de descripciones</td><td>Chrome scrape (lento, ~4h para 7K props) vs. quedarse solo con títulos</td><td>Habilita Super Searcher + keywords avanzados</td></tr>
+    <tr><td>2</td><td>Geocoding de propiedades</td><td>Nominatim (gratis, lento) vs. Google Geocoding API ($5/1K requests)</td><td>Habilita mapa + orientación solar</td></tr>
+    <tr><td>3</td><td>Meli-search repo</td><td>Archivar / merge en caba-market-study / mantener separado</td><td>Simplifica mantenimiento</td></tr>
+    <tr><td>4</td><td>Tablas vacías en DB</td><td>Limpiar las 7 tablas sin uso / mantener para futuro</td><td>Claridad del schema</td></tr>
+    <tr><td>5</td><td>Dashboard: JSX vs HTML</td><td>Convertir JSX a HTML puro / deployar como app React en Vercel</td><td>Accesibilidad del dashboard</td></tr>
+    <tr><td>6</td><td>Automatización del scraping</td><td>Scheduled task en Cowork / script local con cron / manual</td><td>Frecuencia de actualización</td></tr>
+  </table>
+</div>
+
+<!-- ===================== ROADMAP ===================== -->
+<h2>7. Roadmap Sugerido</h2>
+<div class="card">
+  <div style="font-size: 0.85rem;">
+    <p style="color: var(--g); font-weight: 600; margin-bottom: 8px;">FASE 2B: Estabilización (esta sesión)</p>
+    <p style="color: var(--tm); margin-bottom: 16px;">
+      ① Limpiar schema: dropear tablas vacías, consolidar columnas duplicadas<br>
+      ② Convertir dashboard JSX → HTML desplegable en Vercel<br>
+      ③ Actualizar Notion con estado real<br>
+      ④ Merge o archivar meli-search repo
+    </p>
+    <p style="color: var(--o); font-weight: 600; margin-bottom: 8px;">FASE 3: Enriquecimiento</p>
+    <p style="color: var(--tm); margin-bottom: 16px;">
+      ① Scraping de descripciones individuales (Chrome por batch)<br>
+      ② Geocoding con Nominatim/OSM (gratis)<br>
+      ③ Cálculo de orientación solar con SunCalc<br>
+      ④ Super Searcher con búsqueda full-text en descripciones
+    </p>
+    <p style="color: var(--a); font-weight: 600; margin-bottom: 8px;">FASE 4: Análisis AI Avanzado</p>
+    <p style="color: var(--tm);">
+      ① Scoring automático de oportunidades (precio/m² + ubicación + keywords)<br>
+      ② Alertas inteligentes (bajas de precio, nuevos listings sub-mercado)<br>
+      ③ Comparables automáticos (propiedades similares por zona)<br>
+      ④ Report generator (PDF/DOCX por propiedad o barrio)
+    </p>
+  </div>
+</div>
+
+<p style="text-align: center; color: var(--tm); font-size: 0.75rem; margin-top: 40px;">
+  Generado por Cowork &middot; CABA Market Study &middot; ConsultoriaModerna
+</p>
+
+</div>
+</body>
+</html>

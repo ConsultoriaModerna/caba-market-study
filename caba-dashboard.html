@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CABA Real Estate Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1f2937;
+            --accent: #00d4ff;
+            --accent-light: #06b6d4;
+            --green: #4ade80;
+            --red: #ef4444;
+            --yellow: #fbbf24;
+            --orange: #fb923c;
+            --pink: #f472b6;
+            --blue: #60a5fa;
+            --text-primary: #f0f4f8;
+            --text-secondary: #cbd5e1;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .loading-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .loading-indicator.active {
+            display: flex;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--accent);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            gap: 2rem;
+            padding: 0 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .tab-button {
+            padding: 1rem 0;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tab-button:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-button.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+        }
+
+        .kpi-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .insight-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .insight-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .insight-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .insight-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .insight-content {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .chart-container {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            height: 500px;
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .search-container {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input-wrapper {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+        }
+
+        .search-button {
+            background-color: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-button:hover {
+            background-color: var(--accent-light);
+            transform: translateY(-2px);
+        }
+
+        .search-button:active {
+            transform: translateY(0);
+        }
+
+        .enrichment-stats {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .search-results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0 0.5rem;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .search-loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .keyword-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .keyword-pill {
+            background-color: var(--accent);
+            color: var(--bg-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .keyword-pill:hover {
+            background-color: var(--accent-light);
+        }
+
+        .keyword-pill-remove {
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .quick-keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .quick-keyword-btn {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quick-keyword-btn:hover {
+            background-color: var(--accent);
+            color: var(--bg-primary);
+            border-color: var(--accent);
+        }
+
+        .filters-container {
+            background-color: var(--bg-tertiary);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .filters-container.active {
+            display: block;
+        }
+
+        .filter-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .filter-input,
+        .filter-select {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+        }
+
+        .filter-select {
+            cursor: pointer;
+        }
+
+        .filter-input:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .filter-toggle-btn {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-toggle-btn:hover {
+            border-color: var(--accent);
+        }
+
+        .results-container {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .property-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .property-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+        }
+
+        .property-info {
+            flex: 1;
+        }
+
+        .property-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .property-meta {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .property-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .property-keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .property-keyword-tag {
+            background-color: var(--bg-tertiary);
+            color: var(--accent);
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+        }
+
+        .property-price {
+            text-align: right;
+        }
+
+        .property-price-main {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 0.25rem;
+        }
+
+        .property-price-sqm {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .deal-star {
+            color: var(--yellow);
+            font-size: 1.5rem;
+            margin-left: 0.5rem;
+        }
+
+        .opportunities-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .opportunity-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .opportunity-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .opportunity-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .severity-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .severity-high {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: var(--red);
+            border: 1px solid var(--red);
+        }
+
+        .severity-medium {
+            background-color: rgba(251, 191, 36, 0.2);
+            color: var(--yellow);
+            border: 1px solid var(--yellow);
+        }
+
+        .severity-low {
+            background-color: rgba(74, 222, 128, 0.2);
+            color: var(--green);
+            border: 1px solid var(--green);
+        }
+
+        .opportunity-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .opportunity-details {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .opportunity-details-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .opportunity-body {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-input-wrapper {
+                flex-direction: column;
+            }
+
+            .property-card {
+                flex-direction: column;
+            }
+
+            .property-price {
+                text-align: left;
+                margin-top: 1rem;
+            }
+
+            .chart-container {
+                height: 400px;
+            }
+
+            .tabs {
+                overflow-x: auto;
+                gap: 1rem;
+                padding: 0 1rem;
+            }
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="header-title">🏠 CABA Real Estate Dashboard</div>
+            <div class="loading-indicator" id="loadingIndicator">
+                <div class="spinner"></div>
+                <span>Cargando datos...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-button active" data-tab="overview">📊 Overview</button>
+        <button class="tab-button" data-tab="search">🔍 Super Search</button>
+        <button class="tab-button" data-tab="opportunities">⭐ Oportunidades</button>
+    </div>
+
+    <!-- TAB 1: OVERVIEW -->
+    <div class="tab-content active" id="tab-overview">
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Total de Propiedades</div>
+                <div class="kpi-value" id="kpi-total-properties">-</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Precio Mediano (USD)</div>
+                <div class="kpi-value" id="kpi-median-price">-</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Barrios Cubiertos</div>
+                <div class="kpi-value" id="kpi-neighborhoods">-</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Oportunidades</div>
+                <div class="kpi-value" id="kpi-opportunities">-</div>
+            </div>
+        </div>
+
+        <div class="insights-grid">
+            <div class="insight-card">
+                <div class="insight-icon">📈</div>
+                <div class="insight-title">Resumen del Mercado</div>
+                <div class="insight-content" id="insight-market"></div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon">💰</div>
+                <div class="insight-title">Barrios Más Económicos</div>
+                <div class="insight-content" id="insight-cheapest"></div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon">🏆</div>
+                <div class="insight-title">Barrios Más Caros</div>
+                <div class="insight-content" id="insight-expensive"></div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon">🔧</div>
+                <div class="insight-title">Oportunidades de Refacción</div>
+                <div class="insight-content" id="insight-refac"></div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon">🎯</div>
+                <div class="insight-title">Concentración de Oferta</div>
+                <div class="insight-content" id="insight-concentration"></div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon">📊</div>
+                <div class="insight-title">Brecha de Precios</div>
+                <div class="insight-content" id="insight-spread"></div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Top 25 Barrios por Precio Mediano (USD/m²)</div>
+            <canvas id="neighborhoodChart"></canvas>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--green);"></div>
+                    <span>Norte</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--blue);"></div>
+                    <span>Centro</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--orange);"></div>
+                    <span>Oeste</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--pink);"></div>
+                    <span>Sur</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Distribución de Propiedades por Zona</div>
+            <canvas id="zoneChart"></canvas>
+        </div>
+    </div>
+
+    <!-- TAB 2: SUPER SEARCH -->
+    <div class="tab-content" id="tab-search">
+        <div class="search-container">
+            <div id="enrichmentStats" class="enrichment-stats"></div>
+
+            <div class="search-input-wrapper">
+                <input
+                    type="text"
+                    class="search-input"
+                    id="searchInput"
+                    placeholder="Ej: pileta luminoso parrilla (separa términos con espacios)..."
+                >
+                <button class="search-button" id="searchButton">🔍 Buscar</button>
+            </div>
+
+            <div id="selectedKeywords" class="keyword-pills"></div>
+
+            <div class="quick-keywords">
+                <button class="quick-keyword-btn" data-keyword="pileta">pileta</button>
+                <button class="quick-keyword-btn" data-keyword="parrilla">parrilla</button>
+                <button class="quick-keyword-btn" data-keyword="jardin">jardin</button>
+                <button class="quick-keyword-btn" data-keyword="terraza">terraza</button>
+                <button class="quick-keyword-btn" data-keyword="luminoso">luminoso</button>
+                <button class="quick-keyword-btn" data-keyword="reciclado">reciclado</button>
+                <button class="quick-keyword-btn" data-keyword="cochera">cochera</button>
+                <button class="quick-keyword-btn" data-keyword="balcon">balcon</button>
+                <button class="quick-keyword-btn" data-keyword="dependencia">dependencia</button>
+                <button class="quick-keyword-btn" data-keyword="quincho">quincho</button>
+                <button class="quick-keyword-btn" data-keyword="solarium">solarium</button>
+                <button class="quick-keyword-btn" data-keyword="losa radiante">losa radiante</button>
+                <button class="quick-keyword-btn" data-keyword="piso radiante">piso radiante</button>
+                <button class="quick-keyword-btn" data-keyword="vista">vista</button>
+                <button class="quick-keyword-btn" data-keyword="silencioso">silencioso</button>
+                <button class="quick-keyword-btn" data-keyword="a estrenar">a estrenar</button>
+            </div>
+
+            <button class="filter-toggle-btn" id="filterToggle">⚙️ Filtros Avanzados</button>
+
+            <div class="filters-container" id="filtersContainer">
+                <div class="filter-group">
+                    <div class="filter-item">
+                        <label class="filter-label">Precio Mínimo (USD)</label>
+                        <input type="number" class="filter-input" id="filterPriceMin" placeholder="Mínimo" value="0">
+                    </div>
+                    <div class="filter-item">
+                        <label class="filter-label">Precio Máximo (USD)</label>
+                        <input type="number" class="filter-input" id="filterPriceMax" placeholder="Máximo" value="999999">
+                    </div>
+                    <div class="filter-item">
+                        <label class="filter-label">Moneda</label>
+                        <select class="filter-select" id="filterCurrency">
+                            <option value="USD">USD</option>
+                            <option value="ARS">ARS</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label class="filter-label">Barrio</label>
+                        <select class="filter-select" id="filterNeighborhood">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label class="filter-label">Resultados por página</label>
+                        <select class="filter-select" id="filterLimit">
+                            <option value="20">20</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-container" id="searchResults">
+            <div class="empty-state">Ingresa palabras clave para comenzar la búsqueda</div>
+        </div>
+    </div>
+
+    <!-- TAB 3: OPORTUNIDADES -->
+    <div class="tab-content" id="tab-opportunities">
+        <div class="opportunities-list" id="opportunitiesList">
+            <div class="empty-state">Cargando oportunidades...</div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const SUPABASE_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
+
+        const ZONES = {
+            'Norte': ['Belgrano', 'Belgrano R', 'Núñez', 'Saavedra', 'Coghlan', 'Villa Urquiza', 'Colegiales', 'Palermo'],
+            'Centro': ['Caballito', 'Almagro', 'Boedo', 'San Cristóbal', 'Balvanera', 'Recoleta', 'San Telmo'],
+            'Oeste': ['Villa Devoto', 'Monte Castro', 'Floresta', 'Versalles', 'Villa Luro', 'Liniers', 'Villa Pueyrredón'],
+            'Sur': ['Flores', 'Mataderos', 'Parque Chacabuco', 'Barracas', 'La Boca', 'Pompeya', 'Villa Lugano', 'Villa Soldati', 'Parque Patricios']
+        };
+
+        const ZONE_COLORS = {
+            'Norte': '#4ade80',
+            'Centro': '#60a5fa',
+            'Oeste': '#fb923c',
+            'Sur': '#f472b6',
+            'Otro': '#94a3b8'
+        };
+
+        // Data Storage
+        let allProperties = [];
+        let allOpportunities = [];
+        let selectedKeywords = [];
+        let neighborhoodChart = null;
+        let zoneChart = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            loadData();
+        });
+
+        function setupEventListeners() {
+            // Tab switching
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const tabName = e.target.dataset.tab;
+                    switchTab(tabName);
+                    if (tabName === 'search') {
+                        loadEnrichmentStats();
+                    }
+                });
+            });
+
+            // Search via Enter key
+            document.getElementById('searchInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.target.value.trim()) {
+                    const keywords = e.target.value.trim().split(/\s+/);
+                    keywords.forEach(kw => {
+                        if (!selectedKeywords.includes(kw)) {
+                            selectedKeywords.push(kw);
+                        }
+                    });
+                    updateKeywordPills();
+                    performSearch();
+                    e.target.value = '';
+                }
+            });
+
+            // Search button
+            document.getElementById('searchButton').addEventListener('click', () => {
+                if (selectedKeywords.length === 0) {
+                    const input = document.getElementById('searchInput');
+                    if (input.value.trim()) {
+                        const keywords = input.value.trim().split(/\s+/);
+                        keywords.forEach(kw => {
+                            if (!selectedKeywords.includes(kw)) {
+                                selectedKeywords.push(kw);
+                            }
+                        });
+                        updateKeywordPills();
+                        input.value = '';
+                    }
+                }
+                performSearch();
+            });
+
+            // Quick Keywords
+            document.querySelectorAll('.quick-keyword-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const keyword = e.target.dataset.keyword.toLowerCase();
+                    if (!selectedKeywords.includes(keyword)) {
+                        selectedKeywords.push(keyword);
+                    } else {
+                        selectedKeywords = selectedKeywords.filter(k => k !== keyword);
+                    }
+                    updateKeywordPills();
+                    if (selectedKeywords.length > 0) {
+                        performSearch();
+                    }
+                });
+            });
+
+            // Filter Toggle
+            document.getElementById('filterToggle').addEventListener('click', () => {
+                document.getElementById('filtersContainer').classList.toggle('active');
+            });
+
+            // Filter Changes
+            ['filterPriceMin', 'filterPriceMax', 'filterCurrency', 'filterNeighborhood', 'filterLimit'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', () => {
+                        if (selectedKeywords.length > 0) {
+                            performSearch();
+                        }
+                    });
+                }
+            });
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        }
+
+        async function loadData() {
+            showLoading(true);
+            try {
+                await Promise.all([
+                    fetchProperties(),
+                    fetchOpportunities()
+                ]);
+                populateOverview();
+                populateOpportunities();
+                populateFilterNeighborhoods();
+                showLoading(false);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showLoading(false);
+            }
+        }
+
+        async function fetchProperties() {
+            try {
+                const url = `${SUPABASE_URL}/rest/v1/properties?select=id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,segment,source,slug,keywords&is_active=eq.true&order=price_per_sqm.asc.nullslast&limit=5000`;
+                const response = await fetch(url, {
+                    headers: {
+                        apikey: ANON_KEY,
+                        Authorization: `Bearer ${ANON_KEY}`
+                    }
+                });
+                allProperties = await response.json();
+            } catch (error) {
+                console.error('Error fetching properties:', error);
+                allProperties = [];
+            }
+        }
+
+        async function fetchOpportunities() {
+            try {
+                const url = `${SUPABASE_URL}/rest/v1/opportunity_events?select=*&order=created_at.desc&limit=100`;
+                const response = await fetch(url, {
+                    headers: {
+                        apikey: ANON_KEY,
+                        Authorization: `Bearer ${ANON_KEY}`
+                    }
+                });
+                allOpportunities = await response.json();
+            } catch (error) {
+                console.error('Error fetching opportunities:', error);
+                allOpportunities = [];
+            }
+        }
+
+        function convertToUSD(property) {
+            if (property.currency === 'USD' || !property.currency) {
+                return property.price;
+            }
+            if (property.currency === 'ARS') {
+                return Math.round(property.price / 1000);
+            }
+            return property.price;
+        }
+
+        function getZone(neighborhood) {
+            for (const [zone, neighborhoods] of Object.entries(ZONES)) {
+                if (neighborhoods.includes(neighborhood)) {
+                    return zone;
+                }
+            }
+            return 'Otro';
+        }
+
+        function populateOverview() {
+            // KPIs
+            const totalProps = allProperties.length;
+            const pricesUSD = allProperties.map(convertToUSD).filter(p => p > 0);
+            const medianPrice = pricesUSD.length > 0 ? getMedian(pricesUSD) : 0;
+            const neighborhoods = new Set(allProperties.map(p => p.neighborhood)).size;
+
+            document.getElementById('kpi-total-properties').textContent = totalProps.toLocaleString();
+            document.getElementById('kpi-median-price').textContent = medianPrice > 0 ? `$${medianPrice.toLocaleString()}` : '-';
+            document.getElementById('kpi-neighborhoods').textContent = neighborhoods;
+            document.getElementById('kpi-opportunities').textContent = allOpportunities.length;
+
+            // Compute neighborhood stats
+            const neighborhoodStats = computeNeighborhoodStats();
+            const neighborhoodArray = Array.from(neighborhoodStats.values());
+
+            // Insights
+            const sources = new Set(allProperties.map(p => p.source));
+            const refacCount = allProperties.filter(p =>
+                p.keywords && Array.isArray(p.keywords) && p.keywords.some(k => k.toLowerCase().includes('refac'))
+            ).length;
+
+            const cheapest = neighborhoodArray.slice(0, 3).map(n => `${n.name}: $${n.medianPrice}/m²`).join(', ');
+            const expensive = neighborhoodArray.slice(-3).reverse().map(n => `${n.name}: $${n.medianPrice}/m²`).join(', ');
+            const topBarrio = neighborhoodArray[neighborhoodArray.length - 1];
+            const spread = topBarrio && neighborhoodArray[0] ? (topBarrio.medianPrice / neighborhoodArray[0].medianPrice).toFixed(1) : '-';
+
+            document.getElementById('insight-market').innerHTML = `${totalProps.toLocaleString()} propiedades de ${sources.size} fuentes diferentes. Mercado diversificado y activo en CABA.`;
+            document.getElementById('insight-cheapest').innerHTML = `<strong>${cheapest}</strong>`;
+            document.getElementById('insight-expensive').innerHTML = `<strong>${expensive}</strong>`;
+            document.getElementById('insight-refac').innerHTML = `${refacCount} propiedades marcadas con oportunidades de refacción. Potencial de inversión identificado.`;
+            document.getElementById('insight-concentration').innerHTML = `${topBarrio ? topBarrio.name : 'N/A'} concentra la mayor oferta con ${topBarrio ? topBarrio.count : 0} propiedades.`;
+            document.getElementById('insight-spread').innerHTML = `Brecha de ${spread}x entre los barrios más caros y más económicos.`;
+
+            // Charts
+            renderNeighborhoodChart(neighborhoodArray);
+            renderZoneChart();
+        }
+
+        function computeNeighborhoodStats() {
+            const stats = new Map();
+
+            allProperties.forEach(prop => {
+                if (!prop.neighborhood) return;
+
+                const price = prop.price_per_sqm;
+                if (price === null || price === undefined || price < 100 || price > 10000) return;
+
+                if (!stats.has(prop.neighborhood)) {
+                    stats.set(prop.neighborhood, { prices: [], count: 0 });
+                }
+
+                stats.get(prop.neighborhood).prices.push(price);
+                stats.get(prop.neighborhood).count++;
+            });
+
+            const result = new Map();
+            stats.forEach((value, neighborhood) => {
+                if (value.prices.length > 0) {
+                    result.set(neighborhood, {
+                        name: neighborhood,
+                        medianPrice: Math.round(getMedian(value.prices)),
+                        count: value.count,
+                        zone: getZone(neighborhood)
+                    });
+                }
+            });
+
+            return new Map([...result.entries()].sort((a, b) => a[1].medianPrice - b[1].medianPrice));
+        }
+
+        function renderNeighborhoodChart(neighborhoodArray) {
+            const top25 = neighborhoodArray.slice(-25).reverse();
+            const ctx = document.getElementById('neighborhoodChart').getContext('2d');
+
+            if (neighborhoodChart) {
+                neighborhoodChart.destroy();
+            }
+
+            neighborhoodChart = new Chart(ctx, {
+                type: 'barh',
+                data: {
+                    labels: top25.map(n => n.name),
+                    datasets: [{
+                        label: 'Precio Mediano (USD/m²)',
+                        data: top25.map(n => n.medianPrice),
+                        backgroundColor: top25.map(n => ZONE_COLORS[n.zone]),
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: 'rgba(241, 245, 249, 0.6)' },
+                            grid: { color: 'rgba(51, 65, 85, 0.3)' }
+                        },
+                        y: {
+                            ticks: { color: 'rgba(241, 245, 249, 0.6)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderZoneChart() {
+            const zoneData = new Map();
+            ZONES['Norte'].forEach(n => zoneData.set(n, 'Norte'));
+            ZONES['Centro'].forEach(n => zoneData.set(n, 'Centro'));
+            ZONES['Oeste'].forEach(n => zoneData.set(n, 'Oeste'));
+            ZONES['Sur'].forEach(n => zoneData.set(n, 'Sur'));
+
+            const zoneCounts = { 'Norte': 0, 'Centro': 0, 'Oeste': 0, 'Sur': 0, 'Otro': 0 };
+            allProperties.forEach(prop => {
+                const zone = getZone(prop.neighborhood);
+                zoneCounts[zone]++;
+            });
+
+            const ctx = document.getElementById('zoneChart').getContext('2d');
+            if (zoneChart) {
+                zoneChart.destroy();
+            }
+
+            zoneChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(zoneCounts),
+                    datasets: [{
+                        data: Object.values(zoneCounts),
+                        backgroundColor: Object.keys(zoneCounts).map(z => ZONE_COLORS[z])
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: 'rgba(241, 245, 249, 0.8)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function populateOpportunities() {
+            const container = document.getElementById('opportunitiesList');
+
+            if (allOpportunities.length === 0) {
+                container.innerHTML = '<div class="empty-state">No hay oportunidades registradas</div>';
+                return;
+            }
+
+            container.innerHTML = allOpportunities.map(opp => {
+                const property = allProperties.find(p => p.id === opp.property_id);
+                const price = property ? convertToUSD(property) : 'N/A';
+                const neighborhood = property ? property.neighborhood : 'N/A';
+                const pricePerSqm = property ? property.price_per_sqm : 'N/A';
+                const severityClass = `severity-${opp.severity || 'low'}`;
+
+                return `
+                    <div class="opportunity-card">
+                        <div class="opportunity-header">
+                            <div class="severity-badge ${severityClass}">${(opp.severity || 'baja').toUpperCase()}</div>
+                            <div class="opportunity-title">${opp.title || 'Sin título'}</div>
+                        </div>
+                        <div class="opportunity-details">
+                            <div class="opportunity-details-item">📍 ${neighborhood}</div>
+                            <div class="opportunity-details-item">💵 $${typeof price === 'number' ? price.toLocaleString() : price}</div>
+                            <div class="opportunity-details-item">📐 $${typeof pricePerSqm === 'number' ? pricePerSqm : pricePerSqm}/m²</div>
+                        </div>
+                        ${opp.details && opp.details.description ? `<div class="opportunity-body">${opp.details.description}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function populateFilterNeighborhoods() {
+            const neighborhoods = [...new Set(allProperties.map(p => p.neighborhood))].sort();
+            const select = document.getElementById('filterNeighborhood');
+            neighborhoods.forEach(n => {
+                const option = document.createElement('option');
+                option.value = n;
+                option.textContent = n;
+                select.appendChild(option);
+            });
+        }
+
+        function updateKeywordPills() {
+            const container = document.getElementById('selectedKeywords');
+            container.innerHTML = selectedKeywords.map(kw => `
+                <div class="keyword-pill">
+                    ${kw}
+                    <span class="keyword-pill-remove" onclick="removeKeyword('${kw}')">×</span>
+                </div>
+            `).join('');
+        }
+
+        function removeKeyword(keyword) {
+            selectedKeywords = selectedKeywords.filter(k => k !== keyword);
+            updateKeywordPills();
+            if (selectedKeywords.length > 0) {
+                performSearch();
+            } else {
+                document.getElementById('searchResults').innerHTML = '<div class="empty-state">Ingresa palabras clave para comenzar la búsqueda</div>';
+            }
+        }
+
+        async function performSearch() {
+            if (selectedKeywords.length === 0) {
+                document.getElementById('searchResults').innerHTML = '<div class="empty-state">Ingresa palabras clave para comenzar la búsqueda</div>';
+                return;
+            }
+
+            const container = document.getElementById('searchResults');
+            container.innerHTML = '<div class="search-loading">🔍 Buscando propiedades...</div>';
+
+            try {
+                const searchTerms = selectedKeywords.join(' ');
+                const minPrice = parseInt(document.getElementById('filterPriceMin').value) || 0;
+                const maxPrice = parseInt(document.getElementById('filterPriceMax').value) || 999999;
+                const targetCurrency = document.getElementById('filterCurrency').value || 'USD';
+                const targetNeighborhood = document.getElementById('filterNeighborhood').value || null;
+                const resultLimit = parseInt(document.getElementById('filterLimit').value) || 50;
+
+                const rpcUrl = `${SUPABASE_URL}/rest/v1/rpc/search_properties`;
+                const response = await fetch(rpcUrl, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': ANON_KEY,
+                        'Authorization': `Bearer ${ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        search_terms: searchTerms,
+                        min_price: minPrice,
+                        max_price: maxPrice,
+                        target_currency: targetCurrency,
+                        target_neighborhood: targetNeighborhood,
+                        result_limit: resultLimit
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const results = await response.json();
+                renderSearchResults(results);
+            } catch (error) {
+                console.error('Search error:', error);
+                container.innerHTML = '<div class="no-results">Error en la búsqueda. Por favor, intenta de nuevo.</div>';
+            }
+        }
+
+        async function loadEnrichmentStats() {
+            try {
+                const statsEl = document.getElementById('enrichmentStats');
+                statsEl.innerHTML = 'Cargando estadísticas...';
+
+                const url = `${SUPABASE_URL}/rest/v1/properties?select=id&description=not.is.null`;
+                const response = await fetch(url, {
+                    headers: {
+                        'apikey': ANON_KEY,
+                        'Authorization': `Bearer ${ANON_KEY}`,
+                        'Prefer': 'count=exact'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch stats');
+                }
+
+                const contentRange = response.headers.get('content-range');
+                let countWithDescriptions = 0;
+                if (contentRange) {
+                    const match = contentRange.match(/\/(\d+)$/);
+                    if (match) {
+                        countWithDescriptions = parseInt(match[1]);
+                    }
+                }
+
+                statsEl.innerHTML = `✓ ${countWithDescriptions} propiedades tienen descripción disponible para búsqueda full-text`;
+            } catch (error) {
+                console.error('Error loading enrichment stats:', error);
+                document.getElementById('enrichmentStats').innerHTML = 'Estadísticas no disponibles';
+            }
+        }
+
+        function highlightKeywords(text, keywords) {
+            if (!text) return '';
+            let highlighted = text;
+            keywords.forEach(kw => {
+                const regex = new RegExp(`(${kw})`, 'gi');
+                highlighted = highlighted.replace(regex, '<mark style="background-color: rgba(0, 212, 255, 0.3); font-weight: 600;">$1</mark>');
+            });
+            return highlighted;
+        }
+
+        function renderSearchResults(results) {
+            const container = document.getElementById('searchResults');
+
+            if (selectedKeywords.length === 0) {
+                container.innerHTML = '<div class="empty-state">Ingresa palabras clave para comenzar la búsqueda</div>';
+                return;
+            }
+
+            if (results.length === 0) {
+                container.innerHTML = '<div class="no-results">No se encontraron propiedades que coincidan con tu búsqueda</div>';
+                return;
+            }
+
+            const headerHtml = `
+                <div class="search-results-header">
+                    <span>${results.length} propiedades encontradas</span>
+                    <span style="font-size: 0.85rem; color: var(--text-secondary);">Ordenadas por relevancia</span>
+                </div>
+            `;
+
+            const resultsHtml = results.map(prop => {
+                const totalAreaStr = prop.total_area ? `${prop.total_area}` : 'N/A';
+                const coveredAreaStr = prop.covered_area ? `${prop.covered_area}` : '';
+                const areaDisplay = coveredAreaStr ? `${coveredAreaStr} (cubierto) / ${totalAreaStr} (total)` : totalAreaStr;
+
+                const bedroomBaths = [];
+                if (prop.bedrooms) bedroomBaths.push(`${prop.bedrooms} dorm.`);
+                if (prop.bathrooms) bedroomBaths.push(`${prop.bathrooms} baño${prop.bathrooms > 1 ? 's' : ''}`);
+
+                const descriptionPreview = prop.description ? highlightKeywords(prop.description.substring(0, 300), selectedKeywords) : 'Sin descripción disponible';
+
+                return `
+                    <div class="property-card">
+                        <div class="property-info" style="flex: 1;">
+                            <div class="property-title">${prop.title || 'Sin título'}</div>
+                            <div class="property-meta">
+                                <div class="property-meta-item">📍 ${prop.neighborhood}</div>
+                                <div class="property-meta-item">📐 ${areaDisplay} m²</div>
+                                ${bedroomBaths.length > 0 ? `<div class="property-meta-item">🏠 ${bedroomBaths.join(' • ')}</div>` : ''}
+                                ${prop.address_text ? `<div class="property-meta-item" style="color: var(--text-secondary); font-size: 0.85rem;">📮 ${prop.address_text}</div>` : ''}
+                            </div>
+                            <div style="margin-top: 0.75rem; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4;">
+                                ${descriptionPreview}${prop.description && prop.description.length > 300 ? '...' : ''}
+                            </div>
+                            ${prop.source ? `<div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">Fuente: ${prop.source}</div>` : ''}
+                        </div>
+                        <div class="property-price" style="min-width: 150px; text-align: right;">
+                            <div class="property-price-main">${prop.currency} ${prop.price.toLocaleString()}</div>
+                            <div style="margin-top: 0.5rem; font-size: 0.85rem;">
+                                ${prop.rank ? `<div style="color: var(--accent); margin-bottom: 0.25rem;">⭐ Relevancia: ${prop.rank}</div>` : ''}
+                                ${prop.permalink ? `<a href="${prop.permalink}" target="_blank" style="color: var(--blue); text-decoration: none; font-size: 0.9rem;">Ver anuncio →</a>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = headerHtml + resultsHtml;
+        }
+
+        function getMedian(arr) {
+            if (arr.length === 0) return 0;
+            const sorted = arr.slice().sort((a, b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').classList.toggle('active', show);
+        }
+    </script>
+</body>
+</html>
