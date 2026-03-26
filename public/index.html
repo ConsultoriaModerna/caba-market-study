@@ -663,6 +663,11 @@
     </style>
 </head>
 <body>
+    <!-- PROPERTY DETAIL MODAL -->
+    <div id="propModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);overflow-y:auto;" onclick="if(event.target===this)closePropModal()">
+        <div id="propModalContent" style="max-width:800px;margin:40px auto;background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;padding:0;overflow:hidden;"></div>
+    </div>
+
     <header>
         <div class="header-content">
             <div class="header-title">🏠 CABA Real Estate Dashboard</div>
@@ -1064,7 +1069,7 @@
 
         async function fetchProperties() {
             try {
-                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,segment,source,slug,keywords,covered_ratio,permalink';
+                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,segment,source,slug,keywords,covered_ratio,permalink,address_text,contact_phone,contact_name,thumbnail,description,latitude,longitude,cocheras,first_seen_at,enriched_at,geo_precision';
                 const base = `${SUPABASE_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast`;
                 const headers = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
 
@@ -1351,7 +1356,7 @@
                 if (exteriorPct) features.push(exteriorPct);
 
                 return `
-                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="openPropModal('${p.id}')"">
                         <div style="flex:1;min-width:200px;">
                             <div style="font-weight:600;font-size:0.95rem;">${sourceBadge(p.source)} ${segBadge}${p.title || 'Sin título'}</div>
                             <div style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.2rem;">📍 ${p.neighborhood} ${features.length ? '· ' + features.join(' · ') : ''}</div>
@@ -1557,7 +1562,7 @@
                 const usdM2 = prop.price_per_sqm ? `$${Math.round(prop.price_per_sqm).toLocaleString()}/m²` : '';
 
                 return `
-                    <div class="property-card">
+                    <div class="property-card" style="cursor:pointer;" onclick="openPropModal('${prop.id}')"
                         <div class="property-info" style="flex: 1;">
                             <div class="property-title">${sourceBadge(prop.source)} ${prop.title || 'Sin título'} ${segBadge}</div>
                             <div class="property-meta">
@@ -1594,6 +1599,135 @@
         function showLoading(show) {
             document.getElementById('loadingIndicator').classList.toggle('active', show);
         }
+
+        // ── PROPERTY DETAIL MODAL ──
+
+        function openPropModal(propId) {
+            const p = allProperties.find(x => x.id === propId);
+            if (!p) return;
+
+            const modal = document.getElementById('propModal');
+            const content = document.getElementById('propModalContent');
+
+            const price = convertToUSD(p);
+            const exteriorPct = p.covered_ratio ? Math.round((1 - p.covered_ratio) * 100) : null;
+            const daysOnMarket = p.first_seen_at ? Math.round((Date.now() - new Date(p.first_seen_at).getTime()) / 86400000) : null;
+
+            // Neighborhood stats for comparison
+            const barrioProps = allProperties.filter(x => x.neighborhood === p.neighborhood && x.price_per_sqm > 100 && x.price_per_sqm < 10000);
+            const barrioPrices = barrioProps.map(x => +x.price_per_sqm).sort((a, b) => a - b);
+            const barrioMedian = barrioPrices.length ? barrioPrices[Math.floor(barrioPrices.length / 2)] : null;
+            const vsBarrio = (barrioMedian && p.price_per_sqm) ? Math.round((p.price_per_sqm - barrioMedian) / barrioMedian * 100) : null;
+
+            // Comparables: same barrio, different segment, similar area
+            const comps = allProperties
+                .filter(c => c.neighborhood === p.neighborhood && c.segment !== p.segment && c.price_per_sqm > 100 && c.total_area > 0 && p.total_area > 0 && Math.abs(c.total_area - p.total_area) / p.total_area < 0.3)
+                .sort((a, b) => Math.abs(a.total_area - p.total_area) - Math.abs(b.total_area - p.total_area))
+                .slice(0, 3);
+
+            const avgCompPrice = comps.length ? Math.round(comps.reduce((s, c) => s + c.price_per_sqm, 0) / comps.length) : null;
+            const upside = (avgCompPrice && p.price_per_sqm) ? Math.round((avgCompPrice - p.price_per_sqm) / p.price_per_sqm * 100) : null;
+
+            const segColor = p.segment === 'refac' ? '#fb923c' : p.segment === 'recic' ? '#4ade80' : '#60a5fa';
+            const segLabel = p.segment === 'refac' ? 'A REFACCIONAR' : p.segment === 'recic' ? 'RECICLADA' : 'GENERAL';
+
+            content.innerHTML = `
+                ${p.thumbnail ? `<div style="height:200px;background:url('${p.thumbnail}') center/cover;position:relative;">
+                    <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.8));padding:1rem;">
+                        <div style="font-size:1.2rem;font-weight:700;">${p.title || 'Sin titulo'}</div>
+                    </div>
+                </div>` : `<div style="padding:1.5rem 1.5rem 0;"><div style="font-size:1.2rem;font-weight:700;">${p.title || 'Sin titulo'}</div></div>`}
+
+                <div style="padding:1.2rem 1.5rem;">
+                    <!-- Badges -->
+                    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:1rem;">
+                        ${sourceBadge(p.source)}
+                        <span style="background:${segColor}22;color:${segColor};padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;">${segLabel}</span>
+                        ${p.keywords?.map(k => `<span style="background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:8px;font-size:0.65rem;">${k}</span>`).join('') || ''}
+                    </div>
+
+                    <!-- Price block -->
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1.2rem;padding:1rem;background:var(--bg-primary);border-radius:10px;">
+                        <div>
+                            <div style="font-size:1.8rem;font-weight:700;color:var(--accent);">${p.currency} ${price?.toLocaleString()}</div>
+                            <div style="color:var(--text-secondary);font-size:0.85rem;">${p.price_per_sqm ? '$' + Math.round(p.price_per_sqm).toLocaleString() + '/m²' : ''}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            ${vsBarrio !== null ? `<div style="color:${vsBarrio < 0 ? 'var(--green)' : 'var(--red)'};font-size:1.1rem;font-weight:700;">${vsBarrio > 0 ? '+' : ''}${vsBarrio}%</div><div style="font-size:0.7rem;color:var(--text-secondary);">vs mediana ${p.neighborhood}</div>` : ''}
+                            ${upside && upside > 0 ? `<div style="color:var(--green);font-size:0.85rem;margin-top:4px;">Gap: +${upside}% vs comparables</div>` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Features grid -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0.5rem;margin-bottom:1.2rem;">
+                        ${p.total_area ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${p.total_area}</div><div style="font-size:0.65rem;color:var(--text-secondary);">m² totales</div></div>` : ''}
+                        ${p.covered_area ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${p.covered_area}</div><div style="font-size:0.65rem;color:var(--text-secondary);">m² cubiertos</div></div>` : ''}
+                        ${exteriorPct ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${exteriorPct}%</div><div style="font-size:0.65rem;color:var(--text-secondary);">exterior</div></div>` : ''}
+                        ${p.bedrooms ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${p.bedrooms}</div><div style="font-size:0.65rem;color:var(--text-secondary);">dormitorios</div></div>` : ''}
+                        ${p.bathrooms ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${p.bathrooms}</div><div style="font-size:0.65rem;color:var(--text-secondary);">baños</div></div>` : ''}
+                        ${p.cocheras ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${p.cocheras}</div><div style="font-size:0.65rem;color:var(--text-secondary);">cocheras</div></div>` : ''}
+                        ${p.ambientes ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${p.ambientes}</div><div style="font-size:0.65rem;color:var(--text-secondary);">ambientes</div></div>` : ''}
+                        ${daysOnMarket ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${daysOnMarket}d</div><div style="font-size:0.65rem;color:var(--text-secondary);">en mercado</div></div>` : ''}
+                    </div>
+
+                    <!-- Location -->
+                    <div style="margin-bottom:1rem;">
+                        <div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;margin-bottom:0.3rem;">Ubicacion</div>
+                        <div>📍 ${p.address_text || ''} ${p.address_text ? ',' : ''} ${p.neighborhood}</div>
+                        ${p.latitude ? `<div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;">${p.latitude}, ${p.longitude} (${p.geo_precision || 'aprox'})</div>` : ''}
+                    </div>
+
+                    <!-- Contact -->
+                    ${p.contact_phone || p.contact_name ? `
+                    <div style="margin-bottom:1rem;padding:0.8rem;background:var(--bg-primary);border-radius:8px;">
+                        <div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;margin-bottom:0.3rem;">Contacto</div>
+                        ${p.contact_name ? `<div style="font-weight:600;">${p.contact_name}</div>` : ''}
+                        ${p.contact_phone ? `<div style="color:var(--accent);">📞 ${p.contact_phone}</div>` : ''}
+                    </div>` : ''}
+
+                    <!-- Description -->
+                    ${p.description ? `
+                    <div style="margin-bottom:1rem;">
+                        <div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;margin-bottom:0.3rem;">Descripcion</div>
+                        <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;max-height:200px;overflow-y:auto;">${p.description}</div>
+                    </div>` : ''}
+
+                    <!-- Comparables -->
+                    ${comps.length ? `
+                    <div style="margin-bottom:1rem;">
+                        <div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;margin-bottom:0.5rem;">Comparables en ${p.neighborhood}</div>
+                        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                            ${comps.map(c => {
+                                const cSegColor = c.segment === 'recic' ? '#4ade80' : c.segment === 'refac' ? '#fb923c' : '#60a5fa';
+                                return `<div style="flex:1;min-width:140px;background:var(--bg-primary);border-radius:8px;padding:0.6rem;font-size:0.8rem;">
+                                    <div style="color:${cSegColor};font-weight:600;font-size:0.65rem;text-transform:uppercase;">${c.segment}</div>
+                                    <div>$${Math.round(c.price_per_sqm)}/m² · ${c.total_area}m²</div>
+                                    <div style="color:var(--text-secondary);font-size:0.7rem;">USD ${convertToUSD(c)?.toLocaleString()}</div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>` : ''}
+
+                    <!-- Actions -->
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                        ${p.permalink ? `<a href="${p.permalink}" target="_blank" style="flex:1;text-align:center;padding:0.7rem;background:var(--accent);color:#000;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.9rem;">Ver anuncio original</a>` : ''}
+                        ${p.latitude ? `<a href="https://www.google.com/maps/@${p.latitude},${p.longitude},17z" target="_blank" style="flex:1;text-align:center;padding:0.7rem;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:8px;text-decoration:none;font-size:0.9rem;">Ver en Google Maps</a>` : ''}
+                    </div>
+                </div>
+
+                <div style="padding:0.5rem 1.5rem 1rem;text-align:right;">
+                    <button onclick="closePropModal()" style="background:none;border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:6px;cursor:pointer;font-family:inherit;">Cerrar</button>
+                </div>
+            `;
+
+            modal.style.display = 'block';
+        }
+
+        function closePropModal() {
+            document.getElementById('propModal').style.display = 'none';
+        }
+
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closePropModal(); });
 
         // ── HUNTER TAB ──
 
@@ -1656,7 +1790,7 @@
                 if (p.covered_ratio && p.covered_ratio < 0.8) features.push(`${Math.round((1-p.covered_ratio)*100)}% ext.`);
 
                 return `
-                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;border-left:3px solid var(--red);">
+                    <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;border-left:3px solid var(--red);cursor:pointer;" onclick="openPropModal('${p.id}')"
                         <div style="flex:1;min-width:200px;">
                             <div style="font-weight:600;font-size:0.95rem;">${sourceBadge(p.source)} ${segBadge}${p.title || 'Sin título'}</div>
                             <div style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.2rem;">📍 ${p.neighborhood} ${features.length ? '· ' + features.join(' · ') : ''}</div>
