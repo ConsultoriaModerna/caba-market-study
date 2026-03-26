@@ -468,6 +468,7 @@
                 zone: getZone(b.name),
                 churnPct: b.total > 0 ? +(b.inactive / b.total * 100).toFixed(1) : 0,
                 medianPrice: +b.median_price || 0,
+                medianPriceCovered: +b.median_price_covered || 0,
                 medianArea: +b.median_area || 0,
                 medianCovered: +b.avg_covered || 0,
                 coverRatio: (b.avg_covered && b.median_area) ? +(b.avg_covered / b.median_area).toFixed(2) : null
@@ -608,7 +609,8 @@
             tt.innerHTML = `
                 <div class="tt-name">${d.name} <span style="color:${ZONE_COLORS[d.zone]}">${d.zone}</span></div>
                 <div class="tt-row">${d.active} activas / ${d.inactive} bajadas (${d.churnPct}%)</div>
-                <div class="tt-row">Mediana: USD ${d.medianPrice.toLocaleString()}/m²</div>
+                <div class="tt-row">Mediana: USD ${d.medianPrice.toLocaleString()}/m² tot.</div>
+                ${d.medianPriceCovered ? `<div class="tt-row" style="color:#4ade80;">USD ${d.medianPriceCovered.toLocaleString()}/m² cub.</div>` : ''}
                 ${d.medianArea ? `<div class="tt-row">Área mediana: ${d.medianArea} m²</div>` : ''}
                 ${d.coverRatio ? `<div class="tt-row">Ratio cubierto: ${Math.round(d.coverRatio * 100)}%</div>` : ''}
                 ${d._gapPct ? `<div class="tt-row" style="color:#4ade80;">Gap to P75: +${d._gapPct}%</div>` : ''}
