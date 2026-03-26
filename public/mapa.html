@@ -417,7 +417,9 @@ function updateStats() {
     const bar = document.getElementById('stats-bar');
     const avgM2 = filtered.length > 0 ? Math.round(filtered.reduce((s,p) => s + (Number(p.price_per_sqm)||0), 0) / filtered.length) : 0;
     const medianPrice = filtered.length > 0 ? filtered.map(p=>p.price).sort((a,b)=>a-b)[Math.floor(filtered.length/2)] : 0;
-    bar.innerHTML = `<span><strong>${filtered.length}</strong> propiedades</span><span>Med. <strong>$${fmt(avgM2)}</strong>/m²</span><span>Precio med. <strong>$${fmt(medianPrice)}</strong></span>`;
+    const newCount = filtered.filter(p => p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000).length;
+    const newBadge = newCount > 0 ? `<span style="color:#4ade80;"><strong>${newCount}</strong> nuevas</span>` : '';
+    bar.innerHTML = `<span><strong>${filtered.length}</strong> propiedades</span><span>Med. <strong>$${fmt(avgM2)}</strong>/m²</span><span>Precio med. <strong>$${fmt(medianPrice)}</strong></span>${newBadge}`;
 }
 
 // Render markers on map
@@ -487,9 +489,12 @@ function renderList() {
         const dormInfo = p.bedrooms ? `${p.bedrooms}d` : '';
         const bathInfo = p.bathrooms ? `${p.bathrooms}b` : '';
         const dbStr = [dormInfo, bathInfo].filter(Boolean).join('/');
+        const days = p.first_seen_at ? Math.round((Date.now() - new Date(p.first_seen_at).getTime()) / 86400000) : null;
+        const ageBadge = days !== null && days <= 2 ? '<span style="background:rgba(74,222,128,0.2);color:#4ade80;padding:1px 5px;border-radius:6px;font-size:8px;font-weight:700;">NEW</span> ' : days !== null ? `<span style="color:#64748b;font-size:9px;">${days}d</span> ` : '';
+        const srcBadge = p.source === 'zonaprop' ? '<span style="background:rgba(96,165,250,0.15);color:#60a5fa;padding:1px 4px;border-radius:6px;font-size:8px;font-weight:600;">ZP</span> ' : '<span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:1px 4px;border-radius:6px;font-size:8px;font-weight:600;">ML</span> ';
 
         return `<div class="prop-card" data-id="${p.id}" onclick="selectProp('${p.id}')">
-            <div class="prop-title">${p.title || 'Sin título'}${segBadge}</div>
+            <div class="prop-title">${srcBadge}${ageBadge}${p.title || 'Sin título'}${segBadge}</div>
             <div class="prop-addr">${p.address_text || p.neighborhood}</div>
             <div class="prop-metrics">
                 <div class="prop-metric"><span class="val">$${fmt(p.price)}</span><span class="lbl">Precio</span></div>

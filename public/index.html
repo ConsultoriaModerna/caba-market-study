@@ -87,9 +87,8 @@
             animation: spin 0.8s linear infinite;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
         .tabs {
             display: flex;
@@ -726,6 +725,14 @@
                 <div class="kpi-label">Con datos de superficie</div>
                 <div class="kpi-value" id="kpi-covered-data">-</div>
             </div>
+            <div class="kpi-card">
+                <div class="kpi-label" title="Propiedades publicadas en los ultimos 3 dias">Nuevas (3d)</div>
+                <div class="kpi-value" id="kpi-new" style="color:var(--green);">-</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label" title="Dias promedio que lleva una publicacion activa">Edad promedio</div>
+                <div class="kpi-value" id="kpi-avg-age">-</div>
+            </div>
         </div>
 
         <div class="insights-grid">
@@ -1144,6 +1151,19 @@
             }
         }
 
+        function daysOnMarket(p) {
+            if (!p.first_seen_at) return null;
+            return Math.round((Date.now() - new Date(p.first_seen_at).getTime()) / 86400000);
+        }
+
+        function ageBadge(p) {
+            const days = daysOnMarket(p);
+            if (days === null) return '';
+            if (days <= 2) return '<span style="background:rgba(74,222,128,0.2);color:#4ade80;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:700;animation:pulse 2s infinite;">NEW</span>';
+            if (days <= 7) return `<span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">${days}d</span>`;
+            return `<span style="color:#64748b;font-size:0.65rem;">${days}d</span>`;
+        }
+
         function sourceBadge(source) {
             if (source === 'zonaprop') return '<span style="background:rgba(96,165,250,0.15);color:#60a5fa;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">ZP</span>';
             if (source === 'mercadolibre') return '<span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">ML</span>';
@@ -1202,6 +1222,15 @@
             document.getElementById('insight-refac').innerHTML = `${refacCount} propiedades marcadas con oportunidades de refacción. Potencial de inversión identificado.`;
             document.getElementById('insight-concentration').innerHTML = `${topBarrio ? topBarrio.name : 'N/A'} concentra la mayor oferta con ${topBarrio ? topBarrio.count : 0} propiedades.`;
             document.getElementById('insight-spread').innerHTML = `Brecha de ${spread}x entre los barrios más caros y más económicos.`;
+
+            // Age stats
+            const now = Date.now();
+            const withAge = allProperties.filter(p => p.first_seen_at);
+            const newProps = withAge.filter(p => (now - new Date(p.first_seen_at).getTime()) < 3 * 86400000);
+            const ages = withAge.map(p => Math.round((now - new Date(p.first_seen_at).getTime()) / 86400000));
+            const avgAge = ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : 0;
+            document.getElementById('kpi-new').textContent = newProps.length;
+            document.getElementById('kpi-avg-age').textContent = avgAge + 'd';
 
             // Covered ratio stats
             const withCovered = allProperties.filter(p => p.covered_ratio && p.covered_ratio > 0);
@@ -1427,7 +1456,7 @@
                 return `
                     <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="openPropModal('${p.id}')">
                         <div style="flex:1;min-width:200px;">
-                            <div style="font-weight:600;font-size:0.95rem;">${sourceBadge(p.source)} ${segBadge}${p.title || 'Sin título'}</div>
+                            <div style="font-weight:600;font-size:0.95rem;">${sourceBadge(p.source)} ${ageBadge(p)} ${segBadge}${p.title || 'Sin título'}</div>
                             <div style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.2rem;">📍 ${p.neighborhood} ${features.length ? '· ' + features.join(' · ') : ''}</div>
                             ${p._drop ? `<div style="color:var(--red);font-size:0.8rem;margin-top:0.2rem;">📉 ${p._drop.title || 'Price drop detectado'}</div>` : ''}
                         </div>
@@ -1636,7 +1665,7 @@
                 return `
                     <div class="property-card" style="cursor:pointer;" onclick="openPropModal('${prop.id}')">
                         <div class="property-info" style="flex: 1;">
-                            <div class="property-title">${sourceBadge(prop.source)} ${prop.title || 'Sin título'} ${segBadge}</div>
+                            <div class="property-title">${sourceBadge(prop.source)} ${ageBadge(prop)} ${prop.title || 'Sin título'} ${segBadge}</div>
                             <div class="property-meta">
                                 <div class="property-meta-item">📍 ${prop.neighborhood}</div>
                                 <div class="property-meta-item">📐 ${areaDisplay} m²</div>
@@ -2046,7 +2075,7 @@
                 return `
                     <div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;border-left:3px solid var(--red);cursor:pointer;" onclick="openPropModal('${p.id}')">
                         <div style="flex:1;min-width:200px;">
-                            <div style="font-weight:600;font-size:0.95rem;">${sourceBadge(p.source)} ${segBadge}${p.title || 'Sin título'}</div>
+                            <div style="font-weight:600;font-size:0.95rem;">${sourceBadge(p.source)} ${ageBadge(p)} ${segBadge}${p.title || 'Sin título'}</div>
                             <div style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.2rem;">📍 ${p.neighborhood} ${features.length ? '· ' + features.join(' · ') : ''}</div>
                         </div>
                         <div style="text-align:right;min-width:180px;">
@@ -2127,7 +2156,7 @@
                     <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:0.8rem;">
                         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
                             <div>
-                                <div style="font-weight:600;">${sourceBadge(p.source)} ${p.title || 'Sin título'}</div>
+                                <div style="font-weight:600;">${sourceBadge(p.source)} ${ageBadge(p)} ${p.title || 'Sin título'}</div>
                                 <div style="font-size:0.8rem;color:var(--text-secondary);">${p.total_area}m² · $${Math.round(p.price_per_sqm)}/m² · USD ${convertToUSD(p)?.toLocaleString()}</div>
                             </div>
                             <div style="text-align:right;">
