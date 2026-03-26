@@ -1070,7 +1070,7 @@
 
         async function fetchProperties() {
             try {
-                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,segment,source,slug,keywords,covered_ratio';
+                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,segment,source,slug,keywords,covered_ratio,permalink';
                 const base = `${SUPABASE_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast`;
                 const headers = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
 
