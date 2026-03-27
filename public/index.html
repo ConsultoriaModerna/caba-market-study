@@ -1877,7 +1877,11 @@
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
                         ${p.permalink ? `<a href="${p.permalink}" target="_blank" style="flex:1;text-align:center;padding:0.7rem;background:var(--accent);color:#000;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.9rem;">Ver anuncio original</a>` : ''}
                         ${p.latitude ? `<a href="https://www.google.com/maps/@${p.latitude},${p.longitude},17z" target="_blank" style="flex:1;text-align:center;padding:0.7rem;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:8px;text-decoration:none;font-size:0.9rem;">Ver en Google Maps</a>` : ''}
+                        <button onclick="analyzeProperty('${p.id}')" style="flex:1;padding:0.7rem;background:linear-gradient(135deg,#a78bfa,#f472b6);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;font-family:inherit;">🧠 Analizar con AI</button>
                     </div>
+
+                    <!-- AI Analysis container -->
+                    <div id="ai-prop-analysis" style="margin-top:1rem;display:none;"></div>
                 </div>
 
                 <div style="padding:0.5rem 1.5rem 1rem;text-align:right;">
@@ -1893,6 +1897,58 @@
         }
 
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closePropModal(); });
+
+        // ── AI PROPERTY ANALYSIS ──
+
+        async function analyzeProperty(propId) {
+            const container = document.getElementById('ai-prop-analysis');
+            container.style.display = 'block';
+            container.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--text-secondary);"><div class="spinner" style="display:inline-block;margin-bottom:0.5rem;"></div><br>Haiku esta analizando la propiedad...</div>';
+
+            const p = allProperties.find(x => x.id === propId);
+            if (!p) { container.innerHTML = '<div style="color:var(--red);">Propiedad no encontrada</div>'; return; }
+
+            // Get barrio median
+            const barrioProps = allProperties.filter(x => x.neighborhood === p.neighborhood && x.price_per_sqm > 100 && x.price_per_sqm < 10000);
+            const barrioPrices = barrioProps.map(x => +x.price_per_sqm).sort((a, b) => a - b);
+            const barrioMedian = barrioPrices.length ? barrioPrices[Math.floor(barrioPrices.length / 2)] : null;
+
+            // Get comparables
+            const comps = allProperties
+                .filter(c => c.neighborhood === p.neighborhood && c.segment !== p.segment && c.price_per_sqm > 100 && c.total_area > 0 && p.total_area > 0 && Math.abs(c.total_area - p.total_area) / p.total_area < 0.3)
+                .sort((a, b) => Math.abs(a.total_area - p.total_area) - Math.abs(b.total_area - p.total_area))
+                .slice(0, 3);
+
+            try {
+                const resp = await fetch(`${SUPABASE_URL}/functions/v1/analyze-property`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        property: p,
+                        comparables: comps,
+                        barrio_median: barrioMedian
+                    })
+                });
+
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+
+                const formatted = data.analysis
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/^(\d\.\s+.+)$/gm, '<h4 style="color:var(--accent);margin:0.8rem 0 0.3rem;font-size:0.85rem;">$1</h4>')
+                    .replace(/^[-•]\s+(.+)$/gm, '<div style="padding-left:1rem;margin:0.2rem 0;">- $1</div>')
+                    .replace(/\n\n/g, '<br>');
+
+                container.innerHTML = `
+                    <div style="background:linear-gradient(135deg,rgba(167,139,250,0.06),rgba(244,114,182,0.06));border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:1.2rem;">
+                        <div style="display:inline-block;background:linear-gradient(135deg,#a78bfa,#f472b6);color:#0a0e1a;font-size:0.6rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:8px;margin-bottom:0.8rem;letter-spacing:0.05em;">CLAUDE HAIKU ANALYSIS</div>
+                        <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7;">${formatted}</div>
+                    </div>
+                `;
+            } catch (e) {
+                container.innerHTML = `<div style="color:var(--red);padding:0.5rem;">Error: ${e.message}</div>`;
+            }
+        }
 
         // ── SEMANTIC SEARCH ──
 
