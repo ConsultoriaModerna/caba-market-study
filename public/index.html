@@ -662,6 +662,35 @@
     </style>
 </head>
 <body>
+    <!-- TAB 6: SEMANTIC SEARCH -->
+    <div class="tab-content" id="tab-semantic">
+        <div style="max-width:1400px;margin:0 auto;padding:1.5rem 2rem;">
+            <div style="text-align:center;margin-bottom:1.5rem;">
+                <h2 style="font-size:1.3rem;font-weight:600;margin-bottom:0.3rem;">🧠 Semantic Search</h2>
+                <p style="color:var(--text-secondary);font-size:0.85rem;">Describe lo que buscas en lenguaje natural. No necesitas keywords exactos.</p>
+            </div>
+
+            <div style="max-width:700px;margin:0 auto 1.5rem;">
+                <div style="display:flex;gap:0.5rem;">
+                    <input type="text" id="semanticInput" placeholder="Ej: casa luminosa con jardin grande cerca de parques, ideal para familia con ninos"
+                        style="flex:1;padding:0.8rem 1.2rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:1rem;font-family:inherit;outline:none;">
+                    <button id="semanticBtn" style="padding:0.8rem 1.5rem;background:linear-gradient(135deg,#a78bfa,#00d4ff);color:#000;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;font-family:inherit;">Buscar</button>
+                </div>
+                <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.8rem;">
+                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">casa con pileta y parrilla para fines de semana</button>
+                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">propiedad a refaccionar con potencial en zona sur</button>
+                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">casa grande con cochera y espacio para home office</button>
+                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">PH luminoso con terraza y vista abierta</button>
+                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">inversion para alquiler turistico en barrio con onda</button>
+                </div>
+            </div>
+
+            <div id="semanticResults" class="opportunities-list">
+                <div class="empty-state">Describe lo que buscas y encontramos propiedades por similitud conceptual</div>
+            </div>
+        </div>
+    </div>
+
     <!-- TAB 5: INMOBILIARIAS -->
     <div class="tab-content" id="tab-publishers">
         <div style="max-width:1400px;margin:0 auto;padding:1rem 2rem;">
@@ -699,6 +728,7 @@
         <button class="tab-button" data-tab="search" title="Busqueda full-text en descripciones con filtros avanzados (area, dormitorios, segmento, exterior)">🔍 Super Search</button>
         <button class="tab-button" data-tab="opportunities" title="Propiedades rankeadas por valor, gap de refaccion, espacio exterior, y Opportunity Score">⭐ Oportunidades</button>
         <button class="tab-button" data-tab="hunter" title="Anomaly Detector: propiedades con precio anomalo vs su barrio. Comparables: analisis cruzado por segmento">🎯 Hunter</button>
+        <button class="tab-button" data-tab="semantic" title="Busqueda por concepto: describe lo que buscas en lenguaje natural">🧠 Semantic</button>
         <button class="tab-button" data-tab="publishers" title="Perfiles de inmobiliarias agrupadas por telefono. Ver su inventario, especializacion por barrio, y nivel de foco">🏢 Inmobiliarias</button>
     </div>
 
@@ -1863,6 +1893,76 @@
         }
 
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closePropModal(); });
+
+        // ── SEMANTIC SEARCH ──
+
+        async function performSemanticSearch(query) {
+            const container = document.getElementById('semanticResults');
+            container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary);"><div class="spinner" style="display:inline-block;margin-bottom:0.5rem;"></div><br>Buscando por similitud conceptual...</div>';
+
+            try {
+                const resp = await fetch(`${SUPABASE_URL}/functions/v1/semantic-search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, match_count: 20 })
+                });
+
+                const results = await resp.json();
+                if (results.error) throw new Error(results.error);
+                if (!results.length) {
+                    container.innerHTML = '<div class="empty-state">No se encontraron resultados similares. Prueba con otra descripcion.</div>';
+                    return;
+                }
+
+                container.innerHTML = `<div style="margin-bottom:0.8rem;color:var(--text-secondary);font-size:0.8rem;">${results.length} propiedades por similitud conceptual</div>` +
+                    results.map(p => {
+                        const simPct = Math.round((p.similarity || 0) * 100);
+                        const simColor = simPct >= 60 ? '#4ade80' : simPct >= 40 ? '#fbbf24' : '#94a3b8';
+                        const features = [];
+                        if (p.total_area) features.push(`${p.total_area}m²`);
+                        if (p.bedrooms) features.push(`${p.bedrooms}d`);
+                        if (p.bathrooms) features.push(`${p.bathrooms}b`);
+                        if (p.covered_ratio && p.covered_ratio < 0.8) features.push(`${Math.round((1-p.covered_ratio)*100)}% ext.`);
+                        const segBadge = p.segment === 'refac' ? '<span style="background:rgba(249,115,22,0.15);color:#fb923c;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">REFAC</span> ' :
+                            p.segment === 'recic' ? '<span style="background:rgba(74,222,128,0.15);color:#4ade80;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">RECIC</span> ' : '';
+
+                        return `<div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="openPropModal('${p.id}')">
+                            <div style="flex:1;min-width:200px;">
+                                <div style="font-weight:600;font-size:0.9rem;">${sourceBadge(p.source)} ${segBadge}${p.title || 'Sin titulo'}</div>
+                                <div style="color:var(--text-secondary);font-size:0.75rem;margin-top:2px;">📍 ${p.neighborhood} ${features.length ? '· ' + features.join(' · ') : ''}</div>
+                                ${p.description ? `<div style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.4rem;line-height:1.4;">${p.description.substring(0, 200)}...</div>` : ''}
+                            </div>
+                            <div style="text-align:right;min-width:150px;">
+                                <div style="display:inline-block;background:${simColor}22;color:${simColor};padding:3px 10px;border-radius:10px;font-size:0.85rem;font-weight:700;margin-bottom:4px;">${simPct}% match</div>
+                                <div style="font-size:1rem;font-weight:700;">${p.currency} ${p.price?.toLocaleString()}</div>
+                                <div style="color:var(--accent);font-size:0.8rem;">${p.price_per_sqm ? '$' + Math.round(p.price_per_sqm).toLocaleString() + '/m²' : ''}</div>
+                                ${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.75rem;" onclick="event.stopPropagation()">Ver anuncio →</a>` : ''}
+                            </div>
+                        </div>`;
+                    }).join('');
+            } catch (e) {
+                container.innerHTML = `<div class="empty-state" style="color:var(--red);">Error: ${e.message}</div>`;
+            }
+        }
+
+        document.getElementById('semanticBtn')?.addEventListener('click', () => {
+            const q = document.getElementById('semanticInput').value.trim();
+            if (q.length >= 3) performSemanticSearch(q);
+        });
+
+        document.getElementById('semanticInput')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                const q = e.target.value.trim();
+                if (q.length >= 3) performSemanticSearch(q);
+            }
+        });
+
+        document.querySelectorAll('.sem-example').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('semanticInput').value = btn.textContent;
+                performSemanticSearch(btn.textContent);
+            });
+        });
 
         // ── OPPORTUNITY SCORE ──
 
