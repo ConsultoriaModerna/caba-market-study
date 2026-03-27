@@ -773,6 +773,11 @@
             </div>
         </div>
 
+        <div style="max-width:1400px;margin:1rem auto;padding:0 2rem;">
+            <div class="chart-title" style="margin-bottom:0.8rem;">Últimas incorporaciones</div>
+            <div id="latest-props" class="opportunities-list" style="max-height:400px;overflow-y:auto;"></div>
+        </div>
+
         <div class="chart-container">
             <div class="chart-title">Top 25 Barrios por Precio Mediano (USD/m²)</div>
             <canvas id="neighborhoodChart"></canvas>
@@ -1222,6 +1227,33 @@
             document.getElementById('insight-refac').innerHTML = `${refacCount} propiedades marcadas con oportunidades de refacción. Potencial de inversión identificado.`;
             document.getElementById('insight-concentration').innerHTML = `${topBarrio ? topBarrio.name : 'N/A'} concentra la mayor oferta con ${topBarrio ? topBarrio.count : 0} propiedades.`;
             document.getElementById('insight-spread').innerHTML = `Brecha de ${spread}x entre los barrios más caros y más económicos.`;
+
+            // Latest properties
+            const latest = [...allProperties]
+                .filter(p => p.first_seen_at)
+                .sort((a, b) => new Date(b.first_seen_at) - new Date(a.first_seen_at))
+                .slice(0, 15);
+
+            document.getElementById('latest-props').innerHTML = latest.map(p => {
+                const price = convertToUSD(p);
+                const usdM2 = p.price_per_sqm ? `$${Math.round(p.price_per_sqm).toLocaleString()}/m²` : '';
+                const features = [];
+                if (p.total_area) features.push(`${p.total_area}m²`);
+                if (p.bedrooms) features.push(`${p.bedrooms}d`);
+                if (p.bathrooms) features.push(`${p.bathrooms}b`);
+
+                return `<div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="openPropModal('${p.id}')">
+                    <div style="flex:1;min-width:200px;">
+                        <div style="font-weight:600;font-size:0.9rem;">${sourceBadge(p.source)} ${ageBadge(p)} ${p.title || 'Sin titulo'}</div>
+                        <div style="color:var(--text-secondary);font-size:0.75rem;margin-top:2px;">📍 ${p.neighborhood} ${features.length ? '· ' + features.join(' · ') : ''}</div>
+                    </div>
+                    <div style="text-align:right;min-width:130px;">
+                        <div style="font-size:1rem;font-weight:700;">USD ${price?.toLocaleString()}</div>
+                        <div style="color:var(--accent);font-size:0.8rem;">${usdM2}</div>
+                        ${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.75rem;" onclick="event.stopPropagation()">Ver anuncio →</a>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
 
             // Age stats
             const now = Date.now();
