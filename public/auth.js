@@ -1,4 +1,4 @@
-// auth.js — Simple password gate for CABA Market Study dashboard
+// auth.js — Simple password gate for InmoFindr dashboard
 // Include this script at the top of any page that needs protection
 (function() {
   const PASS_HASH = '81fde06999b0bcf4adc2864a9d3b2eb54d96b6c2d433ae298b0a2d8648121fad';
@@ -31,7 +31,7 @@
     overlay.innerHTML = `
       <div style="text-align:center;">
         <div style="font-size:2.5rem;margin-bottom:1rem;">🏠</div>
-        <div style="color:#94a3b8;font-size:0.9rem;margin-bottom:1.5rem;">CABA Market Study</div>
+        <div style="color:#94a3b8;font-size:0.9rem;margin-bottom:1.5rem;">InmoFindr</div>
         <input id="auth-input" type="password" placeholder="Password" autofocus
           style="background:#111827;border:1px solid #334155;color:#f0f4f8;padding:0.8rem 1.5rem;border-radius:8px;font-size:1.1rem;text-align:center;outline:none;width:240px;font-family:inherit;"
         >

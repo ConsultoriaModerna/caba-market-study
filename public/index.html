@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CABA Real Estate Dashboard</title>
+    <title>InmoFindr</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="/auth.js"></script>
     <script src="/nav.js"></script>
@@ -715,7 +715,7 @@
 
     <header>
         <div class="header-content">
-            <div class="header-title">🏠 CABA Real Estate Dashboard</div>
+            <div class="header-title">InmoFindr</div>
             <div class="loading-indicator" id="loadingIndicator">
                 <div class="spinner"></div>
                 <span>Cargando datos...</span>
@@ -740,12 +740,16 @@
                 <div class="kpi-value" id="kpi-total-properties">-</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Precio Mediano (USD)</div>
-                <div class="kpi-value" id="kpi-median-price">-</div>
+                <div class="kpi-label" title="Mediana USD/m2 total, filtrando outliers ($100-$10K/m2)">USD/m² mediano</div>
+                <div class="kpi-value" id="kpi-median-sqm">-</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Barrios Cubiertos</div>
                 <div class="kpi-value" id="kpi-neighborhoods">-</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label" title="USD/m2 mediano por segmento: General / Refaccionar / Reciclada">Segmentos USD/m²</div>
+                <div class="kpi-value" id="kpi-segments" style="font-size:0.85rem;">-</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Oportunidades</div>
@@ -1248,14 +1252,36 @@
         function populateOverview() {
             // KPIs
             const totalProps = allProperties.length;
-            const pricesUSD = allProperties.map(convertToUSD).filter(p => p > 0);
-            const medianPrice = pricesUSD.length > 0 ? getMedian(pricesUSD) : 0;
             const neighborhoods = new Set(allProperties.map(p => p.neighborhood)).size;
 
+            // Median USD/m2 (filtered: $100-$10K range, only valid data)
+            const validSqm = allProperties
+                .filter(p => p.price_per_sqm && p.price_per_sqm >= 100 && p.price_per_sqm <= 10000)
+                .map(p => +p.price_per_sqm);
+            const medianSqm = validSqm.length > 0 ? Math.round(getMedian(validSqm)) : 0;
+
+            // Segments breakdown
+            function segmentMedian(seg) {
+                const vals = allProperties
+                    .filter(p => p.segment === seg && p.price_per_sqm >= 100 && p.price_per_sqm <= 10000)
+                    .map(p => +p.price_per_sqm);
+                return vals.length >= 5 ? Math.round(getMedian(vals)) : null;
+            }
+            const segGeneral = segmentMedian('general');
+            const segRefac = segmentMedian('refac');
+            const segRecic = segmentMedian('recic');
+
             document.getElementById('kpi-total-properties').textContent = totalProps.toLocaleString();
-            document.getElementById('kpi-median-price').textContent = medianPrice > 0 ? `$${medianPrice.toLocaleString()}` : '-';
+            document.getElementById('kpi-median-sqm').textContent = medianSqm > 0 ? `$${medianSqm.toLocaleString()}` : '-';
             document.getElementById('kpi-neighborhoods').textContent = neighborhoods;
             document.getElementById('kpi-opportunities').textContent = allOpportunities.length;
+
+            // Segment KPI
+            const segParts = [];
+            if (segRefac) segParts.push(`<span style="color:var(--orange)">Refac $${segRefac}</span>`);
+            if (segGeneral) segParts.push(`<span style="color:var(--text-secondary)">Gral $${segGeneral}</span>`);
+            if (segRecic) segParts.push(`<span style="color:var(--green)">Recic $${segRecic}</span>`);
+            document.getElementById('kpi-segments').innerHTML = segParts.length ? segParts.join(' · ') : '-';
 
             // Compute neighborhood stats
             const neighborhoodStats = computeNeighborhoodStats();
@@ -1272,7 +1298,9 @@
             const topBarrio = neighborhoodArray[neighborhoodArray.length - 1];
             const spread = topBarrio && neighborhoodArray[0] ? (topBarrio.medianPrice / neighborhoodArray[0].medianPrice).toFixed(1) : '-';
 
-            document.getElementById('insight-market').innerHTML = `${totalProps.toLocaleString()} propiedades de ${sources.size} fuentes diferentes. Mercado diversificado y activo en CABA.`;
+            const regionCount = new Set(allProperties.map(p => p.state || 'CABA')).size;
+            const regionLabel = regionCount > 1 ? `${regionCount} regiones` : 'CABA';
+            document.getElementById('insight-market').innerHTML = `${totalProps.toLocaleString()} propiedades de ${sources.size} fuentes en ${regionLabel}. USD/m² mediano: <strong>$${medianSqm}</strong> (filtrado $100-$10K/m²).`;
             document.getElementById('insight-cheapest').innerHTML = `<strong>${cheapest}</strong>`;
             document.getElementById('insight-expensive').innerHTML = `<strong>${expensive}</strong>`;
             document.getElementById('insight-refac').innerHTML = `${refacCount} propiedades marcadas con oportunidades de refacción. Potencial de inversión identificado.`;
