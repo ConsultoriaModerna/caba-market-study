@@ -205,6 +205,25 @@
                 <div class="filter-label">Fuente</div>
                 <div class="chip-group" id="src-chips"></div>
             </div>
+            <div class="filter-section">
+                <div class="filter-label">Isocrona (click en mapa para origen)</div>
+                <div class="filter-row" style="gap:6px;">
+                    <select class="filter-input" id="f-iso-time" style="flex:1;">
+                        <option value="0">Desactivada</option>
+                        <option value="15">15 min</option>
+                        <option value="30" selected>30 min</option>
+                        <option value="45">45 min</option>
+                        <option value="60">60 min</option>
+                    </select>
+                    <select class="filter-input" id="f-iso-mode" style="flex:1;">
+                        <option value="driving-car">Auto</option>
+                        <option value="cycling-regular">Bici</option>
+                        <option value="foot-walking">A pie</option>
+                    </select>
+                </div>
+                <button onclick="activateIsoMode()" id="iso-btn" style="width:100%;padding:6px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:4px;font-size:11px;cursor:pointer;margin-top:4px;">Activar isocrona</button>
+                <div id="iso-status" style="font-size:10px;color:var(--dim);margin-top:4px;"></div>
+            </div>
             <div style="margin-top:4px;">
                 <button onclick="applyFilters()" style="width:100%;padding:8px;background:var(--accent);color:#000;border:none;border-radius:4px;font-weight:700;font-size:12px;cursor:pointer;">Aplicar Filtros</button>
                 <button onclick="resetFilters()" style="width:100%;padding:6px;background:transparent;color:var(--dim);border:1px solid var(--border);border-radius:4px;font-size:11px;cursor:pointer;margin-top:4px;">Limpiar</button>
@@ -592,6 +611,76 @@ function loadVillas() {
             });
         })
         .catch(e => console.warn('Villas layer failed:', e));
+}
+
+// Isochrone (OpenRouteService)
+const ORS_KEY = ''; // Set your ORS API key here or in env
+let isoLayer = null;
+let isoMarker = null;
+let isoMode = false;
+
+function activateIsoMode() {
+    const time = parseInt(document.getElementById('f-iso-time').value);
+    if (time === 0) {
+        if (isoLayer) { map.removeLayer(isoLayer); isoLayer = null; }
+        if (isoMarker) { map.removeLayer(isoMarker); isoMarker = null; }
+        document.getElementById('iso-status').textContent = '';
+        document.getElementById('iso-btn').textContent = 'Activar isocrona';
+        isoMode = false;
+        return;
+    }
+    isoMode = true;
+    document.getElementById('iso-btn').textContent = 'Click en el mapa...';
+    document.getElementById('iso-btn').style.background = 'rgba(0,212,255,0.15)';
+    document.getElementById('iso-status').textContent = 'Haciendo click en el mapa para definir origen';
+    map.once('click', handleIsoClick);
+}
+
+async function handleIsoClick(e) {
+    const { lat, lng } = e.latlng;
+    const time = parseInt(document.getElementById('f-iso-time').value) * 60;
+    const mode = document.getElementById('f-iso-mode').value;
+
+    document.getElementById('iso-status').textContent = 'Calculando isocrona...';
+
+    // Place marker
+    if (isoMarker) map.removeLayer(isoMarker);
+    isoMarker = L.marker([lat, lng], {
+        icon: L.divIcon({ className: '', html: '<div style="font-size:18px;text-shadow:0 0 6px #000;">📍</div>', iconSize: [20, 20], iconAnchor: [10, 18] })
+    }).addTo(map);
+
+    try {
+        const key = ORS_KEY || window.ORS_API_KEY || '';
+        if (!key) {
+            // Fallback: draw a simple radius circle as approximation
+            const speedKmh = mode === 'driving-car' ? 35 : mode === 'cycling-regular' ? 15 : 5;
+            const radiusM = (time / 3600) * speedKmh * 1000;
+            if (isoLayer) map.removeLayer(isoLayer);
+            isoLayer = L.circle([lat, lng], {
+                radius: radiusM, color: '#00d4ff', fillColor: '#00d4ff',
+                fillOpacity: 0.08, weight: 2, dashArray: '6,4'
+            }).addTo(map);
+            document.getElementById('iso-status').innerHTML = `Radio aprox. ${Math.round(radiusM/1000)}km (${time/60}min ${mode.split('-')[0]}). <a href="https://openrouteservice.org/dev/#/signup" target="_blank" style="color:var(--accent);">Agregar ORS key</a> para isocronas reales.`;
+        } else {
+            const resp = await fetch(`https://api.openrouteservice.org/v2/isochrones/${mode}`, {
+                method: 'POST',
+                headers: { 'Authorization': key, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ locations: [[lng, lat]], range: [time] })
+            });
+            const data = await resp.json();
+            if (isoLayer) map.removeLayer(isoLayer);
+            isoLayer = L.geoJSON(data, {
+                style: { color: '#00d4ff', fillColor: '#00d4ff', fillOpacity: 0.1, weight: 2 }
+            }).addTo(map);
+            document.getElementById('iso-status').textContent = `Isocrona ${time/60}min (${mode.split('-')[0]})`;
+        }
+    } catch (err) {
+        document.getElementById('iso-status').textContent = 'Error: ' + err.message;
+    }
+
+    document.getElementById('iso-btn').textContent = 'Recalcular isocrona';
+    document.getElementById('iso-btn').style.background = 'transparent';
+    isoMode = false;
 }
 
 // Crime heatmap (GCBA 2023 data -- 15K sampled points, yellow-red gradient)
