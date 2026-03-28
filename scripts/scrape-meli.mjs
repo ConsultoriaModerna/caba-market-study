@@ -150,6 +150,7 @@ async function scrapeZone(zone, token) {
           source: 'mercadolibre',
           slug: item.id,
           price_per_sqm: (item.price && totalArea && totalArea > 0) ? Math.round(item.price / totalArea) : null,
+          published_at: item.date_created || null,
           is_active: true,
           last_seen_at: new Date().toISOString(),
           scraped_at: new Date().toISOString(),

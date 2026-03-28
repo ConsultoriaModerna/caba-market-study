@@ -775,9 +775,9 @@
                 <div class="kpi-value" id="kpi-new" style="color:var(--green);">-</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label" title="Dias promedio desde que detectamos la publicacion (no desde que se publico en el portal)">Edad promedio*</div>
+                <div class="kpi-label" title="Dias promedio en mercado. Publicacion = fecha real del portal. Deteccion = cuando la encontramos.">Edad promedio</div>
                 <div class="kpi-value" id="kpi-avg-age">-</div>
-                <div style="font-size:0.55rem;color:var(--text-secondary);margin-top:2px;">*desde deteccion</div>
+                <div style="font-size:0.55rem;color:var(--text-secondary);margin-top:2px;" id="kpi-age-detail"></div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label" title="% de nuevas publicaciones detectadas por semana vs total activas">Rotacion semanal</div>
@@ -1240,7 +1240,7 @@
 
         async function fetchProperties() {
             try {
-                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,price_per_covered_sqm,segment,source,slug,keywords,covered_ratio,permalink,address_text,contact_phone,contact_name,thumbnail,description,latitude,longitude,cocheras,first_seen_at,enriched_at,geo_precision';
+                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,price_per_covered_sqm,segment,source,slug,keywords,covered_ratio,permalink,address_text,contact_phone,contact_name,thumbnail,description,latitude,longitude,cocheras,first_seen_at,published_at,enriched_at,geo_precision';
                 const base = `${SUPABASE_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast`;
                 const headers = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
 
@@ -1345,11 +1345,29 @@
             document.getElementById('kpi-opportunities').textContent = allOpportunities.length;
 
             // Segment KPI
-            const segParts = [];
-            if (segRefac) segParts.push(`<span style="color:var(--orange)">Refac $${segRefac}</span>`);
-            if (segGeneral) segParts.push(`<span style="color:var(--text-secondary)">Gral $${segGeneral}</span>`);
-            if (segRecic) segParts.push(`<span style="color:var(--green)">Recic $${segRecic}</span>`);
-            document.getElementById('kpi-segments').innerHTML = segParts.length ? segParts.join(' · ') : '-';
+            // Segment display with gap arrows
+            let segHtml = '';
+            if (segRefac && segGeneral && segRecic) {
+                const gapRG = Math.round((segGeneral - segRefac) / segRefac * 100);
+                const gapGR = Math.round((segRecic - segGeneral) / segGeneral * 100);
+                const gapTotal = Math.round((segRecic - segRefac) / segRefac * 100);
+                segHtml = `
+                    <div style="display:flex;flex-direction:column;gap:1px;line-height:1.3;">
+                        <span style="color:var(--orange);">Refac $${segRefac}</span>
+                        <span style="color:var(--accent);font-size:0.6rem;">↓ +${gapRG}%</span>
+                        <span style="color:var(--text-secondary);">Gral $${segGeneral}</span>
+                        <span style="color:var(--accent);font-size:0.6rem;">↓ +${gapGR}%</span>
+                        <span style="color:var(--green);">Recic $${segRecic}</span>
+                        <span style="color:var(--accent);font-size:0.6rem;font-weight:700;">Total +${gapTotal}%</span>
+                    </div>`;
+            } else {
+                const segParts = [];
+                if (segRefac) segParts.push(`<span style="color:var(--orange)">Refac $${segRefac}</span>`);
+                if (segGeneral) segParts.push(`<span style="color:var(--text-secondary)">Gral $${segGeneral}</span>`);
+                if (segRecic) segParts.push(`<span style="color:var(--green)">Recic $${segRecic}</span>`);
+                segHtml = segParts.length ? segParts.join(' · ') : '-';
+            }
+            document.getElementById('kpi-segments').innerHTML = segHtml;
 
             // Compute neighborhood stats
             const neighborhoodStats = computeNeighborhoodStats();
@@ -1409,7 +1427,19 @@
             const ages = withAge.map(p => Math.round((now - new Date(p.first_seen_at).getTime()) / 86400000));
             const avgAge = ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : 0;
             document.getElementById('kpi-new').textContent = newProps.length;
-            document.getElementById('kpi-avg-age').textContent = avgAge + 'd';
+
+            // Published age (real portal date) vs detected age
+            const withPublished = allProperties.filter(p => p.published_at);
+            const pubAges = withPublished.map(p => Math.round((now - new Date(p.published_at).getTime()) / 86400000)).filter(a => a >= 0 && a < 1000);
+            const avgPubAge = pubAges.length ? Math.round(pubAges.reduce((a, b) => a + b, 0) / pubAges.length) : null;
+
+            if (avgPubAge !== null) {
+                document.getElementById('kpi-avg-age').textContent = avgPubAge + 'd';
+                document.getElementById('kpi-age-detail').textContent = `publicacion real (${withPublished.length}) | detectado: ${avgAge}d`;
+            } else {
+                document.getElementById('kpi-avg-age').textContent = avgAge + 'd';
+                document.getElementById('kpi-age-detail').textContent = 'desde deteccion';
+            }
 
             // Rotation: props that appeared in last 14d vs total = weekly churn estimate
             const recent14d = withAge.filter(p => (now - new Date(p.first_seen_at).getTime()) < 14 * 86400000).length;
