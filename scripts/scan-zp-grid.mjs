@@ -45,40 +45,51 @@ function runAppleScript(script) {
   }
 }
 
-function buildGridScript(url) {
-  const js = `(function(){
-    var cards = document.querySelectorAll('[data-qa="posting PROPERTY"]');
-    if (!cards.length) cards = document.querySelectorAll('.postingCard, [data-posting-type]');
-    var results = [];
-    cards.forEach(function(card) {
-      var link = card.querySelector('a[href*="/propiedades/"]');
-      var priceEl = card.querySelector('[data-qa="POSTING_CARD_PRICE"], .firstPrice, [class*="price"]');
-      var locEl = card.querySelector('[data-qa="POSTING_CARD_LOCATION"], .postingAddress, [class*="location"]');
-      var featEl = card.querySelector('[data-qa="POSTING_CARD_FEATURES"], .postingMainFeatures, [class*="feature"]');
-      if (link) {
-        var href = link.getAttribute('href') || '';
-        var idMatch = href.match(/(\\d{6,})\\.html/);
-        results.push({
-          slug: href,
-          zp_id: idMatch ? idMatch[1] : null,
-          price_text: priceEl ? priceEl.innerText.trim() : null,
-          location_text: locEl ? locEl.innerText.trim() : null,
-          features_text: featEl ? featEl.innerText.trim() : null,
-          title: link.getAttribute('title') || card.querySelector('h2,h3')?.innerText?.trim() || null
-        });
-      }
-    });
-    var nextBtn = document.querySelector('[data-qa="PAGING_NEXT"], a.next, [class*="next"]');
-    return JSON.stringify({ count: results.length, results: results, hasNext: !!nextBtn, title: document.title });
-  })()`.replace(/"/g, '\\"');
+const JS_EXTRACT_FILE = '/tmp/zp-extract.js';
 
+// Write extraction JS to a file once (avoids AppleScript quoting issues)
+function writeExtractJS() {
+  const js = `(function(){
+  var cards = document.querySelectorAll('[data-qa="posting PROPERTY"]');
+  if (!cards.length) cards = document.querySelectorAll('.postingCard, [data-posting-type]');
+  var results = [];
+  cards.forEach(function(card) {
+    var link = card.querySelector('a[href*="/propiedades/"]');
+    var priceEl = card.querySelector('[data-qa="POSTING_CARD_PRICE"], .firstPrice, [class*="price"]');
+    var locEl = card.querySelector('[data-qa="POSTING_CARD_LOCATION"], .postingAddress, [class*="location"]');
+    var featEl = card.querySelector('[data-qa="POSTING_CARD_FEATURES"], .postingMainFeatures, [class*="feature"]');
+    if (link) {
+      var href = link.getAttribute('href') || '';
+      var idMatch = href.match(/(\\d{6,})\\.html/);
+      results.push({
+        slug: href,
+        zp_id: idMatch ? idMatch[1] : null,
+        price_text: priceEl ? priceEl.innerText.trim() : null,
+        location_text: locEl ? locEl.innerText.trim() : null,
+        features_text: featEl ? featEl.innerText.trim() : null,
+        title: link.getAttribute('title') || (card.querySelector('h2,h3') ? card.querySelector('h2,h3').innerText.trim() : null)
+      });
+    }
+  });
+  var nextBtn = document.querySelector('[data-qa="PAGING_NEXT"], a.next, [class*="next"]');
+  return JSON.stringify({ count: results.length, results: results, hasNext: !!nextBtn, title: document.title });
+})()`;
+  writeFileSync(JS_EXTRACT_FILE, js, 'utf8');
+}
+
+function buildNavScript(url) {
   return `tell application "Google Chrome"
   tell active tab of window 1
     set URL to "${url}"
   end tell
-  delay 5
+end tell`;
+}
+
+function buildExtractScript() {
+  return `tell application "Google Chrome"
   tell active tab of window 1
-    set pageData to execute javascript "${js}"
+    set jsCode to do shell script "cat ${JS_EXTRACT_FILE}"
+    set pageData to execute javascript jsCode
     return pageData
   end tell
 end tell`;
@@ -130,11 +141,17 @@ async function scanLocation(location) {
   for (let page = 1; page <= MAX_PAGES; page++) {
     const url = page === 1 ? `${baseUrl}.html` : `${baseUrl}-pagina-${page}.html`;
 
-    const script = buildGridScript(url);
-    const raw = runAppleScript(script);
+    // Step 1: Navigate
+    const navScript = buildNavScript(url);
+    runAppleScript(navScript);
+    await new Promise(r => setTimeout(r, 5000));
+
+    // Step 2: Extract data via file-based JS
+    const extractScript = buildExtractScript();
+    const raw = runAppleScript(extractScript);
 
     if (!raw) {
-      console.log(`  Page ${page}: AppleScript failed`);
+      console.log(`  Page ${page}: extraction failed`);
       continue;
     }
 
@@ -220,6 +237,7 @@ async function scanLocation(location) {
 
 async function main() {
   const t0 = Date.now();
+  writeExtractJS();
   const locations = getLocations();
   console.log(`ZP Grid Scanner -- ${locations.length} location(s), ${MAX_PAGES} pages each\n`);
 

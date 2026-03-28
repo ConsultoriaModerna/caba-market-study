@@ -26,6 +26,7 @@ export const ZP_LOCATIONS = [
   { slug: 'casas-venta-capital-federal', state: 'CABA', city: 'Capital Federal' },
   // GBA Norte - individual municipalities
   { slug: 'casas-venta-vicente-lopez', state: 'Buenos Aires', city: 'Vicente Lopez' },
+  { slug: 'casas-venta-martinez-san-isidro', state: 'Buenos Aires', city: 'Martinez' },
   { slug: 'casas-venta-san-isidro', state: 'Buenos Aires', city: 'San Isidro' },
 ];
 
