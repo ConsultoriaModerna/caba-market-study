@@ -749,35 +749,38 @@
                 <div class="kpi-value" id="kpi-total-properties">-</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label" title="Mediana USD/m2 total, filtrando outliers ($100-$10K/m2)">USD/m² mediano</div>
+                <div class="kpi-label" title="Mediana USD/m2 del rango seleccionado, filtrando outliers ($100-$10K/m2)">USD/m² mediano</div>
                 <div class="kpi-value" id="kpi-median-sqm">-</div>
+                <div style="font-size:0.6rem;color:var(--text-secondary);margin-top:2px;" id="kpi-median-sqm-range"></div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Barrios Cubiertos</div>
                 <div class="kpi-value" id="kpi-neighborhoods">-</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label" title="USD/m2 mediano por segmento: General / Refaccionar / Reciclada">Segmentos USD/m²</div>
+                <div class="kpi-label" title="USD/m2 mediano por estado: A Refaccionar / General / Reciclada">Por estado USD/m²</div>
                 <div class="kpi-value" id="kpi-segments" style="font-size:0.85rem;">-</div>
             </div>
-            <div class="kpi-card">
+            <div class="kpi-card" style="cursor:pointer;" onclick="switchTab('opportunities')">
                 <div class="kpi-label">Oportunidades</div>
                 <div class="kpi-value" id="kpi-opportunities">-</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Con datos de superficie</div>
+                <div class="kpi-label" title="Propiedades con datos de m2 cubiertos. El % indica cobertura promedio.">Datos superficie</div>
                 <div class="kpi-value" id="kpi-covered-data">-</div>
+                <div style="font-size:0.6rem;color:var(--text-secondary);margin-top:2px;" id="kpi-covered-pct"></div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label" title="Propiedades publicadas en los ultimos 3 dias">Nuevas (3d)</div>
+                <div class="kpi-label" title="Propiedades detectadas por primera vez en los ultimos 3 dias">Nuevas (3d)</div>
                 <div class="kpi-value" id="kpi-new" style="color:var(--green);">-</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label" title="Dias promedio que lleva una publicacion activa">Edad promedio</div>
+                <div class="kpi-label" title="Dias promedio desde que detectamos la publicacion (no desde que se publico en el portal)">Edad promedio*</div>
                 <div class="kpi-value" id="kpi-avg-age">-</div>
+                <div style="font-size:0.55rem;color:var(--text-secondary);margin-top:2px;">*desde deteccion</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label" title="Rotacion: % de propiedades que salen del mercado por semana">Rotacion semanal</div>
+                <div class="kpi-label" title="% de nuevas publicaciones detectadas por semana vs total activas">Rotacion semanal</div>
                 <div class="kpi-value" id="kpi-rotation" style="font-size:0.9rem;">-</div>
             </div>
         </div>
@@ -1336,6 +1339,8 @@
 
             document.getElementById('kpi-total-properties').textContent = totalProps.toLocaleString();
             document.getElementById('kpi-median-sqm').textContent = medianSqm > 0 ? `$${medianSqm.toLocaleString()}` : '-';
+            const rangeLabels = { 'all': 'todas', '50-200': '$50-200K', '50-150': '$50-150K', '100-250': '$100-250K' };
+            document.getElementById('kpi-median-sqm-range').textContent = `rango: ${rangeLabels[globalPriceRange] || 'todas'}`;
             document.getElementById('kpi-neighborhoods').textContent = neighborhoods;
             document.getElementById('kpi-opportunities').textContent = allOpportunities.length;
 
@@ -1414,6 +1419,8 @@
             // Covered ratio stats
             const withCovered = allProperties.filter(p => p.covered_ratio && p.covered_ratio > 0);
             document.getElementById('kpi-covered-data').textContent = withCovered.length;
+            const covPct = totalProps > 0 ? Math.round(withCovered.length / totalProps * 100) : 0;
+            document.getElementById('kpi-covered-pct').textContent = `${covPct}% del total`;
             if (withCovered.length > 0) {
                 const withExterior = withCovered.filter(p => p.covered_ratio < 0.8);
                 const avgRatio = Math.round(withCovered.reduce((s, p) => s + Number(p.covered_ratio), 0) / withCovered.length * 100);
