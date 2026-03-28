@@ -1008,12 +1008,17 @@
     <!-- TAB 3: OPORTUNIDADES -->
     <div class="tab-content" id="tab-opportunities">
         <div style="max-width:1400px;margin:0 auto;padding:1rem 2rem;">
-            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center;">
                 <button class="opp-filter active" data-opp="value" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Mejor valor (USD/m²)</button>
                 <button class="opp-filter" data-opp="gap" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Mayor gap refac</button>
                 <button class="opp-filter" data-opp="exterior" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Con exterior</button>
                 <button class="opp-filter" data-opp="score" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Opportunity Score</button>
                 <button class="opp-filter" data-opp="drops" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Price drops</button>
+                <span style="flex:1;"></span>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem;color:var(--text-secondary);user-select:none;">
+                    <input type="checkbox" id="oppIncludeZN" checked onchange="populateOpportunities()" style="accent-color:var(--accent);">
+                    Incluir GBA Norte
+                </label>
             </div>
             <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.8rem;" id="oppKeywordChips"></div>
             <div style="overflow-x:auto;">
@@ -1849,13 +1854,26 @@
 
         let oppMode = 'value';
 
+        function isGBANorte(neighborhood) {
+            return getZone(neighborhood) === 'GBA Norte';
+        }
+
+        function zoneBadge(neighborhood) {
+            if (isGBANorte(neighborhood)) return '<span style="background:rgba(167,139,250,0.2);color:#a78bfa;padding:1px 5px;border-radius:6px;font-size:0.6rem;font-weight:700;margin-left:3px;">ZN</span>';
+            return '';
+        }
+
         function populateOpportunities() {
             const container = document.getElementById('opportunitiesList');
             const p75 = getNeighborhoodP75();
+            const includeZN = document.getElementById('oppIncludeZN')?.checked ?? true;
+
+            // Base filter: exclude GBA Norte if toggle is off
+            const baseProps = includeZN ? allProperties : allProperties.filter(p => !isGBANorte(p.neighborhood));
 
             let ranked;
             if (oppMode === 'value') {
-                ranked = allProperties
+                ranked = baseProps
                     .filter(p => p.price_per_sqm > 100 && p.price_per_sqm < 10000 && p.currency === 'USD')
                     .sort((a, b) => a.price_per_sqm - b.price_per_sqm)
                     .slice(0, 100);
@@ -1863,7 +1881,7 @@
                 const stats = getBarrioStats();
                 const allPricesArr = Object.values(stats).map(s => s.median).filter(Boolean).sort((a, b) => a - b);
                 const globalP75 = allPricesArr[Math.floor(allPricesArr.length * 0.75)] || 1500;
-                ranked = allProperties
+                ranked = baseProps
                     .filter(p => p.price_per_sqm > 100 && p.price_per_sqm < 10000 && p.currency === 'USD')
                     .map(p => {
                         const bs = stats[p.neighborhood];
@@ -1872,20 +1890,20 @@
                     .sort((a, b) => b._score - a._score)
                     .slice(0, 100);
             } else if (oppMode === 'gap') {
-                ranked = allProperties
+                ranked = baseProps
                     .filter(p => p.segment === 'refac' && p.price_per_sqm > 100 && p.price_per_sqm < p75)
                     .map(p => ({ ...p, _gap: Math.round((p75 - p.price_per_sqm) / p.price_per_sqm * 100) }))
                     .sort((a, b) => b._gap - a._gap)
                     .slice(0, 100);
             } else if (oppMode === 'exterior') {
-                ranked = allProperties
+                ranked = baseProps
                     .filter(p => p.covered_ratio && p.covered_ratio > 0 && p.covered_ratio < 0.7 && p.price_per_sqm > 100)
                     .sort((a, b) => a.price_per_sqm - b.price_per_sqm)
                     .slice(0, 100);
             } else {
                 // Price drops from opportunity_events
                 ranked = allOpportunities.slice(0, 30).map(opp => {
-                    const p = allProperties.find(x => x.id === opp.property_id);
+                    const p = baseProps.find(x => x.id === opp.property_id);
                     return p ? { ...p, _drop: opp } : null;
                 }).filter(Boolean);
             }
@@ -1998,8 +2016,8 @@
                 ).join(' ');
                 return `<tr style="border-bottom:1px solid rgba(51,65,85,0.3);cursor:pointer;" onclick="openPropModal('${p.id}')">
                     <td style="padding:4px;">${thumb}</td>
-                    <td style="padding:6px 8px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title || 'Sin titulo'}</td>
-                    <td style="padding:6px 8px;color:var(--text-secondary);">${p.neighborhood || '-'}</td>
+                    <td style="padding:6px 8px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${zoneBadge(p.neighborhood)}${p.title || 'Sin titulo'}</td>
+                    <td style="padding:6px 8px;color:var(--text-secondary);">${p.neighborhood || '-'}${zoneBadge(p.neighborhood)}</td>
                     <td style="text-align:right;padding:6px 8px;font-weight:600;">$${price?.toLocaleString()}</td>
                     <td style="text-align:right;padding:6px 8px;color:var(--accent);font-weight:600;">${p.price_per_sqm ? '$' + Math.round(p.price_per_sqm).toLocaleString() : '-'}</td>
                     <td style="text-align:right;padding:6px 8px;">${p.total_area || '-'}</td>
