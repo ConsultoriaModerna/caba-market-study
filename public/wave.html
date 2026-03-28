@@ -382,7 +382,7 @@
 <body>
     <header>
         <h1>Wave Above the City</h1>
-        <p>Market pulse — CABA casas en venta</p>
+        <p>Market pulse — CABA + GBA Norte casas en venta</p>
     </header>
 
 
@@ -431,7 +431,7 @@
     </div>
 
     <footer>
-        <a href="https://github.com/ConsultoriaModerna/caba-market-study">CABA Market Study</a> — data live from Supabase
+        <a href="https://github.com/ConsultoriaModerna/caba-market-study">InmoFindr</a> — data live from Supabase
     </footer>
 
     <script>
@@ -439,10 +439,11 @@
         const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
 
         const ZONE_MAP = {
-            'Norte': ['Belgrano', 'Belgrano R', 'Núñez', 'Saavedra', 'Coghlan', 'Villa Urquiza', 'Colegiales', 'Palermo'],
-            'Centro': ['Caballito', 'Almagro', 'Boedo', 'San Cristóbal', 'San Cristobal', 'Balvanera', 'Recoleta', 'San Telmo'],
-            'Oeste': ['Villa Devoto', 'Monte Castro', 'Floresta', 'Versalles', 'Villa Luro', 'Liniers', 'Villa Pueyrredón', 'Villa del Parque', 'Vélez Sarsfield'],
-            'Sur': ['Flores', 'Mataderos', 'Parque Chacabuco', 'Barracas', 'La Boca', 'Pompeya', 'Villa Lugano', 'Villa Soldati', 'Parque Patricios', 'Parque Avellaneda', 'Villa Riachuelo']
+            'Norte': ['Belgrano', 'Belgrano R', 'Belgrano C', 'Belgrano Chico', 'Núñez', 'Lomas de Núñez', 'Saavedra', 'Coghlan', 'Villa Urquiza', 'Colegiales', 'Palermo', 'Palermo Soho', 'Palermo Hollywood', 'Palermo Chico', 'Las Cañitas', 'Barrio Parque'],
+            'Centro': ['Caballito', 'Caballito Norte', 'Caballito Sur', 'Almagro', 'Almagro Norte', 'Almagro Sur', 'Boedo', 'San Cristóbal', 'San Cristobal', 'Balvanera', 'Recoleta', 'Barrio Norte', 'San Telmo', 'Monserrat', 'Congreso', 'San Nicolas', 'Constitución', 'Retiro', 'Villa Crespo', 'Chacarita', 'Villa Ortuzar', 'La Paternal', 'Parque Chas', 'Agronomía', 'Agronomia', 'Villa General Mitre', 'Naón', 'Botánico'],
+            'Oeste': ['Villa Devoto', 'Monte Castro', 'Floresta', 'Floresta Norte', 'Floresta Sur', 'Versalles', 'Villa Luro', 'Liniers', 'Villa Pueyrredón', 'Villa Pueyrredon', 'Villa del Parque', 'Villa Real', 'Villa Santa Rita', 'Velez Sarsfield', 'Vélez Sarsfield', 'Parque Avellaneda'],
+            'Sur': ['Flores', 'Flores Norte', 'Flores Sur', 'Mataderos', 'Parque Chacabuco', 'Barracas', 'La Boca', 'Pompeya', 'Nueva Pompeya', 'Villa Lugano', 'Villa Soldati', 'Parque Patricios', 'Villa Riachuelo'],
+            'GBA Norte': ['Vicente Lopez', 'Vicente López', 'Olivos', 'Florida', 'La Lucila', 'Munro', 'Carapachay', 'Villa Martelli', 'Martinez', 'Martínez', 'San Isidro', 'Beccar', 'Boulogne', 'Acassuso', 'San Fernando', 'Tigre', 'Don Torcuato', 'La Horqueta', 'Lomas de San Isidro', 'Villa Adelina', 'Santa Rita']
         };
 
         const ZONE_COLORS = {
@@ -450,14 +451,16 @@
             'Centro': '#60a5fa',
             'Oeste': '#fb923c',
             'Sur': '#f472b6',
-            'Otro': '#a78bfa'
+            'GBA Norte': '#a78bfa',
+            'Otro': '#94a3b8'
         };
 
         function getZone(neighborhood) {
+            if (!neighborhood) return 'Centro';
             for (const [zone, barrios] of Object.entries(ZONE_MAP)) {
-                if (barrios.includes(neighborhood)) return zone;
+                if (barrios.some(b => b.toLowerCase() === neighborhood.toLowerCase())) return zone;
             }
-            return 'Otro';
+            return 'Centro';
         }
 
         async function fetchData() {
@@ -596,7 +599,7 @@
 
             // Zone legend
             const legend = svg.append('g').attr('transform', `translate(30, ${height - 25})`);
-            const zones = ['Norte', 'Centro', 'Oeste', 'Sur'];
+            const zones = ['Norte', 'Centro', 'Oeste', 'Sur', 'GBA Norte'];
             zones.forEach((z, i) => {
                 legend.append('circle').attr('cx', i * 100).attr('cy', 0).attr('r', 5).attr('fill', ZONE_COLORS[z]);
                 legend.append('text').attr('x', i * 100 + 10).attr('y', 4)
@@ -940,7 +943,7 @@
                 <div class="ai-badge">CLAUDE HAIKU - MARKET ANALYSIS</div>
 
                 <h3>El mercado en un vistazo</h3>
-                <p>CABA tiene <span class="metric">${totalActive.toLocaleString()} casas activas</span> distribuidas en <span class="metric">${data.length} barrios</span>. La mediana de precio se ubica en <span class="metric">USD ${median(allPrices.map(d => d.medianPrice)).toLocaleString()}/m²</span>, con una dispersión significativa entre zonas.</p>
+                <p>El mercado tiene <span class="metric">${totalActive.toLocaleString()} casas activas</span> distribuidas en <span class="metric">${data.length} barrios</span>. La mediana de precio se ubica en <span class="metric">USD ${median(allPrices.map(d => d.medianPrice)).toLocaleString()}/m²</span>, con una dispersión significativa entre zonas.</p>
 
                 <h3>Dónde está el valor</h3>
                 <p>Los barrios más accesibles por USD/m² son <span class="highlight">${cheapest.map(d => d.name + ' ($' + d.medianPrice + ')').join(', ')}</span>. En el otro extremo, <span class="highlight">${expensive.map(d => d.name + ' ($' + d.medianPrice + ')').join(', ')}</span> lideran el segmento premium. La brecha entre el barrio más caro y el más económico es de <span class="metric">${(expensive[0]?.medianPrice / (cheapest[0]?.medianPrice || 1)).toFixed(1)}x</span>.</p>
