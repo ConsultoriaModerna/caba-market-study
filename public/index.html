@@ -1398,18 +1398,26 @@
             document.getElementById('kpi-opportunities').textContent = allOpportunities.length;
 
             // Segment KPI
-            // Segment display: horizontal chips with gap arrows
+            // Segment display: chips + gaps + renovation budget per m²
             let segHtml = '';
             if (segRefac && segGeneral && segRecic) {
-                const gapRG = Math.round((segGeneral - segRefac) / segRefac * 100);
-                const gapGR = Math.round((segRecic - segGeneral) / segGeneral * 100);
+                const gapRefacRecic = Math.round((segRecic - segRefac) / segRefac * 100);
+                const gapGeneralRecic = Math.round((segRecic - segGeneral) / segGeneral * 100);
+                const budgetRefac = segRecic - segRefac; // $/m² available for reno
+                const budgetGeneral = segRecic - segGeneral;
                 segHtml = `
-                    <div style="display:flex;align-items:center;gap:3px;flex-wrap:nowrap;">
-                        <span style="background:rgba(249,115,22,0.15);color:var(--orange);padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:600;">R $${segRefac}</span>
-                        <span style="color:var(--accent);font-size:0.6rem;font-weight:700;">→+${gapRG}%</span>
-                        <span style="background:rgba(148,163,184,0.1);color:var(--text-secondary);padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:600;">G $${segGeneral}</span>
-                        <span style="color:var(--accent);font-size:0.6rem;font-weight:700;">→+${gapGR}%</span>
-                        <span style="background:rgba(74,222,128,0.15);color:var(--green);padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:600;">RC $${segRecic}</span>
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                        <div style="display:flex;align-items:center;gap:3px;flex-wrap:nowrap;">
+                            <span style="background:rgba(249,115,22,0.15);color:var(--orange);padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:600;">R $${segRefac}</span>
+                            <span style="color:var(--accent);font-size:0.55rem;">→+${gapRefacRecic}%</span>
+                            <span style="background:rgba(148,163,184,0.1);color:var(--text-secondary);padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:600;">G $${segGeneral}</span>
+                            <span style="color:var(--accent);font-size:0.55rem;">→+${gapGeneralRecic}%</span>
+                            <span style="background:rgba(74,222,128,0.15);color:var(--green);padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:600;">RC $${segRecic}</span>
+                        </div>
+                        <div style="font-size:0.55rem;color:var(--text-secondary);line-height:1.3;">
+                            Budget reno: <span style="color:var(--orange);font-weight:600;">$${budgetRefac}/m²</span> refac |
+                            <span style="color:var(--text-primary);font-weight:600;">$${budgetGeneral}/m²</span> gral
+                        </div>
                     </div>`;
             } else {
                 const segParts = [];
