@@ -224,11 +224,11 @@
         <div class="chart-container" id="treemap"></div>
       </div>
 
-      <!-- 5. Opportunity Density -->
+      <!-- 5. Opportunity Density 3D -->
       <div class="section">
-        <h2>Opportunity Density Map</h2>
-        <p class="subtitle">X = precio total USD, Y = USD/m2. Densidad muestra donde se concentran las propiedades. Puntos verdes = oportunidades (por debajo de la mediana de su barrio).</p>
-        <div class="chart-container" id="density-map"></div>
+        <h2>Opportunity Density 3D</h2>
+        <p class="subtitle">X = precio USD, Y = USD/m2, Z = gap vs barrio (%). Tamano de burbuja = m2 totales. Verde = oportunidad. Gira para explorar.</p>
+        <div class="chart-container" id="density-map" style="height:650px;"></div>
       </div>
 
       <!-- 6. Bivariate Choropleth -->
@@ -896,7 +896,8 @@
     function buildDensityMap(data) {
       const valid = data.filter(d =>
         d.currency === 'USD' && d.price >= 30000 && d.price <= 500000 &&
-        d.price_per_sqm >= 100 && d.price_per_sqm <= 5000 && d.neighborhood
+        d.price_per_sqm >= 100 && d.price_per_sqm <= 5000 && d.neighborhood &&
+        d.total_area > 0
       );
 
       if (valid.length < 20) {
@@ -916,131 +917,75 @@
         bMed[k] = s[Math.floor(s.length / 2)];
       });
 
-      const container = document.getElementById('density-map');
-      const margin = { top: 20, right: 40, bottom: 50, left: 70 };
-      const width = Math.max(container.clientWidth, 800) - margin.left - margin.right;
-      const height = 550 - margin.top - margin.bottom;
+      // 3D bubble chart with Plotly
+      const gaps = valid.map(d => {
+        const m = bMed[d.neighborhood] || d.price_per_sqm;
+        return Math.round((d.price_per_sqm - m) / m * 100);
+      });
+      const isOpp = valid.map((d, i) => gaps[i] < -15);
 
-      const svg = d3.select('#density-map')
-        .append('svg')
-        .attr('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
-        .attr('preserveAspectRatio', 'xMidYMid meet')
-        .append('g')
-        .attr('transform', `translate(${margin.left},${margin.top})`);
+      const oppData = valid.filter((_, i) => isOpp[i]);
+      const normData = valid.filter((_, i) => !isOpp[i]);
+      const oppGaps = gaps.filter((_, i) => isOpp[i]);
+      const normGaps = gaps.filter((_, i) => !isOpp[i]);
 
-      const x = d3.scaleLinear().domain([30000, 350000]).range([0, width]);
-      const y = d3.scaleLinear().domain([200, 3000]).range([height, 0]);
+      function makeBubbleTrace(subset, subGaps, name, color, opacity) {
+        return {
+          type: 'scatter3d',
+          mode: 'markers',
+          name: `${name} (${subset.length})`,
+          x: subset.map(d => d.price),
+          y: subset.map(d => d.price_per_sqm),
+          z: subGaps,
+          text: subset.map((d, i) =>
+            `<b>${d.title || 'Sin titulo'}</b><br>` +
+            `${d.neighborhood}<br>` +
+            `USD ${d.price.toLocaleString()} -- $${d.price_per_sqm}/m2<br>` +
+            `${d.total_area}m2${d.covered_area ? ' (' + d.covered_area + ' cub.)' : ''}<br>` +
+            `Gap: ${subGaps[i]}%`
+          ),
+          hoverinfo: 'text',
+          marker: {
+            size: subset.map(d => Math.max(3, Math.min(18, Math.sqrt(d.total_area) * 0.6))),
+            color: color,
+            opacity: opacity,
+            line: { width: 0.3, color: 'rgba(255,255,255,0.2)' }
+          }
+        };
+      }
 
-      // Density contour of ALL properties
-      const density = d3.contourDensity()
-        .x(d => x(d.price))
-        .y(d => y(d.price_per_sqm))
-        .size([width, height])
-        .bandwidth(25)
-        .thresholds(12)(valid);
+      const traces = [
+        makeBubbleTrace(oppData, oppGaps, 'Oportunidad', '#4ade80', 0.8),
+        makeBubbleTrace(normData, normGaps, 'Normal', '#94a3b8', 0.25)
+      ];
 
-      svg.append('g')
-        .selectAll('path')
-        .data(density)
-        .join('path')
-        .attr('d', d3.geoPath())
-        .attr('fill', (d, i) => `rgba(0, 212, 255, ${0.03 + i * 0.04})`)
-        .attr('stroke', 'rgba(0, 212, 255, 0.15)')
-        .attr('stroke-width', 0.5);
+      const layout = {
+        paper_bgcolor: '#111827',
+        plot_bgcolor: '#111827',
+        font: { color: '#94a3b8', family: 'Inter' },
+        scene: {
+          xaxis: { title: 'Precio USD', color: '#94a3b8', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
+          yaxis: { title: 'USD/m2', color: '#94a3b8', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
+          zaxis: { title: 'Gap vs barrio (%)', color: '#94a3b8', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
+          bgcolor: '#0a0e1a',
+          camera: { eye: { x: 1.5, y: 1.5, z: 0.8 } }
+        },
+        margin: { l: 0, r: 0, t: 20, b: 0 },
+        legend: { x: 0, y: 1, font: { color: '#e2e8f0', size: 12 } },
+        showlegend: true
+      };
 
-      // Sweet spot zone highlight
-      svg.append('rect')
-        .attr('x', x(100000)).attr('y', y(1800))
-        .attr('width', x(180000) - x(100000))
-        .attr('height', y(400) - y(1800))
-        .attr('fill', 'rgba(74, 222, 128, 0.06)')
-        .attr('stroke', '#4ade80').attr('stroke-width', 1)
-        .attr('stroke-dasharray', '4,3');
+      Plotly.newPlot('density-map', traces, layout, { responsive: true, scrollZoom: true, displaylogo: false });
 
-      svg.append('text')
-        .attr('x', x(140000)).attr('y', y(1750))
-        .attr('text-anchor', 'middle')
-        .attr('fill', '#4ade80').attr('font-size', '10px').attr('font-weight', '600')
-        .text('Sweet Spot $100-180K');
-
-      // Draw property dots: green = opportunity, gray = normal
-      svg.append('g')
-        .selectAll('circle')
-        .data(valid)
-        .join('circle')
-        .attr('cx', d => x(d.price))
-        .attr('cy', d => y(d.price_per_sqm))
-        .attr('r', d => {
-          const m = bMed[d.neighborhood] || d.price_per_sqm;
-          return d.price_per_sqm < m * 0.85 ? 4 : 2.5;
-        })
-        .attr('fill', d => {
-          const m = bMed[d.neighborhood] || d.price_per_sqm;
-          return d.price_per_sqm < m * 0.85 ? '#4ade80' : '#94a3b8';
-        })
-        .attr('fill-opacity', d => {
-          const m = bMed[d.neighborhood] || d.price_per_sqm;
-          return d.price_per_sqm < m * 0.85 ? 0.8 : 0.25;
-        })
-        .attr('stroke', 'none')
-        .on('mouseover', function(evt, d) {
-          d3.select(this).attr('r', 6).attr('fill-opacity', 1);
-          const m = bMed[d.neighborhood] || 0;
-          const gap = m > 0 ? Math.round((d.price_per_sqm - m) / m * 100) : 0;
-          showTooltip(evt,
-            `<strong>${d.title || 'Sin titulo'}</strong><br>` +
-            `${d.neighborhood || 'N/A'}<br>` +
-            `USD ${d.price.toLocaleString()} -- $${d.price_per_sqm.toLocaleString()}/m2<br>` +
-            `${d.total_area || '?'}m2 total${d.covered_area ? ' / ' + d.covered_area + ' cub.' : ''}<br>` +
-            `Gap vs barrio: <strong>${gap}%</strong>`
-          );
-        })
-        .on('mousemove', (evt) => {
-          tooltip.style('left', (evt.pageX + 14) + 'px').style('top', (evt.pageY - 14) + 'px');
-        })
-        .on('mouseout', function() {
-          const d = d3.select(this).datum();
-          const m = bMed[d.neighborhood] || d.price_per_sqm;
-          const isOpp = d.price_per_sqm < m * 0.85;
-          d3.select(this).attr('r', isOpp ? 4 : 2.5).attr('fill-opacity', isOpp ? 0.8 : 0.25);
-          hideTooltip();
-        });
-
-      // Axes
-      svg.append('g')
-        .attr('transform', `translate(0,${height})`)
-        .call(d3.axisBottom(x).ticks(8).tickFormat(d => d >= 1000 ? '$' + (d/1000) + 'K' : d))
-        .call(g => g.selectAll('text').attr('fill', '#94a3b8'))
-        .call(g => g.selectAll('line').attr('stroke', '#334155'))
-        .call(g => g.select('.domain').attr('stroke', '#334155'));
-
-      svg.append('g')
-        .call(d3.axisLeft(y).ticks(8).tickFormat(d => '$' + d))
-        .call(g => g.selectAll('text').attr('fill', '#94a3b8'))
-        .call(g => g.selectAll('line').attr('stroke', '#334155'))
-        .call(g => g.select('.domain').attr('stroke', '#334155'));
-
-      svg.append('text')
-        .attr('x', width / 2).attr('y', height + 40)
-        .attr('text-anchor', 'middle')
-        .attr('fill', '#94a3b8').attr('font-size', '12px')
-        .text('Precio Total (USD)');
-
-      svg.append('text')
-        .attr('transform', 'rotate(-90)')
-        .attr('x', -height / 2).attr('y', -50)
-        .attr('text-anchor', 'middle')
-        .attr('fill', '#94a3b8').attr('font-size', '12px')
-        .text('USD/m2');
-
-      // Legend
-      const opp = valid.filter(d => d.price_per_sqm < (bMed[d.neighborhood] || d.price_per_sqm) * 0.85);
-      svg.append('circle').attr('cx', width - 140).attr('cy', 15).attr('r', 4).attr('fill', '#4ade80');
-      svg.append('text').attr('x', width - 132).attr('y', 19).attr('fill', '#94a3b8').attr('font-size', '10px')
-        .text(`Oportunidad (${opp.length})`);
-      svg.append('circle').attr('cx', width - 140).attr('cy', 32).attr('r', 2.5).attr('fill', '#94a3b8').attr('opacity', 0.5);
-      svg.append('text').attr('x', width - 132).attr('y', 36).attr('fill', '#94a3b8').attr('font-size', '10px')
-        .text(`Normal (${valid.length - opp.length})`);
+      // Click to open property link
+      document.getElementById('density-map').on('plotly_click', function(eventData) {
+        const pt = eventData.points[0];
+        if (!pt) return;
+        const isOppTrace = pt.data.name.includes('Oportunidad');
+        const subset = isOppTrace ? oppData : normData;
+        const prop = subset[pt.pointNumber];
+        if (prop && prop.permalink) window.open(prop.permalink, '_blank');
+      });
     }
 
     // ── 6. BIVARIATE CHOROPLETH: USD/m² vs Crime ──
