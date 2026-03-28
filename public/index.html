@@ -723,6 +723,15 @@
         </div>
     </header>
 
+    <div style="display:flex;align-items:center;justify-content:center;gap:1rem;padding:8px 2rem;background:var(--bg-secondary);border-bottom:1px solid var(--border);font-size:0.8rem;">
+        <span style="color:var(--text-secondary);">Rango USD:</span>
+        <button class="price-range-btn active" data-range="all" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">Todo</button>
+        <button class="price-range-btn" data-range="50-200" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">$50K-$200K</button>
+        <button class="price-range-btn" data-range="50-150" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">$50K-$150K</button>
+        <button class="price-range-btn" data-range="100-250" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">$100K-$250K</button>
+        <span id="global-filter-count" style="color:var(--accent);font-weight:600;font-size:0.75rem;"></span>
+    </div>
+
     <div class="tabs">
         <button class="tab-button active" data-tab="overview" title="Resumen del mercado: KPIs, barrios por precio, distribucion por zona">📊 Overview</button>
         <button class="tab-button" data-tab="search" title="Busqueda full-text en descripciones con filtros avanzados (area, dormitorios, segmento, exterior)">🔍 Super Search</button>
@@ -766,6 +775,10 @@
             <div class="kpi-card">
                 <div class="kpi-label" title="Dias promedio que lleva una publicacion activa">Edad promedio</div>
                 <div class="kpi-value" id="kpi-avg-age">-</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label" title="Rotacion: % de propiedades que salen del mercado por semana">Rotacion semanal</div>
+                <div class="kpi-value" id="kpi-rotation" style="font-size:0.9rem;">-</div>
             </div>
         </div>
 
@@ -1057,18 +1070,66 @@
         };
 
         // Data Storage
-        let allProperties = [];
+        let allPropertiesRaw = []; // unfiltered
+        let allProperties = []; // after global price filter
         let allOpportunities = [];
         let selectedKeywords = [];
         let neighborhoodChart = null;
         let zoneChart = null;
         let sourceShareChart = null;
         let sourceByRegionChart = null;
+        let globalPriceRange = 'all';
+
+        function applyGlobalPriceFilter() {
+            const ranges = {
+                'all': [0, Infinity],
+                '50-200': [50000, 200000],
+                '50-150': [50000, 150000],
+                '100-250': [100000, 250000]
+            };
+            const [min, max] = ranges[globalPriceRange] || [0, Infinity];
+            if (globalPriceRange === 'all') {
+                allProperties = [...allPropertiesRaw];
+            } else {
+                allProperties = allPropertiesRaw.filter(p => {
+                    const usd = p.currency === 'USD' ? p.price : (p.currency === 'ARS' ? Math.round(p.price / 1000) : p.price);
+                    return usd >= min && usd <= max;
+                });
+            }
+            const countEl = document.getElementById('global-filter-count');
+            if (globalPriceRange === 'all') {
+                countEl.textContent = '';
+            } else {
+                countEl.textContent = `${allProperties.length.toLocaleString()} / ${allPropertiesRaw.length.toLocaleString()}`;
+            }
+            populateOverview();
+            populateOpportunities();
+            populateFilterNeighborhoods();
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             setupEventListeners();
             loadData();
+
+            // Global price range toggle
+            document.querySelectorAll('.price-range-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.price-range-btn').forEach(b => {
+                        b.classList.remove('active');
+                        b.style.background = 'transparent';
+                        b.style.color = 'var(--text-secondary)';
+                    });
+                    e.target.classList.add('active');
+                    e.target.style.background = 'rgba(0,212,255,0.15)';
+                    e.target.style.color = 'var(--accent)';
+                    globalPriceRange = e.target.dataset.range;
+                    applyGlobalPriceFilter();
+                });
+            });
+            // Set default active style
+            const defaultBtn = document.querySelector('.price-range-btn.active');
+            if (defaultBtn) { defaultBtn.style.background = 'rgba(0,212,255,0.15)'; defaultBtn.style.color = 'var(--accent)'; }
         });
 
         function setupEventListeners() {
@@ -1181,16 +1242,18 @@
                 const headers = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
 
                 // Paginate in chunks of 1000
-                allProperties = [];
+                allPropertiesRaw = [];
                 for (let offset = 0; offset < 20000; offset += 1000) {
                     const response = await fetch(base + `&limit=1000&offset=${offset}`, { headers });
                     const chunk = await response.json();
                     if (!chunk.length) break;
-                    allProperties.push(...chunk);
+                    allPropertiesRaw.push(...chunk);
                     if (chunk.length < 1000) break;
                 }
+                allProperties = [...allPropertiesRaw];
             } catch (error) {
                 console.error('Error fetching properties:', error);
+                allPropertiesRaw = [];
                 allProperties = [];
             }
         }
@@ -1342,6 +1405,11 @@
             const avgAge = ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : 0;
             document.getElementById('kpi-new').textContent = newProps.length;
             document.getElementById('kpi-avg-age').textContent = avgAge + 'd';
+
+            // Rotation: props that appeared in last 14d vs total = weekly churn estimate
+            const recent14d = withAge.filter(p => (now - new Date(p.first_seen_at).getTime()) < 14 * 86400000).length;
+            const weeklyRotation = withAge.length > 0 ? Math.round(recent14d / 2 / withAge.length * 100 * 10) / 10 : 0;
+            document.getElementById('kpi-rotation').textContent = weeklyRotation > 0 ? `${weeklyRotation}%` : '-';
 
             // Covered ratio stats
             const withCovered = allProperties.filter(p => p.covered_ratio && p.covered_ratio > 0);
