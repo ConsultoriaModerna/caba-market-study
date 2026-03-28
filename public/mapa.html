@@ -12,6 +12,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        .leaflet-tile-pane { transition: opacity 0.3s ease; }
+        .leaflet-marker-icon { transition: transform 0.2s ease, opacity 0.2s ease; }
+        .leaflet-popup { transition: opacity 0.15s ease; }
+        .marker-cluster { transition: transform 0.25s ease, opacity 0.25s ease; }
+        .leaflet-zoom-anim .leaflet-tile-pane { transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); }
         :root {
             --bg: #0a0e1a; --panel: #0f1419; --card: #151a25;
             --border: #1e2735; --text: #e0e0e0; --dim: #7a8999;
@@ -705,7 +710,17 @@ function loadCrimeHeatmap() {
 
 // Init
 async function init() {
-    map = L.map('map', { zoomControl: true }).setView([-34.62, -58.44], 12);
+    map = L.map('map', {
+        zoomControl: true,
+        zoomAnimation: true,
+        zoomAnimationThreshold: 4,
+        fadeAnimation: true,
+        markerZoomAnimation: true,
+        wheelDebounceTime: 80,
+        wheelPxPerZoomLevel: 120,
+        zoomSnap: 0.5,
+        zoomDelta: 0.5
+    }).setView([-34.62, -58.44], 12);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         attribution: '© OSM', maxZoom: 19
     }).addTo(map);
@@ -716,8 +731,9 @@ async function init() {
         showCoverageOnHover: false,
         zoomToBoundsOnClick: true,
         removeOutsideVisibleBounds: true,
-        animateAddingMarkers: false,
+        animateAddingMarkers: true,
         disableClusteringAtZoom: 17,
+        spiderfyDistanceMultiplier: 1.5,
         iconCreateFunction: function(cluster) {
             const children = cluster.getAllChildMarkers();
             const prices = children.map(m => m.options._pricePerSqm).filter(v => v > 0);
