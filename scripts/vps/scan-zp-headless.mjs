@@ -85,7 +85,8 @@ function parseFeatures(text) {
 
 function extractNeighborhood(locText) {
   if (!locText) return null;
-  const parts = locText.split(',').map(s => s.trim());
+  const cleaned = locText.includes('\n') ? locText.split('\n').pop() : locText;
+  const parts = cleaned.split(',').map(s => s.trim());
   return parts.length >= 2 ? parts[parts.length - 2] : parts[0];
 }
 

@@ -1112,6 +1112,32 @@
         let sourceByRegionChart = null;
         let globalPriceRange = 'all';
 
+        // Favorites (localStorage)
+        function getFavorites() {
+            try { return JSON.parse(localStorage.getItem('inmofindr_favs') || '[]'); } catch { return []; }
+        }
+        function isFavorite(id) { return getFavorites().includes(id); }
+        function toggleFavorite(id) {
+            let favs = getFavorites();
+            if (favs.includes(id)) {
+                favs = favs.filter(f => f !== id);
+            } else {
+                favs.push(id);
+            }
+            localStorage.setItem('inmofindr_favs', JSON.stringify(favs));
+            return favs.includes(id);
+        }
+        function favStar(id) {
+            const active = isFavorite(id);
+            return `<span onclick="event.stopPropagation();toggleFavAndUpdate('${id}',this)" style="cursor:pointer;font-size:1rem;${active ? '' : 'opacity:0.3;'}" title="${active ? 'Quitar de favoritos' : 'Agregar a favoritos'}">${active ? '★' : '☆'}</span>`;
+        }
+        function toggleFavAndUpdate(id, el) {
+            const now = toggleFavorite(id);
+            el.textContent = now ? '★' : '☆';
+            el.style.opacity = now ? '1' : '0.3';
+            el.title = now ? 'Quitar de favoritos' : 'Agregar a favoritos';
+        }
+
         function applyGlobalPriceFilter() {
             const ranges = {
                 'all': [0, Infinity],
@@ -2016,7 +2042,7 @@
                 ).join(' ');
                 return `<tr style="border-bottom:1px solid rgba(51,65,85,0.3);cursor:pointer;" onclick="openPropModal('${p.id}')">
                     <td style="padding:4px;">${thumb}</td>
-                    <td style="padding:6px 8px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${zoneBadge(p.neighborhood)}${p.title || 'Sin titulo'}</td>
+                    <td style="padding:6px 8px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${favStar(p.id)} ${zoneBadge(p.neighborhood)}${p.title || 'Sin titulo'}</td>
                     <td style="padding:6px 8px;color:var(--text-secondary);">${p.neighborhood || '-'}${zoneBadge(p.neighborhood)}</td>
                     <td style="text-align:right;padding:6px 8px;font-weight:600;">$${price?.toLocaleString()}</td>
                     <td style="text-align:right;padding:6px 8px;color:var(--accent);font-weight:600;">${p.price_per_sqm ? '$' + Math.round(p.price_per_sqm).toLocaleString() : '-'}</td>
@@ -2401,6 +2427,7 @@
 
                     <!-- Admin actions -->
                     <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
+                        <button onclick="toggleFavorite('${p.id}');openPropModal('${p.id}')" style="padding:0.5rem 1rem;background:${isFavorite(p.id) ? 'rgba(251,191,36,0.15)' : 'transparent'};border:1px solid ${isFavorite(p.id) ? 'var(--yellow)' : 'var(--border)'};color:${isFavorite(p.id) ? 'var(--yellow)' : 'var(--text-secondary)'};border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:inherit;">${isFavorite(p.id) ? '★ Favorita' : '☆ Agregar a Fav'}</button>
                         <button onclick="editProperty('${p.id}')" style="flex:1;padding:0.5rem;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Editar</button>
                         <button onclick="deleteProperty('${p.id}')" style="padding:0.5rem 1rem;background:transparent;border:1px solid rgba(239,68,68,0.3);color:var(--red);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Borrar</button>
                     </div>

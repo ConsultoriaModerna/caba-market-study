@@ -531,7 +531,28 @@
         showlegend: true
       };
 
-      Plotly.newPlot('scatter-3d', traces, layout, { responsive: true });
+      const plotConfig = {
+        responsive: true,
+        scrollZoom: true,
+        displayModeBar: true,
+        modeBarButtonsToAdd: ['resetCameraDefault3d'],
+        displaylogo: false
+      };
+
+      Plotly.newPlot('scatter-3d', traces, layout, plotConfig);
+
+      // Click to open property link or add to favorites
+      const scatterEl = document.getElementById('scatter-3d');
+      scatterEl.on('plotly_click', function(eventData) {
+        const pt = eventData.points[0];
+        if (!pt) return;
+        const seg = pt.data.name === 'A Refaccionar' ? 'refac' : pt.data.name === 'Reciclada' ? 'recic' : 'general';
+        const subset = validData.filter(d => (d.segment || 'general') === seg);
+        const prop = subset[pt.pointNumber];
+        if (prop && prop.permalink) {
+          window.open(prop.permalink, '_blank');
+        }
+      });
     }
 
     // =============================================
