@@ -1015,16 +1015,19 @@
                 <button class="opp-filter" data-opp="score" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Opportunity Score</button>
                 <button class="opp-filter" data-opp="drops" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Price drops</button>
             </div>
+            <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.8rem;" id="oppKeywordChips"></div>
             <div style="overflow-x:auto;">
                 <table id="oppTable" style="width:100%;border-collapse:collapse;font-size:0.8rem;">
                     <thead>
                         <tr style="border-bottom:2px solid var(--border);color:var(--text-secondary);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;">
+                            <th style="width:44px;"></th>
                             <th style="text-align:left;padding:8px;cursor:pointer;" onclick="sortOppTable('title')">Propiedad</th>
                             <th style="text-align:left;padding:8px;cursor:pointer;" onclick="sortOppTable('neighborhood')">Barrio ↕</th>
                             <th style="text-align:right;padding:8px;cursor:pointer;" onclick="sortOppTable('price')">Precio ↕</th>
                             <th style="text-align:right;padding:8px;cursor:pointer;" onclick="sortOppTable('price_per_sqm')">USD/m² ↕</th>
                             <th style="text-align:right;padding:8px;cursor:pointer;" onclick="sortOppTable('total_area')">m² ↕</th>
                             <th style="text-align:center;padding:8px;">Seg</th>
+                            <th style="text-align:left;padding:8px;">Tags</th>
                             <th style="text-align:center;padding:8px;">Fuente</th>
                             <th style="text-align:center;padding:8px;cursor:pointer;" onclick="sortOppTable('age')">Edad ↕</th>
                             <th style="text-align:center;padding:8px;">Link</th>
@@ -1920,19 +1923,53 @@
                 `;
             }).join('');
 
-            // Also render sortable table
+            // Sortable table with tags and thumbnails
             renderOppTable(ranked);
+            renderOppKeywordChips(ranked);
         }
 
         let oppSortKey = 'price_per_sqm';
         let oppSortAsc = true;
+        let oppTagFilter = [];
+        let oppLastData = [];
+
+        function renderOppKeywordChips(data) {
+            // Count top keywords across opportunities
+            const kwCount = {};
+            data.forEach(p => {
+                (p.keywords || []).forEach(kw => { kwCount[kw] = (kwCount[kw] || 0) + 1; });
+            });
+            const topKw = Object.entries(kwCount).sort((a, b) => b[1] - a[1]).slice(0, 12);
+            const container = document.getElementById('oppKeywordChips');
+            container.innerHTML = topKw.map(([kw, ct]) => {
+                const active = oppTagFilter.includes(kw);
+                return `<span onclick="toggleOppTag('${kw}')" style="padding:2px 8px;border-radius:10px;font-size:0.7rem;cursor:pointer;border:1px solid ${active ? 'var(--accent)' : 'var(--border)'};background:${active ? 'rgba(0,212,255,0.15)' : 'var(--bg-tertiary)'};color:${active ? 'var(--accent)' : 'var(--text-secondary)'};">${kw} (${ct})</span>`;
+            }).join('');
+        }
+
+        function toggleOppTag(kw) {
+            if (oppTagFilter.includes(kw)) {
+                oppTagFilter = oppTagFilter.filter(k => k !== kw);
+            } else {
+                oppTagFilter.push(kw);
+            }
+            renderOppTable(oppLastData);
+            renderOppKeywordChips(oppLastData);
+        }
 
         function renderOppTable(data) {
+            oppLastData = data;
             const tbody = document.getElementById('oppTableBody');
             if (!data || !data.length) { tbody.innerHTML = ''; return; }
 
+            // Apply tag filter
+            let filtered = data;
+            if (oppTagFilter.length > 0) {
+                filtered = data.filter(p => oppTagFilter.every(kw => (p.keywords || []).includes(kw)));
+            }
+
             const now = Date.now();
-            const sorted = [...data].sort((a, b) => {
+            const sorted = [...filtered].sort((a, b) => {
                 let va = a[oppSortKey], vb = b[oppSortKey];
                 if (oppSortKey === 'age') {
                     va = a.first_seen_at ? (now - new Date(a.first_seen_at).getTime()) / 86400000 : 9999;
@@ -1949,13 +1986,19 @@
                 const age = p.first_seen_at ? Math.round((now - new Date(p.first_seen_at).getTime()) / 86400000) : '-';
                 const segColor = p.segment === 'refac' ? 'var(--orange)' : p.segment === 'recic' ? 'var(--green)' : 'var(--text-secondary)';
                 const segLabel = p.segment === 'refac' ? 'R' : p.segment === 'recic' ? 'RC' : 'G';
+                const thumb = p.thumbnail ? `<img src="${p.thumbnail}" style="width:40px;height:30px;object-fit:cover;border-radius:4px;" onerror="this.style.display='none'">` : '<div style="width:40px;height:30px;background:var(--bg-tertiary);border-radius:4px;"></div>';
+                const tags = (p.keywords || []).slice(0, 4).map(kw =>
+                    `<span style="padding:1px 4px;border-radius:6px;font-size:0.6rem;background:rgba(255,255,255,0.05);color:var(--text-secondary);">${kw}</span>`
+                ).join(' ');
                 return `<tr style="border-bottom:1px solid rgba(51,65,85,0.3);cursor:pointer;" onclick="openPropModal('${p.id}')">
-                    <td style="padding:6px 8px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title || 'Sin titulo'}</td>
+                    <td style="padding:4px;">${thumb}</td>
+                    <td style="padding:6px 8px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title || 'Sin titulo'}</td>
                     <td style="padding:6px 8px;color:var(--text-secondary);">${p.neighborhood || '-'}</td>
                     <td style="text-align:right;padding:6px 8px;font-weight:600;">$${price?.toLocaleString()}</td>
                     <td style="text-align:right;padding:6px 8px;color:var(--accent);font-weight:600;">${p.price_per_sqm ? '$' + Math.round(p.price_per_sqm).toLocaleString() : '-'}</td>
                     <td style="text-align:right;padding:6px 8px;">${p.total_area || '-'}</td>
                     <td style="text-align:center;padding:6px 8px;color:${segColor};font-weight:600;font-size:0.7rem;">${segLabel}</td>
+                    <td style="padding:6px 4px;max-width:180px;">${tags}</td>
                     <td style="text-align:center;padding:6px 8px;">${sourceBadge(p.source)}</td>
                     <td style="text-align:center;padding:6px 8px;font-size:0.75rem;">${age}d</td>
                     <td style="text-align:center;padding:6px 8px;">${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.75rem;" onclick="event.stopPropagation()">→</a>` : ''}</td>
@@ -1970,7 +2013,7 @@
                 oppSortKey = key;
                 oppSortAsc = key === 'neighborhood' || key === 'title';
             }
-            populateOpportunities();
+            renderOppTable(oppLastData);
         }
 
         // Opportunity filter buttons
@@ -2022,8 +2065,14 @@
         }
 
         async function performSearch() {
-            if (selectedKeywords.length === 0) {
-                document.getElementById('searchResults').innerHTML = '<div class="empty-state">Ingresa palabras clave para comenzar la búsqueda</div>';
+            // Allow search with just filters (no keywords required)
+            const hasFilters = document.getElementById('filterAreaMin').value > 0 ||
+                document.getElementById('filterBedrooms').value > 0 ||
+                document.getElementById('filterNeighborhood').value ||
+                document.getElementById('filterSegment').value ||
+                document.getElementById('filterExterior').value;
+            if (selectedKeywords.length === 0 && !hasFilters) {
+                document.getElementById('searchResults').innerHTML = '<div class="empty-state">Ingresa palabras clave o usa los filtros avanzados</div>';
                 return;
             }
 
@@ -2162,10 +2211,13 @@
                 const usdM2 = prop.price_per_sqm ? `$${Math.round(prop.price_per_sqm).toLocaleString()}/m²` : '';
                 const usdM2Cub = prop.price_per_covered_sqm ? `$${Math.round(prop.price_per_covered_sqm).toLocaleString()}/m² cub.` : '';
 
+                const thumbHtml = prop.thumbnail ? `<img src="${prop.thumbnail}" style="width:80px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : '';
+
                 return `
-                    <div class="property-card" style="cursor:pointer;" onclick="openPropModal('${prop.id}')">
+                    <div class="property-card" style="cursor:pointer;display:flex;gap:12px;" onclick="openPropModal('${prop.id}')">
+                        ${thumbHtml}
                         <div class="property-info" style="flex: 1;">
-                            <div class="property-title">${sourceBadge(prop.source)} ${ageBadge(prop)} ${prop.title || 'Sin título'} ${segBadge}</div>
+                            <div class="property-title">${sourceBadge(prop.source)} ${ageBadge(prop)} ${prop.title || 'Sin titulo'} ${segBadge}</div>
                             <div class="property-meta">
                                 <div class="property-meta-item">📍 ${prop.neighborhood}</div>
                                 <div class="property-meta-item">📐 ${areaDisplay} m²</div>
