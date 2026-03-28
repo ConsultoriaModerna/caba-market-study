@@ -709,6 +709,42 @@
         </div>
     </div>
 
+    <!-- TAB: FAVORITES -->
+    <div class="tab-content" id="tab-favorites">
+        <div style="max-width:1400px;margin:0 auto;padding:1rem 2rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                <div>
+                    <h2 style="font-size:1.2rem;font-weight:600;margin-bottom:0.3rem;">Propiedades Favoritas</h2>
+                    <p style="color:var(--text-secondary);font-size:0.8rem;">Tus propiedades marcadas con estrella. Guardadas localmente en este navegador.</p>
+                </div>
+                <button onclick="exportFavorites()" style="padding:0.4rem 1rem;background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);border-radius:8px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Exportar CSV</button>
+            </div>
+            <div id="favSummary" style="margin-bottom:1rem;"></div>
+            <div style="overflow-x:auto;">
+                <table id="favTable" style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+                    <thead>
+                        <tr style="border-bottom:2px solid var(--border);color:var(--text-secondary);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;">
+                            <th style="width:44px;"></th>
+                            <th style="text-align:left;padding:8px;">Propiedad</th>
+                            <th style="text-align:left;padding:8px;">Barrio</th>
+                            <th style="text-align:right;padding:8px;">Precio</th>
+                            <th style="text-align:right;padding:8px;">USD/m²</th>
+                            <th style="text-align:right;padding:8px;">m²</th>
+                            <th style="text-align:center;padding:8px;">Seg</th>
+                            <th style="text-align:left;padding:8px;">Tags</th>
+                            <th style="text-align:center;padding:8px;">Link</th>
+                            <th style="text-align:center;padding:8px;">Quitar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="favTableBody"></tbody>
+                </table>
+            </div>
+            <div id="favEmpty" style="display:none;text-align:center;padding:3rem;color:var(--text-secondary);">
+                No hay favoritas todavia. Marca propiedades con ★ desde cualquier tabla o modal.
+            </div>
+        </div>
+    </div>
+
     <!-- PROPERTY DETAIL MODAL -->
     <div id="propModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);overflow-y:auto;" onclick="if(event.target===this)closePropModal()">
         <div id="propModalContent" style="max-width:800px;margin:40px auto;background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;padding:0;overflow:hidden;"></div>
@@ -740,6 +776,7 @@
         <button class="tab-button" data-tab="hunter" title="Anomaly Detector: propiedades con precio anomalo vs su barrio. Comparables: analisis cruzado por segmento">🎯 Hunter</button>
         <button class="tab-button" data-tab="semantic" title="Busqueda por concepto: describe lo que buscas en lenguaje natural">🧠 Semantic</button>
         <button class="tab-button" data-tab="publishers" title="Perfiles de inmobiliarias agrupadas por telefono. Ver su inventario, especializacion por barrio, y nivel de foco">🏢 Inmobiliarias</button>
+        <button class="tab-button" data-tab="favorites" title="Propiedades marcadas como favoritas" id="favTabBtn">★ Favoritas <span id="favCount" style="background:rgba(251,191,36,0.2);color:#fbbf24;padding:1px 6px;border-radius:8px;font-size:0.7rem;font-weight:700;">0</span></button>
     </div>
 
     <!-- TAB 1: OVERVIEW -->
@@ -1136,6 +1173,95 @@
             el.textContent = now ? '★' : '☆';
             el.style.opacity = now ? '1' : '0.3';
             el.title = now ? 'Quitar de favoritos' : 'Agregar a favoritos';
+            updateFavCount();
+        }
+
+        function updateFavCount() {
+            const count = getFavorites().length;
+            const el = document.getElementById('favCount');
+            if (el) el.textContent = count;
+        }
+
+        function populateFavorites() {
+            const favIds = getFavorites();
+            const favProps = favIds.map(id => allPropertiesRaw.find(p => p.id === id)).filter(Boolean);
+            const tbody = document.getElementById('favTableBody');
+            const empty = document.getElementById('favEmpty');
+            const summary = document.getElementById('favSummary');
+
+            if (favProps.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                summary.innerHTML = '';
+                return;
+            }
+            empty.style.display = 'none';
+
+            // Summary stats
+            const prices = favProps.map(p => convertToUSD(p)).filter(v => v > 0);
+            const sqms = favProps.map(p => +p.price_per_sqm).filter(v => v > 100 && v < 10000);
+            const avgPrice = prices.length ? Math.round(prices.reduce((a,b) => a+b, 0) / prices.length) : 0;
+            const avgSqm = sqms.length ? Math.round(sqms.reduce((a,b) => a+b, 0) / sqms.length) : 0;
+            const barrios = [...new Set(favProps.map(p => p.neighborhood))];
+            summary.innerHTML = `
+                <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:0.85rem;color:var(--text-secondary);">
+                    <span><strong style="color:var(--yellow);">${favProps.length}</strong> favoritas</span>
+                    <span>Precio promedio: <strong style="color:var(--accent);">$${avgPrice.toLocaleString()}</strong></span>
+                    <span>USD/m² promedio: <strong style="color:var(--accent);">$${avgSqm}</strong></span>
+                    <span>${barrios.length} barrios</span>
+                </div>`;
+
+            tbody.innerHTML = favProps.map(p => {
+                const price = convertToUSD(p);
+                const segColor = p.segment === 'refac' ? 'var(--orange)' : p.segment === 'recic' ? 'var(--green)' : 'var(--text-secondary)';
+                const segLabel = p.segment === 'refac' ? 'R' : p.segment === 'recic' ? 'RC' : 'G';
+                const thumb = p.thumbnail ? `<img src="${p.thumbnail}" style="width:40px;height:30px;object-fit:cover;border-radius:4px;" onerror="this.style.display='none'">` : '<div style="width:40px;height:30px;background:var(--bg-tertiary);border-radius:4px;"></div>';
+                const tags = (p.keywords || []).slice(0, 4).map(kw =>
+                    `<span style="padding:1px 4px;border-radius:6px;font-size:0.6rem;background:rgba(255,255,255,0.05);color:var(--text-secondary);">${kw}</span>`
+                ).join(' ');
+                return `<tr style="border-bottom:1px solid rgba(51,65,85,0.3);cursor:pointer;" onclick="openPropModal('${p.id}')">
+                    <td style="padding:4px;">${thumb}</td>
+                    <td style="padding:6px 8px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${zoneBadge(p.neighborhood)}${p.title || 'Sin titulo'}</td>
+                    <td style="padding:6px 8px;color:var(--text-secondary);">${p.neighborhood || '-'}${zoneBadge(p.neighborhood)}</td>
+                    <td style="text-align:right;padding:6px 8px;font-weight:600;">$${price?.toLocaleString()}</td>
+                    <td style="text-align:right;padding:6px 8px;color:var(--accent);font-weight:600;">${p.price_per_sqm ? '$' + Math.round(p.price_per_sqm).toLocaleString() : '-'}</td>
+                    <td style="text-align:right;padding:6px 8px;">${p.total_area || '-'}</td>
+                    <td style="text-align:center;padding:6px 8px;color:${segColor};font-weight:600;font-size:0.7rem;">${segLabel}</td>
+                    <td style="padding:6px 4px;max-width:160px;">${tags}</td>
+                    <td style="text-align:center;padding:6px 8px;">${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.75rem;" onclick="event.stopPropagation()">→</a>` : ''}</td>
+                    <td style="text-align:center;padding:6px 8px;">
+                        <button onclick="event.stopPropagation();toggleFavorite('${p.id}');populateFavorites();updateFavCount();" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:0.9rem;" title="Quitar de favoritos">x</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function exportFavorites() {
+            const favIds = getFavorites();
+            const favProps = favIds.map(id => allPropertiesRaw.find(p => p.id === id)).filter(Boolean);
+            if (!favProps.length) { alert('No hay favoritas'); return; }
+
+            const headers = ['Titulo','Barrio','Precio USD','USD/m2','m2 Total','m2 Cubierto','Dormitorios','Segmento','Link'];
+            const rows = favProps.map(p => [
+                (p.title || '').replace(/,/g, ' '),
+                p.neighborhood || '',
+                convertToUSD(p),
+                p.price_per_sqm || '',
+                p.total_area || '',
+                p.covered_area || '',
+                p.bedrooms || '',
+                p.segment || '',
+                p.permalink || ''
+            ]);
+
+            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inmofindr-favoritas-${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         function applyGlobalPriceFilter() {
@@ -1163,6 +1289,7 @@
             populateOverview();
             populateOpportunities();
             populateFilterNeighborhoods();
+            updateFavCount();
         }
 
         // Initialize
@@ -1198,6 +1325,9 @@
                     switchTab(tabName);
                     if (tabName === 'search') {
                         loadEnrichmentStats();
+                    }
+                    if (tabName === 'favorites') {
+                        populateFavorites();
                     }
                 });
             });
