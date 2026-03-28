@@ -8,6 +8,7 @@
     <script src="/auth.js"></script>
     <script src="/nav.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -747,11 +748,13 @@
             <div class="kpi-card">
                 <div class="kpi-label">Total de Propiedades</div>
                 <div class="kpi-value" id="kpi-total-properties">-</div>
+                <div style="font-size:0.6rem;margin-top:2px;" id="kpi-source-split"></div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label" title="Mediana USD/m2 del rango seleccionado, filtrando outliers ($100-$10K/m2)">USD/m² mediano</div>
                 <div class="kpi-value" id="kpi-median-sqm">-</div>
                 <div style="font-size:0.6rem;color:var(--text-secondary);margin-top:2px;" id="kpi-median-sqm-range"></div>
+                <div style="height:24px;margin-top:4px;" id="kpi-sqm-sparkline"></div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label">Barrios Cubiertos</div>
@@ -855,9 +858,9 @@
             </div>
         </div>
 
-        <div class="chart-container">
-            <div class="chart-title">Distribución de Propiedades por Zona</div>
-            <canvas id="zoneChart"></canvas>
+        <div class="chart-container" style="height:auto;min-height:350px;">
+            <div class="chart-title">Densidad de Propiedades por Zona</div>
+            <div id="zoneMapChart" style="width:100%;min-height:320px;"></div>
         </div>
 
         <div class="chart-container" style="height:auto;min-height:400px;">
@@ -1012,7 +1015,25 @@
                 <button class="opp-filter" data-opp="score" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Opportunity Score</button>
                 <button class="opp-filter" data-opp="drops" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Price drops</button>
             </div>
-            <div class="opportunities-list" id="opportunitiesList">
+            <div style="overflow-x:auto;">
+                <table id="oppTable" style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+                    <thead>
+                        <tr style="border-bottom:2px solid var(--border);color:var(--text-secondary);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;">
+                            <th style="text-align:left;padding:8px;cursor:pointer;" onclick="sortOppTable('title')">Propiedad</th>
+                            <th style="text-align:left;padding:8px;cursor:pointer;" onclick="sortOppTable('neighborhood')">Barrio ↕</th>
+                            <th style="text-align:right;padding:8px;cursor:pointer;" onclick="sortOppTable('price')">Precio ↕</th>
+                            <th style="text-align:right;padding:8px;cursor:pointer;" onclick="sortOppTable('price_per_sqm')">USD/m² ↕</th>
+                            <th style="text-align:right;padding:8px;cursor:pointer;" onclick="sortOppTable('total_area')">m² ↕</th>
+                            <th style="text-align:center;padding:8px;">Seg</th>
+                            <th style="text-align:center;padding:8px;">Fuente</th>
+                            <th style="text-align:center;padding:8px;cursor:pointer;" onclick="sortOppTable('age')">Edad ↕</th>
+                            <th style="text-align:center;padding:8px;">Link</th>
+                        </tr>
+                    </thead>
+                    <tbody id="oppTableBody"></tbody>
+                </table>
+            </div>
+            <div class="opportunities-list" id="opportunitiesList" style="display:none;">
                 <div class="empty-state">Cargando oportunidades...</div>
             </div>
         </div>
@@ -1338,9 +1359,38 @@
             const segRecic = segmentMedian('recic');
 
             document.getElementById('kpi-total-properties').textContent = totalProps.toLocaleString();
+
+            // Source split bar
+            const zpN = allProperties.filter(p => p.source === 'zonaprop').length;
+            const mlN = allProperties.filter(p => p.source === 'mercadolibre').length;
+            const zpPct = totalProps > 0 ? Math.round(zpN / totalProps * 100) : 0;
+            document.getElementById('kpi-source-split').innerHTML = `
+                <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,0.05);margin-bottom:2px;">
+                    <div style="width:${zpPct}%;background:#60a5fa;" title="ZP ${zpN}"></div>
+                    <div style="width:${100-zpPct}%;background:#fbbf24;" title="ML ${mlN}"></div>
+                </div>
+                <span style="color:#60a5fa;">ZP ${zpN}</span> · <span style="color:#fbbf24;">ML ${mlN}</span>`;
             document.getElementById('kpi-median-sqm').textContent = medianSqm > 0 ? `$${medianSqm.toLocaleString()}` : '-';
             const rangeLabels = { 'all': 'todas', '50-200': '$50-200K', '50-150': '$50-150K', '100-250': '$100-250K' };
             document.getElementById('kpi-median-sqm-range').textContent = `rango: ${rangeLabels[globalPriceRange] || 'todas'}`;
+
+            // Sparkline distribution of USD/m²
+            const sparkEl = document.getElementById('kpi-sqm-sparkline');
+            if (validSqm.length > 10) {
+                const bins = 20;
+                const mn = 100, mx = 3000;
+                const step = (mx - mn) / bins;
+                const hist = Array(bins).fill(0);
+                validSqm.forEach(v => { const i = Math.min(bins - 1, Math.floor((Math.min(v, mx) - mn) / step)); if (i >= 0) hist[i]++; });
+                const hMax = Math.max(...hist);
+                const barW = 100 / bins;
+                sparkEl.innerHTML = `<svg viewBox="0 0 100 24" preserveAspectRatio="none" style="width:100%;height:100%;">
+                    ${hist.map((h, i) => `<rect x="${i*barW}" y="${24 - h/hMax*22}" width="${barW*0.8}" height="${h/hMax*22}" fill="${mn + i*step < medianSqm ? 'rgba(0,212,255,0.3)' : 'rgba(0,212,255,0.15)'}" rx="0.5"/>`).join('')}
+                    <line x1="${(medianSqm-mn)/(mx-mn)*100}" x2="${(medianSqm-mn)/(mx-mn)*100}" y1="0" y2="24" stroke="#00d4ff" stroke-width="0.5" stroke-dasharray="1,1"/>
+                </svg>`;
+            } else {
+                sparkEl.innerHTML = '';
+            }
             document.getElementById('kpi-neighborhoods').textContent = neighborhoods;
             document.getElementById('kpi-opportunities').textContent = allOpportunities.length;
 
@@ -1553,43 +1603,90 @@
             });
         }
 
-        function renderZoneChart() {
-            const zoneData = new Map();
-            Object.entries(ZONES).forEach(([zone, neighborhoods]) => {
-                neighborhoods.forEach(n => zoneData.set(n, zone));
+        let zoneGeoData = null;
+        async function renderZoneChart() {
+            const container = document.getElementById('zoneMapChart');
+
+            // Count properties per barrio
+            const barrioCounts = {};
+            allProperties.forEach(p => {
+                if (!p.neighborhood) return;
+                const key = p.neighborhood.toUpperCase();
+                barrioCounts[key] = (barrioCounts[key] || 0) + 1;
             });
 
-            const zoneCounts = {};
-            Object.keys(ZONES).forEach(z => { zoneCounts[z] = 0; });
-            zoneCounts['Otro'] = 0;
-            allProperties.forEach(prop => {
-                const zone = getZone(prop.neighborhood);
-                zoneCounts[zone]++;
-            });
-
-            const ctx = document.getElementById('zoneChart').getContext('2d');
-            if (zoneChart) {
-                zoneChart.destroy();
+            // Load GeoJSON once
+            if (!zoneGeoData) {
+                try {
+                    const resp = await fetch('/data/barrios_caba.geojson');
+                    zoneGeoData = await resp.json();
+                } catch (e) {
+                    container.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:40px;">Error cargando mapa de barrios</p>';
+                    return;
+                }
             }
 
-            zoneChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(zoneCounts),
-                    datasets: [{
-                        data: Object.values(zoneCounts),
-                        backgroundColor: Object.keys(zoneCounts).map(z => ZONE_COLORS[z])
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: { color: 'rgba(241, 245, 249, 0.8)' }
-                        }
-                    }
-                }
+            const maxCount = Math.max(...Object.values(barrioCounts), 1);
+            const features = zoneGeoData.features.map(f => {
+                const name = (f.properties.nombre || '').toUpperCase();
+                const count = barrioCounts[name] || 0;
+                const zone = getZone(f.properties.nombre || '');
+                return { ...f, properties: { ...f.properties, count, zone } };
+            });
+
+            container.innerHTML = '';
+            const width = container.clientWidth;
+            const height = Math.max(300, width * 0.55);
+
+            const svg = d3.select('#zoneMapChart')
+                .append('svg')
+                .attr('viewBox', `0 0 ${width} ${height}`)
+                .attr('preserveAspectRatio', 'xMidYMid meet');
+
+            const projection = d3.geoMercator()
+                .fitSize([width - 20, height - 20], { type: 'FeatureCollection', features });
+            const path = d3.geoPath().projection(projection);
+
+            svg.selectAll('path')
+                .data(features)
+                .join('path')
+                .attr('d', path)
+                .attr('fill', d => {
+                    const baseColor = ZONE_COLORS[d.properties.zone] || ZONE_COLORS['Otro'];
+                    const intensity = d.properties.count > 0 ? 0.15 + (d.properties.count / maxCount) * 0.7 : 0.05;
+                    return baseColor.replace(')', `, ${intensity})`).replace('rgb', 'rgba').replace('#', '');
+                })
+                .attr('fill', d => {
+                    const c = ZONE_COLORS[d.properties.zone] || '#94a3b8';
+                    const opacity = d.properties.count > 0 ? 0.2 + (d.properties.count / maxCount) * 0.8 : 0.05;
+                    return c + Math.round(opacity * 255).toString(16).padStart(2, '0');
+                })
+                .attr('stroke', '#1e293b')
+                .attr('stroke-width', 0.8)
+                .append('title')
+                .text(d => `${d.properties.nombre}: ${d.properties.count} propiedades (${d.properties.zone})`);
+
+            // Labels on barrios with enough properties
+            svg.selectAll('text')
+                .data(features.filter(f => f.properties.count >= 20))
+                .join('text')
+                .attr('transform', d => `translate(${path.centroid(d)})`)
+                .attr('text-anchor', 'middle')
+                .attr('fill', '#e2e8f0')
+                .attr('font-size', '8px')
+                .attr('font-weight', '500')
+                .attr('pointer-events', 'none')
+                .text(d => `${d.properties.nombre} (${d.properties.count})`);
+
+            // Zone legend
+            const legend = svg.append('g').attr('transform', `translate(10, ${height - 80})`);
+            Object.entries(ZONE_COLORS).forEach(([zone, color], i) => {
+                const zoneCt = allProperties.filter(p => getZone(p.neighborhood) === zone).length;
+                if (zoneCt === 0) return;
+                const g = legend.append('g').attr('transform', `translate(0, ${i * 14})`);
+                g.append('rect').attr('width', 10).attr('height', 10).attr('rx', 2).attr('fill', color);
+                g.append('text').attr('x', 14).attr('y', 9).attr('fill', '#94a3b8').attr('font-size', '9px')
+                    .text(`${zone} (${zoneCt})`);
             });
         }
 
@@ -1752,7 +1849,7 @@
                 ranked = allProperties
                     .filter(p => p.price_per_sqm > 100 && p.price_per_sqm < 10000 && p.currency === 'USD')
                     .sort((a, b) => a.price_per_sqm - b.price_per_sqm)
-                    .slice(0, 30);
+                    .slice(0, 100);
             } else if (oppMode === 'score') {
                 const stats = getBarrioStats();
                 const allPricesArr = Object.values(stats).map(s => s.median).filter(Boolean).sort((a, b) => a - b);
@@ -1764,18 +1861,18 @@
                         return { ...p, _score: computeOpportunityScore(p, bs?.median || 0, globalP75) };
                     })
                     .sort((a, b) => b._score - a._score)
-                    .slice(0, 30);
+                    .slice(0, 100);
             } else if (oppMode === 'gap') {
                 ranked = allProperties
                     .filter(p => p.segment === 'refac' && p.price_per_sqm > 100 && p.price_per_sqm < p75)
                     .map(p => ({ ...p, _gap: Math.round((p75 - p.price_per_sqm) / p.price_per_sqm * 100) }))
                     .sort((a, b) => b._gap - a._gap)
-                    .slice(0, 30);
+                    .slice(0, 100);
             } else if (oppMode === 'exterior') {
                 ranked = allProperties
                     .filter(p => p.covered_ratio && p.covered_ratio > 0 && p.covered_ratio < 0.7 && p.price_per_sqm > 100)
                     .sort((a, b) => a.price_per_sqm - b.price_per_sqm)
-                    .slice(0, 30);
+                    .slice(0, 100);
             } else {
                 // Price drops from opportunity_events
                 ranked = allOpportunities.slice(0, 30).map(opp => {
@@ -1822,6 +1919,58 @@
                     </div>
                 `;
             }).join('');
+
+            // Also render sortable table
+            renderOppTable(ranked);
+        }
+
+        let oppSortKey = 'price_per_sqm';
+        let oppSortAsc = true;
+
+        function renderOppTable(data) {
+            const tbody = document.getElementById('oppTableBody');
+            if (!data || !data.length) { tbody.innerHTML = ''; return; }
+
+            const now = Date.now();
+            const sorted = [...data].sort((a, b) => {
+                let va = a[oppSortKey], vb = b[oppSortKey];
+                if (oppSortKey === 'age') {
+                    va = a.first_seen_at ? (now - new Date(a.first_seen_at).getTime()) / 86400000 : 9999;
+                    vb = b.first_seen_at ? (now - new Date(b.first_seen_at).getTime()) / 86400000 : 9999;
+                }
+                if (oppSortKey === 'title' || oppSortKey === 'neighborhood') {
+                    return oppSortAsc ? (va || '').localeCompare(vb || '') : (vb || '').localeCompare(va || '');
+                }
+                return oppSortAsc ? (va || 0) - (vb || 0) : (vb || 0) - (va || 0);
+            });
+
+            tbody.innerHTML = sorted.map(p => {
+                const price = convertToUSD(p);
+                const age = p.first_seen_at ? Math.round((now - new Date(p.first_seen_at).getTime()) / 86400000) : '-';
+                const segColor = p.segment === 'refac' ? 'var(--orange)' : p.segment === 'recic' ? 'var(--green)' : 'var(--text-secondary)';
+                const segLabel = p.segment === 'refac' ? 'R' : p.segment === 'recic' ? 'RC' : 'G';
+                return `<tr style="border-bottom:1px solid rgba(51,65,85,0.3);cursor:pointer;" onclick="openPropModal('${p.id}')">
+                    <td style="padding:6px 8px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title || 'Sin titulo'}</td>
+                    <td style="padding:6px 8px;color:var(--text-secondary);">${p.neighborhood || '-'}</td>
+                    <td style="text-align:right;padding:6px 8px;font-weight:600;">$${price?.toLocaleString()}</td>
+                    <td style="text-align:right;padding:6px 8px;color:var(--accent);font-weight:600;">${p.price_per_sqm ? '$' + Math.round(p.price_per_sqm).toLocaleString() : '-'}</td>
+                    <td style="text-align:right;padding:6px 8px;">${p.total_area || '-'}</td>
+                    <td style="text-align:center;padding:6px 8px;color:${segColor};font-weight:600;font-size:0.7rem;">${segLabel}</td>
+                    <td style="text-align:center;padding:6px 8px;">${sourceBadge(p.source)}</td>
+                    <td style="text-align:center;padding:6px 8px;font-size:0.75rem;">${age}d</td>
+                    <td style="text-align:center;padding:6px 8px;">${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.75rem;" onclick="event.stopPropagation()">→</a>` : ''}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function sortOppTable(key) {
+            if (oppSortKey === key) {
+                oppSortAsc = !oppSortAsc;
+            } else {
+                oppSortKey = key;
+                oppSortAsc = key === 'neighborhood' || key === 'title';
+            }
+            populateOpportunities();
         }
 
         // Opportunity filter buttons
