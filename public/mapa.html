@@ -455,7 +455,7 @@ function renderMarkers() {
             iconAnchor: [6, 6]
         });
 
-        const marker = L.marker([p.latitude, p.longitude], { icon })
+        const marker = L.marker([p.latitude, p.longitude], { icon, _pricePerSqm: p.price_per_sqm || 0 })
             .bindPopup(() => createPopup(p), { maxWidth: 300 });
 
         marker.on('click', () => selectProp(p.id));
@@ -709,7 +709,20 @@ async function init() {
     markerCluster = L.markerClusterGroup({
         maxClusterRadius: 40,
         spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false
+        showCoverageOnHover: false,
+        iconCreateFunction: function(cluster) {
+            const children = cluster.getAllChildMarkers();
+            const prices = children.map(m => m.options._pricePerSqm).filter(v => v > 0);
+            const avg = prices.length ? prices.reduce((a,b) => a+b, 0) / prices.length : 0;
+            const color = priceColor(avg);
+            const count = cluster.getChildCount();
+            const size = count < 10 ? 32 : count < 50 ? 38 : count < 100 ? 44 : 50;
+            return L.divIcon({
+                html: `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${size < 38 ? 11 : 12}px;font-weight:700;color:#000;border:2px solid rgba(0,0,0,0.3);box-shadow:0 0 8px ${color}80;">${count}</div>`,
+                className: '',
+                iconSize: [size, size]
+            });
+        }
     }).addTo(map);
 
     railwayLayer = L.featureGroup();
