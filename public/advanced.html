@@ -650,11 +650,25 @@
         plot_bgcolor: '#111827',
         font: { color: '#94a3b8', family: 'Inter' },
         scene: {
-          xaxis: { title: 'Area total (m2)', color: '#94a3b8', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
-          yaxis: { title: 'USD/m2', color: '#94a3b8', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
-          zaxis: { title: 'Gap vs barrio (%)', color: '#94a3b8', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
+          xaxis: {
+            title: 'Area total (m2)', color: '#94a3b8',
+            gridcolor: '#1e3a5f', zerolinecolor: '#334155',
+            backgroundcolor: '#0d1520', showbackground: true
+          },
+          yaxis: {
+            title: 'USD/m2', color: '#94a3b8',
+            gridcolor: '#1e3a5f', zerolinecolor: '#334155',
+            backgroundcolor: '#0f1825', showbackground: true
+          },
+          zaxis: {
+            title: 'Gap vs barrio (%)', color: '#94a3b8',
+            gridcolor: '#1e3a5f', zerolinecolor: '#334155',
+            backgroundcolor: '#0d1520', showbackground: true
+          },
           bgcolor: '#0a0e1a',
-          camera: { eye: { x: 1.8, y: 1.8, z: 0.8 } }
+          camera: { eye: { x: 1.6, y: 1.6, z: 0.7 }, up: { x: 0, y: 0, z: 1 } },
+          dragmode: 'turntable',
+          aspectmode: 'cube'
         },
         margin: { l: 0, r: 0, t: 20, b: 0 },
         legend: { x: 0, y: 1, font: { color: '#e2e8f0', size: 12 } },
@@ -1102,11 +1116,25 @@
         plot_bgcolor: '#111827',
         font: { color: '#94a3b8', family: 'Inter' },
         scene: {
-          xaxis: { title: 'Precio USD', color: '#94a3b8', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
-          yaxis: { title: 'USD/m2', color: '#94a3b8', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
-          zaxis: { title: 'Gap vs barrio (%)', color: '#94a3b8', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
+          xaxis: {
+            title: 'Precio USD', color: '#94a3b8',
+            gridcolor: '#1e3a5f', zerolinecolor: '#334155',
+            backgroundcolor: '#0d1520', showbackground: true
+          },
+          yaxis: {
+            title: 'USD/m2', color: '#94a3b8',
+            gridcolor: '#1e3a5f', zerolinecolor: '#334155',
+            backgroundcolor: '#0f1825', showbackground: true
+          },
+          zaxis: {
+            title: 'Gap vs barrio (%)', color: '#94a3b8',
+            gridcolor: '#1e3a5f', zerolinecolor: '#334155',
+            backgroundcolor: '#0d1520', showbackground: true
+          },
           bgcolor: '#0a0e1a',
-          camera: { eye: { x: 1.5, y: 1.5, z: 0.8 } }
+          camera: { eye: { x: 1.5, y: 1.5, z: 0.8 }, up: { x: 0, y: 0, z: 1 } },
+          dragmode: 'turntable',
+          aspectmode: 'cube'
         },
         margin: { l: 0, r: 0, t: 20, b: 0 },
         legend: { x: 0, y: 1, font: { color: '#e2e8f0', size: 12 } },
