@@ -231,11 +231,19 @@
         <div class="chart-container" id="contour-map"></div>
       </div>
 
+      <!-- 6. Bivariate Choropleth -->
+      <div class="section">
+        <h2>Bivariate Choropleth: Precio vs Seguridad</h2>
+        <p class="subtitle">Cada barrio coloreado por dos variables: USD/m2 mediano (eje X) y cantidad de delitos 2023 (eje Y). El sweet spot esta abajo a la izquierda: precio bajo + pocos delitos. Hover para detalles.</p>
+        <div class="chart-container" id="bivariate-chart"></div>
+      </div>
+
     </div>
   </div>
 
   <!-- Shared tooltip -->
   <div class="tooltip" id="tooltip" style="display:none;"></div>
+  <div class="tooltip" id="bivariate-tooltip" style="position:absolute;background:#111827;border:1px solid #00d4ff;border-radius:8px;padding:10px 14px;font-size:0.8rem;color:#e2e8f0;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:100;max-width:220px;"></div>
 
   <script>
     // -- Config --
@@ -929,6 +937,149 @@
         .attr('fill', '#94a3b8').attr('font-size', '10px')
         .text('$' + Math.round(priceExtent[1]) + '/m2');
     }
+
+    // ── 6. BIVARIATE CHOROPLETH: USD/m² vs Crime ──
+    async function drawBivariateChoropleth() {
+      const container = document.getElementById('bivariate-chart');
+      if (!container) return;
+
+      // Load barrio polygons + crime data
+      const [geoRes, crimeRes] = await Promise.all([
+        fetch('/data/barrios_caba.geojson').then(r => r.json()),
+        fetch('/data/crime_barrios.json').then(r => r.json())
+      ]);
+
+      // Compute median USD/m2 per barrio from property data
+      const barrioPrice = {};
+      filteredProps.forEach(p => {
+        if (!p.neighborhood || !p.price_per_sqm || p.price_per_sqm < 100 || p.price_per_sqm > 10000) return;
+        const n = p.neighborhood.toUpperCase();
+        if (!barrioPrice[n]) barrioPrice[n] = [];
+        barrioPrice[n].push(+p.price_per_sqm);
+      });
+
+      // Merge data onto GeoJSON features
+      const features = geoRes.features.map(f => {
+        const name = (f.properties.nombre || '').toUpperCase();
+        const prices = barrioPrice[name] || [];
+        const medianPrice = prices.length >= 3 ? prices.sort((a,b) => a-b)[Math.floor(prices.length/2)] : null;
+        const crime = crimeRes[name] || crimeRes[f.properties.nombre] || null;
+        const crimeRate = crime ? crime.total : null;
+        return { ...f, properties: { ...f.properties, medianPrice, crimeRate, propCount: prices.length } };
+      }).filter(f => f.properties.medianPrice !== null && f.properties.crimeRate !== null);
+
+      if (features.length < 5) {
+        container.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:40px;">Datos insuficientes para bivariate choropleth</p>';
+        return;
+      }
+
+      // Bivariate color scheme (3x3 grid)
+      // X axis: USD/m2 (low=good → high=bad for buyer)
+      // Y axis: Crime (low=good → high=bad)
+      // Sweet spot: low price + low crime = bottom-left = teal
+      const biColors = [
+        ['#e8e8e8', '#b5c0da', '#6c83b5'], // low crime
+        ['#b8d6be', '#90b2b3', '#567994'], // mid crime
+        ['#73ae80', '#5a9178', '#2a5a5b']  // high crime
+      ];
+      // Transpose for our axes: row=crime(0=low), col=price(0=low)
+
+      const priceVals = features.map(f => f.properties.medianPrice);
+      const crimeVals = features.map(f => f.properties.crimeRate);
+      const pBreaks = d3.scaleQuantile().domain(priceVals).range([0,1,2]);
+      const cBreaks = d3.scaleQuantile().domain(crimeVals).range([0,1,2]);
+
+      function biColor(price, crime) {
+        const pi = pBreaks(price);
+        const ci = cBreaks(crime);
+        return biColors[ci][pi];
+      }
+
+      const width = container.clientWidth;
+      const height = Math.max(500, width * 0.6);
+
+      const svg = d3.select('#bivariate-chart')
+        .append('svg')
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet');
+
+      const projection = d3.geoMercator()
+        .fitSize([width - 40, height - 80], { type: 'FeatureCollection', features });
+
+      const path = d3.geoPath().projection(projection);
+
+      const tooltip = d3.select('#bivariate-tooltip');
+
+      svg.selectAll('path')
+        .data(features)
+        .join('path')
+        .attr('d', path)
+        .attr('fill', d => biColor(d.properties.medianPrice, d.properties.crimeRate))
+        .attr('stroke', '#1e293b')
+        .attr('stroke-width', 1)
+        .attr('cursor', 'pointer')
+        .on('mouseover', function(event, d) {
+          d3.select(this).attr('stroke', '#00d4ff').attr('stroke-width', 2.5);
+          tooltip.style('opacity', 1)
+            .html(`<strong>${d.properties.nombre}</strong><br>
+              USD/m²: $${Math.round(d.properties.medianPrice).toLocaleString()}<br>
+              Delitos 2023: ${d.properties.crimeRate.toLocaleString()}<br>
+              Propiedades: ${d.properties.propCount}`)
+            .style('left', (event.pageX + 12) + 'px')
+            .style('top', (event.pageY - 10) + 'px');
+        })
+        .on('mousemove', function(event) {
+          tooltip.style('left', (event.pageX + 12) + 'px').style('top', (event.pageY - 10) + 'px');
+        })
+        .on('mouseout', function() {
+          d3.select(this).attr('stroke', '#1e293b').attr('stroke-width', 1);
+          tooltip.style('opacity', 0);
+        });
+
+      // Barrio labels for large polygons
+      svg.selectAll('text.label')
+        .data(features.filter(f => f.properties.propCount >= 30))
+        .join('text')
+        .attr('class', 'label')
+        .attr('transform', d => `translate(${path.centroid(d)})`)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#fff')
+        .attr('font-size', '9px')
+        .attr('font-weight', '500')
+        .attr('pointer-events', 'none')
+        .attr('opacity', 0.8)
+        .text(d => d.properties.nombre);
+
+      // Legend (3x3 grid)
+      const legendSize = 18;
+      const legendX = width - 120;
+      const legendY = height - 100;
+      const lg = svg.append('g').attr('transform', `translate(${legendX},${legendY})`);
+
+      for (let ci = 0; ci < 3; ci++) {
+        for (let pi = 0; pi < 3; pi++) {
+          lg.append('rect')
+            .attr('x', pi * legendSize)
+            .attr('y', (2 - ci) * legendSize)
+            .attr('width', legendSize)
+            .attr('height', legendSize)
+            .attr('fill', biColors[ci][pi])
+            .attr('stroke', '#1e293b');
+        }
+      }
+
+      lg.append('text').attr('x', legendSize * 1.5).attr('y', -6)
+        .attr('text-anchor', 'middle').attr('fill', '#94a3b8').attr('font-size', '9px').text('USD/m² →');
+      lg.append('text').attr('x', -8).attr('y', legendSize * 1.5)
+        .attr('text-anchor', 'middle').attr('fill', '#94a3b8').attr('font-size', '9px')
+        .attr('transform', `rotate(-90, -8, ${legendSize * 1.5})`).text('Delitos →');
+
+      lg.append('text').attr('x', 0).attr('y', legendSize * 3 + 14)
+        .attr('fill', '#4ade80').attr('font-size', '8px').text('Sweet spot ↙');
+    }
+
+    // Add bivariate to the load chain
+    drawBivariateChoropleth();
   </script>
 </body>
 </html>
