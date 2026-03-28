@@ -569,18 +569,20 @@ function loadRailways() {
         .catch(e => console.warn('Railways failed:', e));
 }
 
-// 200m buffer around train tracks
+// 200m buffer around train tracks (real meters, scales with zoom)
 function buildRailBuffer(geojson) {
     geojson.features.forEach(feat => {
-        const coords = feat.geometry.coordinates.map(c => [c[1], c[0]]);
+        const coords = feat.geometry.coordinates;
         if (coords.length < 2) return;
-        // Draw semi-transparent buffer along the line
-        L.polyline(coords, {
-            color: '#ef4444', weight: 25, opacity: 0.08,
-            lineCap: 'round', lineJoin: 'round'
-        }).addTo(railBufferLayer);
+        // Sample every 5th point to keep performance reasonable
+        for (let i = 0; i < coords.length; i += 5) {
+            L.circle([coords[i][1], coords[i][0]], {
+                radius: 200,
+                color: '#ef4444', fillColor: '#ef4444',
+                fillOpacity: 0.08, weight: 0, opacity: 0
+            }).addTo(railBufferLayer);
+        }
     });
-    // Don't add to map by default (toggle via layers control)
 }
 
 // Religious institutions
