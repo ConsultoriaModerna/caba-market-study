@@ -259,21 +259,22 @@
     const SEGMENT_COLORS = { refac: '#fb923c', recic: '#4ade80', general: '#64748b' };
 
     const ZONE_MAP = {
-      Norte:    { color: '#4ade80', barrios: ['Belgrano','Nunez','Núñez','Saavedra','Coghlan','Villa Urquiza','Colegiales','Palermo'] },
-      Centro:   { color: '#60a5fa', barrios: ['Caballito','Almagro','Boedo','San Cristóbal','San Cristobal','Balvanera','Recoleta','San Telmo'] },
-      Oeste:    { color: '#fb923c', barrios: ['Villa Devoto','Monte Castro','Floresta','Versalles','Villa Luro','Liniers'] },
-      Sur:      { color: '#f472b6', barrios: ['Flores','Mataderos','Parque Chacabuco','Barracas','La Boca','Pompeya','Nueva Pompeya','Villa Lugano'] },
-      'GBA Norte': { color: '#a78bfa', barrios: ['Vicente Lopez','Vicente López','Olivos','Florida','La Lucila','Martinez','Martínez','San Isidro','Beccar'] },
+      Norte:    { color: '#4ade80', barrios: ['Belgrano','Belgrano R','Belgrano C','Belgrano Chico','Nunez','Núñez','Lomas de Núñez','Saavedra','Coghlan','Villa Urquiza','Colegiales','Palermo','Palermo Soho','Palermo Hollywood','Palermo Chico','Las Cañitas','Barrio Parque'] },
+      Centro:   { color: '#60a5fa', barrios: ['Caballito','Caballito Norte','Caballito Sur','Almagro','Almagro Norte','Almagro Sur','Boedo','San Cristóbal','San Cristobal','Balvanera','Recoleta','Barrio Norte','San Telmo','Monserrat','Congreso','San Nicolas','Constitución','Retiro','Villa Crespo','Chacarita','Villa Ortuzar','La Paternal','Parque Chas','Agronomía','Agronomia','Villa General Mitre','Naón','Botánico'] },
+      Oeste:    { color: '#fb923c', barrios: ['Villa Devoto','Monte Castro','Floresta','Floresta Norte','Floresta Sur','Versalles','Villa Luro','Liniers','Villa Pueyrredón','Villa Pueyrredon','Villa del Parque','Villa Real','Villa Santa Rita','Velez Sarsfield','Parque Avellaneda'] },
+      Sur:      { color: '#f472b6', barrios: ['Flores','Flores Norte','Flores Sur','Mataderos','Parque Chacabuco','Barracas','La Boca','Pompeya','Nueva Pompeya','Villa Lugano','Villa Soldati','Parque Patricios','Villa Riachuelo'] },
+      'GBA Norte': { color: '#a78bfa', barrios: ['Vicente Lopez','Vicente López','Olivos','Florida','La Lucila','Munro','Carapachay','Villa Martelli','Martinez','Martínez','San Isidro','Beccar','Boulogne','Acassuso','San Fernando','Tigre','Don Torcuato','La Horqueta','Lomas de San Isidro','Villa Adelina','Santa Rita'] },
     };
     const ZONE_DEFAULT_COLOR = '#94a3b8';
 
     function getZone(neighborhood) {
-      if (!neighborhood) return 'Otro';
+      if (!neighborhood) return 'Centro';
       const n = neighborhood.trim();
       for (const [zone, info] of Object.entries(ZONE_MAP)) {
         if (info.barrios.some(b => n.toLowerCase() === b.toLowerCase())) return zone;
       }
-      return 'Otro';
+      // Default to closest match instead of "Otro"
+      return 'Centro';
     }
 
     function getZoneColor(zone) {
@@ -293,9 +294,107 @@
     function showTooltip(evt, html) {
       tooltip.html(html).style('display', 'block')
         .style('left', (evt.pageX + 14) + 'px')
-        .style('top', (evt.pageY - 14) + 'px');
+        .style('top', (evt.pageY - 14) + 'px')
+        .style('pointer-events', 'auto');
     }
-    function hideTooltip() { tooltip.style('display', 'none'); }
+    function hideTooltip() {
+      setTimeout(() => {
+        if (!tooltip.node().matches(':hover')) tooltip.style('display', 'none');
+      }, 200);
+    }
+
+    // Tooltip self-hide on mouseleave
+    document.getElementById('tooltip').addEventListener('mouseleave', () => {
+      tooltip.style('display', 'none');
+    });
+
+    // Favorites (shared with index.html via localStorage)
+    function getFavs() { try { return JSON.parse(localStorage.getItem('inmofindr_favs') || '[]'); } catch { return []; } }
+    function isFav(id) { return getFavs().includes(id); }
+    function toggleFav(id) {
+      let f = getFavs();
+      f = f.includes(id) ? f.filter(x => x !== id) : [...f, id];
+      localStorage.setItem('inmofindr_favs', JSON.stringify(f));
+      return f.includes(id);
+    }
+
+    // Property popup card (used by all 3D charts)
+    function showPropertyPopup(p) {
+      let overlay = document.getElementById('prop-popup-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'prop-popup-overlay';
+        Object.assign(overlay.style, {
+          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+          width: '420px', background: '#111827', border: '1px solid #00d4ff',
+          borderRadius: '12px', zIndex: '10000', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.6)'
+        });
+        document.body.appendChild(overlay);
+      }
+      const fav = isFav(p.id);
+      overlay.innerHTML = `
+        <div style="padding:1rem 1.2rem;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-weight:700;color:#e2e8f0;font-size:0.95rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title || 'Sin titulo'}</div>
+          <button onclick="document.getElementById('prop-popup-overlay').remove()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:1.2rem;margin-left:8px;">x</button>
+        </div>
+        <div style="padding:1rem 1.2rem;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:0.8rem;">
+            <div>
+              <div style="font-size:1.3rem;font-weight:700;color:#00d4ff;">USD ${(p.price||0).toLocaleString()}</div>
+              <div style="font-size:0.85rem;color:#94a3b8;">${p.price_per_sqm ? '$'+p.price_per_sqm+'/m2' : ''} ${p.total_area ? '-- '+p.total_area+'m2' : ''}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="color:#94a3b8;font-size:0.8rem;">📍 ${p.neighborhood || ''}</div>
+              <div style="color:${p.segment==='refac'?'#fb923c':p.segment==='recic'?'#4ade80':'#94a3b8'};font-size:0.75rem;font-weight:600;">${(p.segment||'general').toUpperCase()}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:0.5rem;">
+            ${p.permalink ? `<a href="${p.permalink}" target="_blank" style="flex:1;text-align:center;padding:0.6rem;background:#00d4ff;color:#000;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.85rem;">Ver publicacion</a>` : ''}
+            <button onclick="const on=toggleFav('${p.id}');this.textContent=on?'★ Favorita':'☆ Favoritar';this.style.borderColor=on?'#eab308':'#1e293b';this.style.color=on?'#eab308':'#94a3b8';" style="padding:0.6rem 1rem;background:transparent;border:1px solid ${fav?'#eab308':'#1e293b'};color:${fav?'#eab308':'#94a3b8'};border-radius:8px;cursor:pointer;font-size:0.85rem;font-family:inherit;">${fav ? '★ Favorita' : '☆ Favoritar'}</button>
+          </div>
+        </div>`;
+    }
+
+    // Show barrio property list in a modal-like panel
+    let _rawData = [];
+    function showBarrioList(barrio) {
+      const props = _rawData
+        .filter(d => d.neighborhood === barrio && d.currency === 'USD' && d.price > 0)
+        .sort((a, b) => (a.price_per_sqm || 9999) - (b.price_per_sqm || 9999))
+        .slice(0, 30);
+
+      const listHtml = props.map(p =>
+        `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e293b;cursor:pointer;" onclick="window.open('${p.permalink || ''}','_blank')">
+          <div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.8rem;">${p.title || 'Sin titulo'}</div>
+          <div style="min-width:120px;text-align:right;font-size:0.8rem;">
+            <span style="font-weight:600;">$${(p.price||0).toLocaleString()}</span>
+            <span style="color:#00d4ff;margin-left:6px;">${p.price_per_sqm ? '$'+p.price_per_sqm+'/m2' : ''}</span>
+          </div>
+        </div>`
+      ).join('');
+
+      // Create or reuse overlay
+      let overlay = document.getElementById('barrio-list-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'barrio-list-overlay';
+        Object.assign(overlay.style, {
+          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+          width: '500px', maxHeight: '70vh', background: '#111827', border: '1px solid #00d4ff',
+          borderRadius: '12px', zIndex: '10000', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.6)'
+        });
+        document.body.appendChild(overlay);
+      }
+      overlay.innerHTML = `
+        <div style="padding:1rem 1.2rem;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-weight:700;color:#e2e8f0;">${barrio} -- ${props.length} propiedades</div>
+          <button onclick="document.getElementById('barrio-list-overlay').remove()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:1.2rem;">x</button>
+        </div>
+        <div style="padding:0.5rem 1.2rem;max-height:55vh;overflow-y:auto;">
+          ${listHtml || '<div style="color:#94a3b8;padding:1rem;">Sin propiedades en este barrio</div>'}
+        </div>`;
+      hideTooltip();
+    }
 
     // -- Fetch data --
     async function fetchData() {
@@ -309,6 +408,7 @@
 
     // -- Main --
     fetchData().then(raw => {
+      _rawData = raw; // store for barrio list popup
       document.getElementById('loading').style.display = 'none';
       document.getElementById('content').style.display = 'block';
       document.getElementById('header-subtitle').textContent = raw.length.toLocaleString() + ' active listings loaded';
@@ -585,9 +685,7 @@
         const seg = pt.data.name === 'A Refaccionar' ? 'refac' : pt.data.name === 'Reciclada' ? 'recic' : 'general';
         const subset = validData.filter(d => (d.segment || 'general') === seg);
         const prop = subset[pt.pointNumber];
-        if (prop && prop.permalink) {
-          window.open(prop.permalink, '_blank');
-        }
+        if (prop) showPropertyPopup(prop);
       });
     }
 
@@ -695,15 +793,19 @@
         .on('mouseover', function(evt, d) {
           d3.select(this).attr('fill-opacity', 1).attr('stroke-opacity', 1);
           showTooltip(evt,
-            `<strong>${d.id}</strong><br>` +
-            `Zone: ${d.zone}<br>` +
-            `Listings: ${d.count}<br>` +
-            `Median USD/m2: ${d.medianPrice ? '$' + d.medianPrice.toLocaleString(undefined, {maximumFractionDigits: 0}) : 'N/A'}`
+            `<strong>${d.id}</strong> <span style="color:${d.color};font-size:0.7rem;">${d.zone}</span><br>` +
+            `${d.count} propiedades -- $${d.medianPrice ? d.medianPrice.toLocaleString(undefined, {maximumFractionDigits: 0}) : '?'}/m2<br>` +
+            `<a href="#" onclick="event.preventDefault();showBarrioList('${d.id}')" style="color:#00d4ff;font-size:0.8rem;">Ver listado →</a>`
           );
         })
-        .on('mouseout', function() {
-          d3.select(this).attr('fill-opacity', 0.8).attr('stroke-opacity', 0.4);
-          hideTooltip();
+        .on('mouseout', function(evt) {
+          // Delay hide to allow clicking the link
+          setTimeout(() => {
+            if (!tooltip.node().matches(':hover')) {
+              d3.select(this).attr('fill-opacity', 0.8).attr('stroke-opacity', 0.4);
+              hideTooltip();
+            }
+          }, 300);
         })
         .call(d3.drag()
           .on('start', (evt, d) => { if (!evt.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
@@ -1013,14 +1115,14 @@
 
       Plotly.newPlot('density-map', traces, layout, { responsive: true, scrollZoom: true, displaylogo: false });
 
-      // Click to open property link
+      // Click shows property popup card
       document.getElementById('density-map').on('plotly_click', function(eventData) {
         const pt = eventData.points[0];
         if (!pt) return;
         const isOppTrace = pt.data.name.includes('Oportunidad');
         const subset = isOppTrace ? oppData : normData;
         const prop = subset[pt.pointNumber];
-        if (prop && prop.permalink) window.open(prop.permalink, '_blank');
+        if (prop) showPropertyPopup(prop);
       });
     }
 
