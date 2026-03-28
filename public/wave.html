@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wave Above the City — CABA Market Pulse</title>
+    <title>Wave Above the City — InmoFindr Market Pulse</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="/auth.js"></script>
     <script src="/nav.js"></script>
@@ -192,7 +192,8 @@
 
         .churn-bar .numbers .churn {
             color: #f472b6;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 0.8rem;
         }
 
         .churn-bar .bg-fill {
@@ -200,8 +201,17 @@
             top: 0;
             left: 0;
             height: 100%;
-            opacity: 0.08;
+            opacity: 0.15;
             transition: width 0.8s ease;
+        }
+
+        .churn-bar .churn-indicator {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            opacity: 0.25;
         }
 
         /* Tooltip */
@@ -662,17 +672,22 @@
         function renderChurnGrid(data) {
             const sorted = [...data].sort((a, b) => b.churnPct - a.churnPct);
             const maxTotal = d3.max(data, d => d.total);
+            const maxChurn = d3.max(data, d => d.churnPct) || 1;
 
-            document.getElementById('churn-grid').innerHTML = sorted.map(d => {
+            document.getElementById('churn-grid').innerHTML = sorted.map((d, i) => {
                 const color = ZONE_COLORS[d.zone] || ZONE_COLORS['Otro'];
                 const fillW = (d.total / maxTotal * 100).toFixed(0);
+                const churnIntensity = d.churnPct / maxChurn;
+                const borderColor = d.churnPct > 5 ? `rgba(244,114,182,${0.3 + churnIntensity * 0.5})` : 'var(--border)';
+                const bgTint = d.churnPct > 5 ? `rgba(244,114,182,${churnIntensity * 0.08})` : '';
                 return `
-                    <div class="churn-bar">
+                    <div class="churn-bar" style="border-color:${borderColor};${bgTint ? 'background:'+bgTint+';' : ''}">
                         <div class="bg-fill" style="width:${fillW}%;background:${color}"></div>
+                        ${d.churnPct > 3 ? `<div class="churn-indicator" style="color:${color};">${i + 1}</div>` : ''}
                         <div class="name">${d.name}</div>
                         <div class="numbers">
                             ${d.active} activas / ${d.inactive} bajadas
-                            ${d.churnPct > 0 ? `— <span class="churn">${d.churnPct}% churn</span>` : ''}
+                            ${d.churnPct > 0 ? `<br><span class="churn">${d.churnPct}% churn</span>` : ''}
                         </div>
                     </div>
                 `;
