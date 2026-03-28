@@ -24,9 +24,9 @@ echo "$ML_OUT"
 ML_NEW=$(echo "$ML_OUT" | grep -oP '\d+ new' | grep -oP '\d+' || echo "0")
 ML_STALE=$(echo "$ML_OUT" | grep -oP '\d+ marked inactive' | grep -oP '\d+' || echo "0")
 
-# Step 2: ZP grid scan (Chrome, ~2 min)
-echo "━━━ [2/5] ZP Grid Scan ━━━"
-ZP_OUT=$(node scripts/scan-zp-grid.mjs 20 2>&1) || ERRORS="${ERRORS}ZP scan failed. "
+# Step 2: ZP grid scan (Puppeteer headless, all zones, ~10 min)
+echo "━━━ [2/5] ZP Grid Scan (headless) ━━━"
+ZP_OUT=$(node scripts/vps/scan-zp-headless.mjs 20 --zone=all 2>&1) || ERRORS="${ERRORS}ZP scan failed. "
 echo "$ZP_OUT"
 ZP_NEW=$(echo "$ZP_OUT" | grep -oP '\d+ new,' | grep -oP '\d+' || echo "0")
 ZP_REFRESHED=$(echo "$ZP_OUT" | grep -oP '\d+ refreshed' | grep -oP '\d+' || echo "0")
