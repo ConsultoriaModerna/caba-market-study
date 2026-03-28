@@ -34,7 +34,9 @@ function extractKeywords(title, attrs) {
     'jardin': 'jardin', 'patio': 'patio', 'terraza': 'terraza',
     'pileta': 'pileta', 'cochera': 'cochera', 'garage': 'cochera',
     'parrilla': 'parrilla', 'quincho': 'quincho',
-    'refaccionar': 'a refaccionar', 'reciclada': 'reciclada', 'reciclado': 'reciclada',
+    'refaccionar': 'a refaccionar', 'a reciclar': 'a refaccionar', 'para reciclar': 'a refaccionar',
+    'reciclada': 'reciclada', 'reciclado': 'reciclada', 'reciclado a nuevo': 'reciclada', 'refaccionada': 'reciclada',
+    'a estrenar': 'a estrenar', 'a nuevo': 'a estrenar',
     'escritura': 'escritura', 'apto credito': 'apto credito',
     'ph': 'ph', 'duplex': 'duplex', 'triplex': 'triplex',
     'lote': 'lote propio',
@@ -53,6 +55,7 @@ function extractKeywords(title, attrs) {
 function determineSegment(kw) {
   if (kw.includes('a refaccionar')) return 'refac';
   if (kw.includes('reciclada')) return 'recic';
+  if (kw.includes('a estrenar')) return 'recic'; // a estrenar = top condition
   return 'general';
 }
 

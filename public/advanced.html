@@ -206,6 +206,12 @@
       <div class="section">
         <h2>3D Opportunity Scanner</h2>
         <p class="subtitle">X = superficie total, Y = USD/m2, Z = gap vs mediana del barrio (%). Tamano de bola = m2 cubiertos. Bolas grandes y bajas = mucho espacio habitable a bajo precio.</p>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.8rem;">
+            <button class="scatter-toggle active" data-seg="all" onclick="toggleScatterSeg(this)" style="padding:3px 10px;border-radius:12px;border:1px solid var(--accent);background:rgba(0,212,255,0.15);color:var(--accent);cursor:pointer;font-size:0.75rem;">Todas</button>
+            <button class="scatter-toggle" data-seg="refac" onclick="toggleScatterSeg(this)" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--orange);cursor:pointer;font-size:0.75rem;">A Refaccionar</button>
+            <button class="scatter-toggle" data-seg="general" onclick="toggleScatterSeg(this)" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:#94a3b8;cursor:pointer;font-size:0.75rem;">General</button>
+            <button class="scatter-toggle" data-seg="recic" onclick="toggleScatterSeg(this)" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--green);cursor:pointer;font-size:0.75rem;">Reciclada</button>
+        </div>
         <div class="chart-container" id="scatter-3d" style="height:650px;"></div>
       </div>
 
@@ -466,7 +472,31 @@
     // =============================================
     // 2. 3D OPPORTUNITY SCANNER (Plotly)
     // =============================================
+    let scatter3dData = []; // store for re-filtering
+    let scatter3dBarrioMedians = {};
+
+    function toggleScatterSeg(btn) {
+      document.querySelectorAll('.scatter-toggle').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.borderColor = 'var(--border)';
+        b.classList.remove('active');
+      });
+      btn.classList.add('active');
+      btn.style.background = 'rgba(0,212,255,0.15)';
+      btn.style.borderColor = 'var(--accent)';
+      const seg = btn.dataset.seg;
+
+      const el = document.getElementById('scatter-3d');
+      const indices = [];
+      const traceNames = { 'refac': 'A Refaccionar', 'general': 'General', 'recic': 'Reciclada' };
+      el.data.forEach((trace, i) => {
+        const visible = seg === 'all' || trace.name === traceNames[seg];
+        Plotly.restyle('scatter-3d', { visible: visible }, [i]);
+      });
+    }
+
     function build3DScatter(data) {
+      scatter3dData = data;
       // Compute barrio medians for gap calculation
       const barrioMedians = {};
       data.forEach(d => {
@@ -535,8 +565,14 @@
         responsive: true,
         scrollZoom: true,
         displayModeBar: true,
-        modeBarButtonsToAdd: ['resetCameraDefault3d'],
+        modeBarButtonsToRemove: ['toImage'],
         displaylogo: false
+      };
+
+      layout.scene.dragmode = 'turntable';
+      layout.scene.camera = {
+        eye: { x: 1.6, y: 1.6, z: 0.7 },
+        up: { x: 0, y: 0, z: 1 }
       };
 
       Plotly.newPlot('scatter-3d', traces, layout, plotConfig);
