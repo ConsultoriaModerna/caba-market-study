@@ -398,7 +398,7 @@
 
     // -- Fetch data --
     async function fetchData() {
-      const query = '/rest/v1/properties?select=id,title,neighborhood,price,price_per_sqm,total_area,covered_area,bedrooms,bathrooms,segment,currency,source,state,city,latitude,longitude,keywords&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast&limit=5000';
+      const query = '/rest/v1/properties?select=id,title,neighborhood,price,price_per_sqm,total_area,covered_area,bedrooms,bathrooms,segment,currency,source,state,city,latitude,longitude,keywords,permalink,thumbnail&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast&limit=10000';
       const resp = await fetch(SUPABASE_URL + query, {
         headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY }
       });
