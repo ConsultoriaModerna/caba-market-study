@@ -425,6 +425,7 @@
       buildForceNetwork(raw);
       buildTreemap(raw);
       buildDensityMap(raw);
+      drawBivariateChoropleth();
     }).catch(err => {
       document.getElementById('loading').innerHTML = 'Error loading data: ' + err.message;
     });
@@ -1167,19 +1168,36 @@
 
       // Compute median USD/m2 per barrio from property data
       const barrioPrice = {};
-      filteredProps.forEach(p => {
+      _rawData.forEach(p => {
         if (!p.neighborhood || !p.price_per_sqm || p.price_per_sqm < 100 || p.price_per_sqm > 10000) return;
         const n = p.neighborhood.toUpperCase();
         if (!barrioPrice[n]) barrioPrice[n] = [];
         barrioPrice[n].push(+p.price_per_sqm);
       });
 
+      // Fuzzy crime key lookup (handles "LA BOCA" vs "BOCA", "NUÑEZ" vs "NUNEZ")
+      function findCrime(name) {
+        const upper = name.toUpperCase();
+        if (crimeRes[upper]) return crimeRes[upper];
+        if (crimeRes[name]) return crimeRes[name];
+        // Try without "LA ", "NUEVA "
+        const stripped = upper.replace(/^(LA |NUEVA |VILLA )/, '');
+        if (crimeRes[stripped]) return crimeRes[stripped];
+        // Try removing accents
+        const noAccent = upper.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        for (const key of Object.keys(crimeRes)) {
+          const keyNorm = key.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          if (keyNorm === noAccent || keyNorm === stripped) return crimeRes[key];
+        }
+        return null;
+      }
+
       // Merge data onto GeoJSON features
       const features = geoRes.features.map(f => {
         const name = (f.properties.nombre || '').toUpperCase();
         const prices = barrioPrice[name] || [];
         const medianPrice = prices.length >= 3 ? prices.sort((a,b) => a-b)[Math.floor(prices.length/2)] : null;
-        const crime = crimeRes[name] || crimeRes[f.properties.nombre] || null;
+        const crime = findCrime(f.properties.nombre || '');
         const crimeRate = crime ? crime.total : null;
         return { ...f, properties: { ...f.properties, medianPrice, crimeRate, propCount: prices.length } };
       }).filter(f => f.properties.medianPrice !== null && f.properties.crimeRate !== null);
@@ -1294,8 +1312,7 @@
         .attr('fill', '#4ade80').attr('font-size', '8px').text('Sweet spot ↙');
     }
 
-    // Add bivariate to the load chain
-    drawBivariateChoropleth();
+    // bivariate is called inside fetchData().then()
   </script>
 </body>
 </html>
