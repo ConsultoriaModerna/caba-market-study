@@ -2381,6 +2381,12 @@
                         <button onclick="analyzeProperty('${p.id}')" style="flex:1;padding:0.7rem;background:linear-gradient(135deg,#a78bfa,#f472b6);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;font-family:inherit;">🧠 Analizar con AI</button>
                     </div>
 
+                    <!-- Admin actions -->
+                    <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
+                        <button onclick="editProperty('${p.id}')" style="flex:1;padding:0.5rem;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Editar</button>
+                        <button onclick="deleteProperty('${p.id}')" style="padding:0.5rem 1rem;background:transparent;border:1px solid rgba(239,68,68,0.3);color:var(--red);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Borrar</button>
+                    </div>
+
                     <!-- AI Analysis container -->
                     <div id="ai-prop-analysis" style="margin-top:1rem;display:none;"></div>
                 </div>
@@ -2395,6 +2401,125 @@
 
         function closePropModal() {
             document.getElementById('propModal').style.display = 'none';
+        }
+
+        async function deleteProperty(propId) {
+            if (!confirm(`Borrar propiedad ${propId} de la base de datos?\n\nEsta accion no se puede deshacer.`)) return;
+            if (!confirm('Confirmar: BORRAR definitivamente?')) return;
+            try {
+                const resp = await fetch(`${SUPABASE_URL}/rest/v1/properties?id=eq.${propId}`, {
+                    method: 'DELETE',
+                    headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` }
+                });
+                if (resp.ok) {
+                    allPropertiesRaw = allPropertiesRaw.filter(p => p.id !== propId);
+                    applyGlobalPriceFilter();
+                    closePropModal();
+                    alert('Propiedad eliminada');
+                } else {
+                    alert('Error al borrar: ' + resp.status);
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        function editProperty(propId) {
+            const p = allProperties.find(x => x.id === propId);
+            if (!p) return;
+            const content = document.getElementById('propModalContent');
+            content.innerHTML = `
+                <div style="padding:1.5rem;">
+                    <h3 style="margin-bottom:1rem;color:var(--accent);">Editar Propiedad</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;">
+                        <div>
+                            <label style="font-size:0.7rem;color:var(--text-secondary);display:block;margin-bottom:2px;">Titulo</label>
+                            <input id="edit-title" value="${(p.title || '').replace(/"/g, '&quot;')}" style="width:100%;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:inherit;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem;color:var(--text-secondary);display:block;margin-bottom:2px;">Barrio</label>
+                            <input id="edit-neighborhood" value="${p.neighborhood || ''}" style="width:100%;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:inherit;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem;color:var(--text-secondary);display:block;margin-bottom:2px;">Precio</label>
+                            <input id="edit-price" type="number" value="${p.price || ''}" style="width:100%;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:inherit;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem;color:var(--text-secondary);display:block;margin-bottom:2px;">Moneda</label>
+                            <select id="edit-currency" style="width:100%;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:inherit;">
+                                <option value="USD" ${p.currency === 'USD' ? 'selected' : ''}>USD</option>
+                                <option value="ARS" ${p.currency === 'ARS' ? 'selected' : ''}>ARS</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem;color:var(--text-secondary);display:block;margin-bottom:2px;">m² totales</label>
+                            <input id="edit-total-area" type="number" value="${p.total_area || ''}" style="width:100%;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:inherit;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem;color:var(--text-secondary);display:block;margin-bottom:2px;">m² cubiertos</label>
+                            <input id="edit-covered-area" type="number" value="${p.covered_area || ''}" style="width:100%;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:inherit;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem;color:var(--text-secondary);display:block;margin-bottom:2px;">Segmento</label>
+                            <select id="edit-segment" style="width:100%;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:inherit;">
+                                <option value="general" ${p.segment === 'general' ? 'selected' : ''}>General</option>
+                                <option value="refac" ${p.segment === 'refac' ? 'selected' : ''}>A Refaccionar</option>
+                                <option value="recic" ${p.segment === 'recic' ? 'selected' : ''}>Reciclada</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem;color:var(--text-secondary);display:block;margin-bottom:2px;">Dormitorios</label>
+                            <input id="edit-bedrooms" type="number" value="${p.bedrooms || ''}" style="width:100%;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:inherit;">
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;margin-top:1.2rem;">
+                        <button onclick="saveProperty('${p.id}')" style="flex:1;padding:0.7rem;background:var(--accent);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit;">Guardar</button>
+                        <button onclick="openPropModal('${p.id}')" style="padding:0.7rem 1.2rem;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:8px;cursor:pointer;font-family:inherit;">Cancelar</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function saveProperty(propId) {
+            const updates = {
+                title: document.getElementById('edit-title').value,
+                neighborhood: document.getElementById('edit-neighborhood').value,
+                price: parseFloat(document.getElementById('edit-price').value) || null,
+                currency: document.getElementById('edit-currency').value,
+                total_area: parseFloat(document.getElementById('edit-total-area').value) || null,
+                covered_area: parseFloat(document.getElementById('edit-covered-area').value) || null,
+                segment: document.getElementById('edit-segment').value,
+                bedrooms: parseInt(document.getElementById('edit-bedrooms').value) || null,
+            };
+            // Recalculate price_per_sqm
+            const area = updates.covered_area || updates.total_area;
+            if (updates.price && area) {
+                updates.price_per_sqm = Math.round(updates.price / area);
+            }
+
+            try {
+                const resp = await fetch(`${SUPABASE_URL}/rest/v1/properties?id=eq.${propId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        apikey: ANON_KEY,
+                        Authorization: `Bearer ${ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(updates)
+                });
+                if (resp.ok) {
+                    // Update local data
+                    const idx = allPropertiesRaw.findIndex(p => p.id === propId);
+                    if (idx >= 0) Object.assign(allPropertiesRaw[idx], updates);
+                    applyGlobalPriceFilter();
+                    openPropModal(propId);
+                } else {
+                    alert('Error al guardar: ' + resp.status);
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
         }
 
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closePropModal(); });
