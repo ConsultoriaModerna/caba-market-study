@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CABA — Property Explorer</title>
+    <title>InmoFindr — Property Explorer</title>
     <script src="/auth.js"></script>
     <script src="/nav.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
@@ -154,7 +154,7 @@
 <div id="app">
     <div id="sidebar">
         <div class="sidebar-header">
-            <h1>CABA Property Explorer</h1>
+            <h1>InmoFindr Explorer</h1>
             <div class="sub">Propiedades geocodeadas — Live Supabase</div>
         </div>
 
@@ -261,7 +261,7 @@ const KEYWORDS = [
 const SEGMENTS = ['cheap','refac','recic','general'];
 const SOURCES = ['zonaprop','mercadolibre'];
 
-let map, markerCluster, railwayLayer, bufferLayer;
+let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer;
 let allProps = [];
 let filtered = [];
 let activeKws = new Set();
@@ -526,27 +526,71 @@ function selectProp(id) {
     if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// Railways
+// Railways (from static GeoJSON)
 function loadRailways() {
-    const cached = sessionStorage.getItem('caba_railway_data');
-    if (cached) { renderRailways(JSON.parse(cached)); return; }
-
-    const query = `[out:json][timeout:25];area["name"="Buenos Aires"]["admin_level"="2"]->.a;(way["railway"="rail"](area.a);way["railway"="light_rail"](area.a););out geom;`;
-    fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query })
+    fetch('/data/railways.geojson')
         .then(r => r.json())
-        .then(d => { sessionStorage.setItem('caba_railway_data', JSON.stringify(d)); renderRailways(d); })
+        .then(geojson => {
+            L.geoJSON(geojson, {
+                style: { color: '#ef4444', weight: 2.5, opacity: 0.5 }
+            }).addTo(railwayLayer);
+            railwayLayer.addTo(map);
+            // Build 200m buffer zones
+            buildRailBuffer(geojson);
+        })
         .catch(e => console.warn('Railways failed:', e));
 }
 
-function renderRailways(data) {
-    if (!data?.elements) return;
-    data.elements.forEach(el => {
-        if (el.type === 'way' && el.geometry) {
-            const coords = el.geometry.map(n => [n.lat, n.lon]);
-            L.polyline(coords, { color: '#ef4444', weight: 2.5, opacity: 0.5 }).addTo(railwayLayer);
-        }
+// 200m buffer around train tracks
+function buildRailBuffer(geojson) {
+    geojson.features.forEach(feat => {
+        const coords = feat.geometry.coordinates.map(c => [c[1], c[0]]);
+        if (coords.length < 2) return;
+        // Draw semi-transparent buffer along the line
+        L.polyline(coords, {
+            color: '#ef4444', weight: 25, opacity: 0.08,
+            lineCap: 'round', lineJoin: 'round'
+        }).addTo(railBufferLayer);
     });
-    railwayLayer.addTo(map);
+    // Don't add to map by default (toggle via layers control)
+}
+
+// Religious institutions
+function loadReligious() {
+    fetch('/data/religious.json')
+        .then(r => r.json())
+        .then(places => {
+            places.forEach(p => {
+                if (!p.lat || !p.lon) return;
+                const icon = L.divIcon({
+                    className: '',
+                    html: '<div style="font-size:12px;text-align:center;opacity:0.7;">&#9069;</div>',
+                    iconSize: [14, 14], iconAnchor: [7, 7]
+                });
+                L.marker([p.lat, p.lon], { icon })
+                    .bindPopup(`<b>${p.name || 'Lugar de culto'}</b><br>${p.religion || ''} ${p.denomination || ''}`)
+                    .addTo(religiousLayer);
+            });
+        })
+        .catch(e => console.warn('Religious layer failed:', e));
+}
+
+// Villas / asentamientos
+function loadVillas() {
+    fetch('/data/villas.json')
+        .then(r => r.json())
+        .then(places => {
+            places.forEach(p => {
+                if (!p.lat || !p.lon) return;
+                L.circle([p.lat, p.lon], {
+                    radius: 300, color: '#f97316', fillColor: '#f97316',
+                    fillOpacity: 0.15, weight: 1.5, opacity: 0.6
+                })
+                    .bindPopup(`<b>${p.name}</b><br>Asentamiento informal`)
+                    .addTo(villasLayer);
+            });
+        })
+        .catch(e => console.warn('Villas layer failed:', e));
 }
 
 // Init
@@ -564,11 +608,17 @@ async function init() {
 
     railwayLayer = L.featureGroup();
     bufferLayer = L.featureGroup();
+    railBufferLayer = L.featureGroup();
+    religiousLayer = L.featureGroup();
+    villasLayer = L.featureGroup();
 
     L.control.layers({}, {
         'Propiedades': markerCluster,
-        'Vías de Tren': railwayLayer
-    }, { position: 'topright', collapsed: true }).addTo(map);
+        'Vias de Tren': railwayLayer,
+        'Buffer 200m Tren': railBufferLayer,
+        'Lugares de Culto': religiousLayer,
+        'Villas / Asentamientos': villasLayer
+    }, { position: 'topright', collapsed: false }).addTo(map);
 
     initChips();
 
@@ -593,6 +643,8 @@ async function init() {
 
     document.getElementById('loading').classList.add('hidden');
     loadRailways();
+    loadReligious();
+    loadVillas();
 
     // Enter key applies filters
     document.querySelectorAll('.filter-input').forEach(input => {
