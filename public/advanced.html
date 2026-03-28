@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InmoFindr -- Advanced Analytics</title>
+  <script src="/auth.js"></script>
+  <script src="/nav.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.0.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a1f3a;
+      --border: #1e293b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #00d4ff;
+      --green: #4ade80;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --orange: #f97316;
+      --purple: #a78bfa;
+      --sur: #f472b6;
+      --oeste: #fb923c;
+      --centro: #60a5fa;
+      --norte: #4ade80;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; padding: 40px 24px; }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid var(--accent);
+    }
+
+    header h1 { font-size: 2.2rem; color: var(--accent); font-weight: 700; }
+    header p { color: var(--text-muted); margin-top: 8px; }
+
+    .section {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 32px;
+      border: 1px solid var(--border);
+    }
+
+    .section h2 {
+      font-size: 1.4rem;
+      color: var(--accent);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .section .subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+
+    .chart-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .tooltip {
+      position: absolute;
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      pointer-events: none;
+      z-index: 1000;
+      color: var(--text);
+      max-width: 320px;
+      line-height: 1.5;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    .tooltip strong { color: var(--accent); }
+
+    .filter-info {
+      text-align: right;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 12px;
+    }
+
+    .filter-info span { color: var(--accent); font-weight: 600; }
+
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    .loading::after {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--accent);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-left: 12px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Parallel coordinates styles */
+    .pc-axis line, .pc-axis path { stroke: var(--border); }
+    .pc-axis text { fill: var(--text-muted); font-size: 11px; }
+    .pc-axis .axis-title { fill: var(--accent); font-size: 13px; font-weight: 600; }
+    .brush .selection { fill: var(--accent); fill-opacity: 0.25; stroke: var(--accent); }
+
+    /* Force network styles */
+    .node-label {
+      fill: var(--text);
+      font-size: 10px;
+      font-weight: 500;
+      text-anchor: middle;
+      pointer-events: none;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+
+    /* Treemap styles */
+    .treemap-cell text {
+      fill: #fff;
+      font-size: 11px;
+      font-weight: 500;
+      pointer-events: none;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    }
+
+    .legend {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .message-box {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>InmoFindr -- Advanced Analytics</h1>
+      <p id="header-subtitle">Loading properties...</p>
+    </header>
+
+    <div id="loading" class="loading">Loading data from Supabase</div>
+
+    <div id="content" style="display:none;">
+
+      <!-- 1. Parallel Coordinates -->
+      <div class="section">
+        <h2>Parallel Coordinates</h2>
+        <p class="subtitle">Each line is a property. Drag on any axis to filter. Color by segment: <span style="color:#fb923c">refac</span>, <span style="color:#4ade80">recic</span>, <span style="color:#64748b">general</span>.</p>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#fb923c"></div> Refac</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> Recic</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#64748b"></div> General</div>
+        </div>
+        <div class="chart-container" id="parallel-coords"></div>
+        <div class="filter-info" id="pc-filter-info"></div>
+      </div>
+
+      <!-- 2. 3D Scatter Plot -->
+      <div class="section">
+        <h2>3D Scatter Plot</h2>
+        <p class="subtitle">Explore the relationship between area, price per sqm, and total price in 3D space. Color by segment.</p>
+        <div class="chart-container" id="scatter-3d" style="height:650px;"></div>
+      </div>
+
+      <!-- 3. Force-Directed Network -->
+      <div class="section">
+        <h2>Neighborhood Network</h2>
+        <p class="subtitle">Neighborhoods connected by similar median USD/m2 (within 15%). Node size reflects listing count. Hover for details.</p>
+        <div class="legend" id="network-legend"></div>
+        <div class="chart-container" id="force-network"></div>
+      </div>
+
+      <!-- 4. Treemap -->
+      <div class="section">
+        <h2>Market Composition Treemap</h2>
+        <p class="subtitle">Zone and neighborhood breakdown by listing count. Color intensity reflects median USD/m2.</p>
+        <div class="chart-container" id="treemap"></div>
+      </div>
+
+      <!-- 5. Contour Heatmap -->
+      <div class="section">
+        <h2>Price Density Contour Map</h2>
+        <p class="subtitle">Spatial distribution of USD/m2 values. Contours show price density, dots are individual properties.</p>
+        <div class="chart-container" id="contour-map"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Shared tooltip -->
+  <div class="tooltip" id="tooltip" style="display:none;"></div>
+
+  <script>
+    // -- Config --
+    const SUPABASE_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
+    const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
+
+    const SEGMENT_COLORS = { refac: '#fb923c', recic: '#4ade80', general: '#64748b' };
+
+    const ZONE_MAP = {
+      Norte:    { color: '#4ade80', barrios: ['Belgrano','Nunez','Núñez','Saavedra','Coghlan','Villa Urquiza','Colegiales','Palermo'] },
+      Centro:   { color: '#60a5fa', barrios: ['Caballito','Almagro','Boedo','San Cristóbal','San Cristobal','Balvanera','Recoleta','San Telmo'] },
+      Oeste:    { color: '#fb923c', barrios: ['Villa Devoto','Monte Castro','Floresta','Versalles','Villa Luro','Liniers'] },
+      Sur:      { color: '#f472b6', barrios: ['Flores','Mataderos','Parque Chacabuco','Barracas','La Boca','Pompeya','Nueva Pompeya','Villa Lugano'] },
+      'GBA Norte': { color: '#a78bfa', barrios: ['Vicente Lopez','Vicente López','Olivos','Florida','La Lucila','Martinez','Martínez','San Isidro','Beccar'] },
+    };
+    const ZONE_DEFAULT_COLOR = '#94a3b8';
+
+    function getZone(neighborhood) {
+      if (!neighborhood) return 'Otro';
+      const n = neighborhood.trim();
+      for (const [zone, info] of Object.entries(ZONE_MAP)) {
+        if (info.barrios.some(b => n.toLowerCase() === b.toLowerCase())) return zone;
+      }
+      return 'Otro';
+    }
+
+    function getZoneColor(zone) {
+      return ZONE_MAP[zone] ? ZONE_MAP[zone].color : ZONE_DEFAULT_COLOR;
+    }
+
+    function segmentColor(s) { return SEGMENT_COLORS[s] || SEGMENT_COLORS.general; }
+
+    function median(arr) {
+      if (!arr.length) return 0;
+      const sorted = [...arr].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+
+    const tooltip = d3.select('#tooltip');
+    function showTooltip(evt, html) {
+      tooltip.html(html).style('display', 'block')
+        .style('left', (evt.pageX + 14) + 'px')
+        .style('top', (evt.pageY - 14) + 'px');
+    }
+    function hideTooltip() { tooltip.style('display', 'none'); }
+
+    // -- Fetch data --
+    async function fetchData() {
+      const query = '/rest/v1/properties?select=id,title,neighborhood,price,price_per_sqm,total_area,covered_area,bedrooms,bathrooms,segment,currency,source,state,city,latitude,longitude,keywords&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast&limit=5000';
+      const resp = await fetch(SUPABASE_URL + query, {
+        headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY }
+      });
+      if (!resp.ok) throw new Error('Failed to fetch: ' + resp.status);
+      return resp.json();
+    }
+
+    // -- Main --
+    fetchData().then(raw => {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+      document.getElementById('header-subtitle').textContent = raw.length.toLocaleString() + ' active listings loaded';
+
+      // Filter for USD properties with valid metrics
+      const filtered = raw.filter(d =>
+        d.currency === 'USD' &&
+        d.price >= 30000 && d.price <= 2000000 &&
+        d.price_per_sqm >= 100 && d.price_per_sqm <= 10000
+      );
+
+      buildParallelCoordinates(filtered);
+      build3DScatter(filtered);
+      buildForceNetwork(raw);
+      buildTreemap(raw);
+      buildContourMap(raw);
+    }).catch(err => {
+      document.getElementById('loading').innerHTML = 'Error loading data: ' + err.message;
+    });
+
+    // =============================================
+    // 1. PARALLEL COORDINATES
+    // =============================================
+    function buildParallelCoordinates(data) {
+      const container = document.getElementById('parallel-coords');
+      const margin = { top: 50, right: 20, bottom: 20, left: 20 };
+      const width = Math.max(container.clientWidth, 800) - margin.left - margin.right;
+      const height = 500 - margin.top - margin.bottom;
+
+      const svg = d3.select('#parallel-coords')
+        .append('svg')
+        .attr('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet')
+        .append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
+
+      // Get unique neighborhoods and segments
+      const neighborhoods = [...new Set(data.map(d => d.neighborhood).filter(Boolean))].sort();
+      const segments = ['general', 'refac', 'recic'];
+
+      // Define dimensions
+      const dimensions = [
+        { key: 'price', label: 'Precio USD', type: 'linear', domain: d3.extent(data, d => d.price) },
+        { key: 'price_per_sqm', label: 'USD/m2', type: 'linear', domain: d3.extent(data, d => d.price_per_sqm) },
+        { key: 'total_area', label: 'Superficie m2', type: 'linear', domain: [0, d3.max(data, d => d.total_area) || 500] },
+        { key: 'bedrooms', label: 'Dormitorios', type: 'linear', domain: [0, d3.max(data, d => d.bedrooms) || 6] },
+        { key: 'neighborhood', label: 'Barrio', type: 'ordinal', domain: neighborhoods },
+        { key: 'segment', label: 'Segmento', type: 'ordinal', domain: segments },
+      ];
+
+      // Create scales
+      const x = d3.scalePoint().domain(dimensions.map(d => d.key)).range([0, width]).padding(0.1);
+
+      const yScales = {};
+      dimensions.forEach(dim => {
+        if (dim.type === 'linear') {
+          yScales[dim.key] = d3.scaleLinear().domain(dim.domain).range([height, 0]).nice();
+        } else {
+          yScales[dim.key] = d3.scalePoint().domain(dim.domain).range([height, 0]).padding(0.05);
+        }
+      });
+
+      // Draw lines
+      function path(d) {
+        return d3.line()(dimensions.map(dim => {
+          const val = d[dim.key];
+          if (val == null) return null;
+          return [x(dim.key), yScales[dim.key](val)];
+        }).filter(p => p !== null));
+      }
+
+      const foreground = svg.append('g').attr('class', 'foreground');
+      const lines = foreground.selectAll('path')
+        .data(data)
+        .join('path')
+        .attr('d', path)
+        .attr('fill', 'none')
+        .attr('stroke', d => segmentColor(d.segment))
+        .attr('stroke-width', 1)
+        .attr('stroke-opacity', 0.35);
+
+      // Draw axes
+      const brushSelections = {};
+      let totalCount = data.length;
+
+      dimensions.forEach(dim => {
+        const g = svg.append('g')
+          .attr('class', 'pc-axis')
+          .attr('transform', `translate(${x(dim.key)},0)`);
+
+        // Axis
+        if (dim.type === 'linear') {
+          g.call(d3.axisLeft(yScales[dim.key]).ticks(6).tickFormat(d => {
+            if (dim.key === 'price') return d >= 1000 ? (d / 1000) + 'K' : d;
+            return d3.format(',.0f')(d);
+          }));
+        } else {
+          const tickCount = dim.domain.length > 20 ? 0 : dim.domain.length;
+          if (tickCount > 0 && tickCount <= 20) {
+            g.call(d3.axisLeft(yScales[dim.key]));
+          } else {
+            g.append('line').attr('y1', 0).attr('y2', height).attr('stroke', 'var(--border)');
+          }
+        }
+
+        // Axis title
+        g.append('text')
+          .attr('class', 'axis-title')
+          .attr('y', -20)
+          .attr('text-anchor', 'middle')
+          .text(dim.label);
+
+        // Brush
+        const brush = d3.brushY()
+          .extent([[-12, 0], [12, height]])
+          .on('brush end', function(event) {
+            if (event.selection) {
+              brushSelections[dim.key] = event.selection;
+            } else {
+              delete brushSelections[dim.key];
+            }
+            applyBrush();
+          });
+
+        g.append('g').attr('class', 'brush').call(brush);
+      });
+
+      function applyBrush() {
+        const activeKeys = Object.keys(brushSelections);
+        if (activeKeys.length === 0) {
+          lines.attr('stroke-opacity', 0.35).attr('stroke-width', 1);
+          updateFilterInfo(totalCount, totalCount);
+          return;
+        }
+
+        let count = 0;
+        lines.each(function(d) {
+          let active = true;
+          for (const key of activeKeys) {
+            const [y0, y1] = brushSelections[key];
+            const val = d[key];
+            if (val == null) { active = false; break; }
+            const yPos = yScales[key](val);
+            if (yPos < y0 || yPos > y1) { active = false; break; }
+          }
+          d3.select(this)
+            .attr('stroke-opacity', active ? 0.6 : 0.03)
+            .attr('stroke-width', active ? 1.5 : 0.5);
+          if (active) count++;
+        });
+        updateFilterInfo(count, totalCount);
+      }
+
+      function updateFilterInfo(shown, total) {
+        document.getElementById('pc-filter-info').innerHTML =
+          'Showing <span>' + shown.toLocaleString() + '</span> of <span>' + total.toLocaleString() + '</span> properties';
+      }
+      updateFilterInfo(totalCount, totalCount);
+    }
+
+    // =============================================
+    // 2. 3D SCATTER PLOT (Plotly)
+    // =============================================
+    function build3DScatter(data) {
+      const validData = data.filter(d => d.total_area && d.price_per_sqm && d.price);
+
+      const traces = ['general', 'refac', 'recic'].map(seg => {
+        const subset = validData.filter(d => (d.segment || 'general') === seg);
+        return {
+          type: 'scatter3d',
+          mode: 'markers',
+          name: seg,
+          x: subset.map(d => d.total_area),
+          y: subset.map(d => d.price_per_sqm),
+          z: subset.map(d => d.price),
+          text: subset.map(d =>
+            `<b>${d.title || 'Sin titulo'}</b><br>` +
+            `Barrio: ${d.neighborhood || 'N/A'}<br>` +
+            `Precio: USD ${d.price.toLocaleString()}<br>` +
+            `Area: ${d.total_area} m2<br>` +
+            `USD/m2: ${d.price_per_sqm.toLocaleString()}`
+          ),
+          hoverinfo: 'text',
+          marker: {
+            size: 4,
+            color: SEGMENT_COLORS[seg],
+            opacity: 0.7
+          }
+        };
+      });
+
+      const layout = {
+        paper_bgcolor: '#111827',
+        plot_bgcolor: '#111827',
+        font: { color: '#94a3b8', family: 'Inter' },
+        scene: {
+          xaxis: { title: 'Area (m2)', color: '#94a3b8', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
+          yaxis: { title: 'USD/m2', color: '#94a3b8', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
+          zaxis: { title: 'Price (USD)', color: '#94a3b8', gridcolor: '#1e293b', zerolinecolor: '#1e293b' },
+          bgcolor: '#0a0e1a',
+          camera: { eye: { x: 1.8, y: 1.8, z: 0.8 } }
+        },
+        margin: { l: 0, r: 0, t: 20, b: 0 },
+        legend: { x: 0, y: 1, font: { color: '#e2e8f0' } },
+        showlegend: true
+      };
+
+      Plotly.newPlot('scatter-3d', traces, layout, { responsive: true });
+    }
+
+    // =============================================
+    // 3. FORCE-DIRECTED NETWORK
+    // =============================================
+    function buildForceNetwork(data) {
+      // Build legend
+      const legendContainer = document.getElementById('network-legend');
+      const zones = ['Norte', 'Centro', 'Oeste', 'Sur', 'GBA Norte', 'Otro'];
+      zones.forEach(z => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `<div class="legend-dot" style="background:${getZoneColor(z)}"></div> ${z}`;
+        legendContainer.appendChild(item);
+      });
+
+      // Aggregate by neighborhood
+      const nhMap = {};
+      data.forEach(d => {
+        if (!d.neighborhood) return;
+        const n = d.neighborhood.trim();
+        if (!nhMap[n]) nhMap[n] = { name: n, prices: [], zone: getZone(n) };
+        if (d.price_per_sqm && d.currency === 'USD' && d.price_per_sqm >= 100 && d.price_per_sqm <= 10000) {
+          nhMap[n].prices.push(d.price_per_sqm);
+        }
+      });
+
+      // Count all properties per neighborhood (not just USD with valid price_per_sqm)
+      data.forEach(d => {
+        if (!d.neighborhood) return;
+        const n = d.neighborhood.trim();
+        if (!nhMap[n]) nhMap[n] = { name: n, prices: [], zone: getZone(n) };
+      });
+
+      const nodes = Object.values(nhMap)
+        .filter(n => {
+          // Count total properties for this neighborhood
+          const total = data.filter(d => d.neighborhood && d.neighborhood.trim() === n.name).length;
+          return total >= 10;
+        })
+        .map(n => {
+          const count = data.filter(d => d.neighborhood && d.neighborhood.trim() === n.name).length;
+          return {
+            id: n.name,
+            count: count,
+            medianPrice: median(n.prices),
+            zone: n.zone,
+            color: getZoneColor(n.zone),
+            radius: Math.max(6, Math.sqrt(count) * 2.5)
+          };
+        });
+
+      // Build edges -- connect neighborhoods with similar median USD/m2 (within 15%)
+      const links = [];
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const a = nodes[i], b = nodes[j];
+          if (a.medianPrice && b.medianPrice) {
+            const ratio = Math.min(a.medianPrice, b.medianPrice) / Math.max(a.medianPrice, b.medianPrice);
+            if (ratio >= 0.85) {
+              links.push({
+                source: a.id,
+                target: b.id,
+                strength: ratio
+              });
+            }
+          }
+        }
+      }
+
+      const container = document.getElementById('force-network');
+      const width = Math.max(container.clientWidth, 800);
+      const height = 600;
+
+      const svg = d3.select('#force-network')
+        .append('svg')
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet');
+
+      const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(80).strength(d => d.strength * 0.3))
+        .force('charge', d3.forceManyBody().strength(-200))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(d => d.radius + 4));
+
+      const link = svg.append('g')
+        .selectAll('line')
+        .data(links)
+        .join('line')
+        .attr('stroke', '#334155')
+        .attr('stroke-opacity', d => (d.strength - 0.85) / 0.15 * 0.5 + 0.1)
+        .attr('stroke-width', 1);
+
+      const node = svg.append('g')
+        .selectAll('circle')
+        .data(nodes)
+        .join('circle')
+        .attr('r', d => d.radius)
+        .attr('fill', d => d.color)
+        .attr('fill-opacity', 0.8)
+        .attr('stroke', d => d.color)
+        .attr('stroke-width', 1.5)
+        .attr('stroke-opacity', 0.4)
+        .on('mouseover', function(evt, d) {
+          d3.select(this).attr('fill-opacity', 1).attr('stroke-opacity', 1);
+          showTooltip(evt,
+            `<strong>${d.id}</strong><br>` +
+            `Zone: ${d.zone}<br>` +
+            `Listings: ${d.count}<br>` +
+            `Median USD/m2: ${d.medianPrice ? '$' + d.medianPrice.toLocaleString(undefined, {maximumFractionDigits: 0}) : 'N/A'}`
+          );
+        })
+        .on('mouseout', function() {
+          d3.select(this).attr('fill-opacity', 0.8).attr('stroke-opacity', 0.4);
+          hideTooltip();
+        })
+        .call(d3.drag()
+          .on('start', (evt, d) => { if (!evt.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+          .on('drag', (evt, d) => { d.fx = evt.x; d.fy = evt.y; })
+          .on('end', (evt, d) => { if (!evt.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+        );
+
+      // Labels for neighborhoods with count >= 50
+      const labels = svg.append('g')
+        .selectAll('text')
+        .data(nodes.filter(d => d.count >= 50))
+        .join('text')
+        .attr('class', 'node-label')
+        .attr('dy', d => -d.radius - 4)
+        .text(d => d.id);
+
+      simulation.on('tick', () => {
+        link
+          .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+        node
+          .attr('cx', d => d.x = Math.max(d.radius, Math.min(width - d.radius, d.x)))
+          .attr('cy', d => d.y = Math.max(d.radius, Math.min(height - d.radius, d.y)));
+        labels
+          .attr('x', d => d.x).attr('y', d => d.y - d.radius - 4);
+      });
+    }
+
+    // =============================================
+    // 4. TREEMAP
+    // =============================================
+    function buildTreemap(data) {
+      // Aggregate data by zone > neighborhood
+      const nhAgg = {};
+      data.forEach(d => {
+        if (!d.neighborhood) return;
+        const n = d.neighborhood.trim();
+        if (!nhAgg[n]) nhAgg[n] = { name: n, zone: getZone(n), count: 0, prices: [] };
+        nhAgg[n].count++;
+        if (d.price_per_sqm && d.currency === 'USD' && d.price_per_sqm >= 100 && d.price_per_sqm <= 10000) {
+          nhAgg[n].prices.push(d.price_per_sqm);
+        }
+      });
+
+      // Build hierarchy
+      const zoneGroups = {};
+      Object.values(nhAgg).forEach(nh => {
+        if (!zoneGroups[nh.zone]) zoneGroups[nh.zone] = [];
+        zoneGroups[nh.zone].push({
+          name: nh.name,
+          count: nh.count,
+          medianPrice: median(nh.prices)
+        });
+      });
+
+      const hierarchyData = {
+        name: 'Market',
+        children: Object.entries(zoneGroups).map(([zone, barrios]) => ({
+          name: zone,
+          children: barrios.map(b => ({
+            name: b.name,
+            value: b.count,
+            medianPrice: b.medianPrice
+          }))
+        }))
+      };
+
+      const container = document.getElementById('treemap');
+      const width = Math.max(container.clientWidth, 800);
+      const height = 550;
+
+      const svg = d3.select('#treemap')
+        .append('svg')
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet');
+
+      // Color scale for median price
+      const allMedians = Object.values(nhAgg).map(n => median(n.prices)).filter(v => v > 0);
+      const priceExtent = d3.extent(allMedians);
+      const colorScale = d3.scaleSequential()
+        .domain(priceExtent)
+        .interpolator(d3.interpolateRgbBasis(['#1e3a5f', '#00d4ff', '#eab308']));
+
+      const root = d3.hierarchy(hierarchyData)
+        .sum(d => d.value)
+        .sort((a, b) => b.value - a.value);
+
+      d3.treemap()
+        .size([width, height])
+        .padding(2)
+        .paddingTop(22)
+        .round(true)(root);
+
+      // Zone group headers
+      const zoneG = svg.selectAll('.zone-group')
+        .data(root.children)
+        .join('g')
+        .attr('class', 'zone-group');
+
+      zoneG.append('rect')
+        .attr('x', d => d.x0)
+        .attr('y', d => d.y0)
+        .attr('width', d => d.x1 - d.x0)
+        .attr('height', d => d.y1 - d.y0)
+        .attr('fill', 'none')
+        .attr('stroke', '#334155')
+        .attr('stroke-width', 2);
+
+      zoneG.append('text')
+        .attr('x', d => d.x0 + 6)
+        .attr('y', d => d.y0 + 15)
+        .attr('fill', '#e2e8f0')
+        .attr('font-size', '12px')
+        .attr('font-weight', '600')
+        .text(d => d.data.name);
+
+      // Leaf cells
+      const leaf = svg.selectAll('.treemap-cell')
+        .data(root.leaves())
+        .join('g')
+        .attr('class', 'treemap-cell')
+        .attr('transform', d => `translate(${d.x0},${d.y0})`);
+
+      leaf.append('rect')
+        .attr('width', d => Math.max(0, d.x1 - d.x0))
+        .attr('height', d => Math.max(0, d.y1 - d.y0))
+        .attr('fill', d => d.data.medianPrice ? colorScale(d.data.medianPrice) : '#1e293b')
+        .attr('rx', 2)
+        .attr('opacity', 0.85)
+        .on('mouseover', function(evt, d) {
+          d3.select(this).attr('opacity', 1).attr('stroke', '#00d4ff').attr('stroke-width', 2);
+          showTooltip(evt,
+            `<strong>${d.data.name}</strong><br>` +
+            `Listings: ${d.data.value}<br>` +
+            `Median USD/m2: ${d.data.medianPrice ? '$' + d.data.medianPrice.toLocaleString(undefined, {maximumFractionDigits: 0}) : 'N/A'}`
+          );
+        })
+        .on('mousemove', (evt) => {
+          tooltip.style('left', (evt.pageX + 14) + 'px').style('top', (evt.pageY - 14) + 'px');
+        })
+        .on('mouseout', function() {
+          d3.select(this).attr('opacity', 0.85).attr('stroke', 'none');
+          hideTooltip();
+        });
+
+      // Labels on cells big enough
+      leaf.filter(d => (d.x1 - d.x0) > 50 && (d.y1 - d.y0) > 20)
+        .append('text')
+        .attr('x', 4)
+        .attr('y', 14)
+        .text(d => d.data.name)
+        .attr('font-size', d => (d.x1 - d.x0) > 80 ? '11px' : '9px');
+
+      leaf.filter(d => (d.x1 - d.x0) > 50 && (d.y1 - d.y0) > 34)
+        .append('text')
+        .attr('x', 4)
+        .attr('y', 28)
+        .attr('fill', '#94a3b8')
+        .attr('font-size', '9px')
+        .text(d => d.data.value + ' props');
+    }
+
+    // =============================================
+    // 5. CONTOUR HEATMAP
+    // =============================================
+    function buildContourMap(data) {
+      const geoData = data.filter(d =>
+        d.latitude && d.longitude &&
+        d.price_per_sqm && d.currency === 'USD' &&
+        d.price_per_sqm >= 100 && d.price_per_sqm <= 10000 &&
+        d.latitude > -35.5 && d.latitude < -34.0 &&
+        d.longitude > -59.0 && d.longitude < -58.0
+      );
+
+      if (geoData.length < 30) {
+        document.getElementById('contour-map').innerHTML =
+          '<div class="message-box">Not enough geocoded properties to generate contour map (' + geoData.length + ' found, minimum 30 required).</div>';
+        return;
+      }
+
+      const container = document.getElementById('contour-map');
+      const margin = { top: 20, right: 40, bottom: 50, left: 60 };
+      const width = Math.max(container.clientWidth, 800) - margin.left - margin.right;
+      const height = 550 - margin.top - margin.bottom;
+
+      const svg = d3.select('#contour-map')
+        .append('svg')
+        .attr('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet')
+        .append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
+
+      const xExtent = d3.extent(geoData, d => d.longitude);
+      const yExtent = d3.extent(geoData, d => d.latitude);
+
+      // Add some padding
+      const xPad = (xExtent[1] - xExtent[0]) * 0.05;
+      const yPad = (yExtent[1] - yExtent[0]) * 0.05;
+
+      const x = d3.scaleLinear().domain([xExtent[0] - xPad, xExtent[1] + xPad]).range([0, width]);
+      const y = d3.scaleLinear().domain([yExtent[0] - yPad, yExtent[1] + yPad]).range([height, 0]);
+
+      // Density contour
+      const priceExtent = d3.extent(geoData, d => d.price_per_sqm);
+      const priceColor = d3.scaleSequential()
+        .domain(priceExtent)
+        .interpolator(d3.interpolateRgbBasis(['#2d1b69', '#e65100', '#fdd835']));
+
+      // Compute density
+      const density = d3.contourDensity()
+        .x(d => x(d.longitude))
+        .y(d => y(d.latitude))
+        .size([width, height])
+        .bandwidth(20)
+        .thresholds(15)(geoData);
+
+      // Draw contours
+      svg.append('g')
+        .selectAll('path')
+        .data(density)
+        .join('path')
+        .attr('d', d3.geoPath())
+        .attr('fill', (d, i) => d3.interpolateRgbBasis(['#2d1b69', '#e65100', '#fdd835'])(i / density.length))
+        .attr('fill-opacity', 0.5)
+        .attr('stroke', '#e65100')
+        .attr('stroke-opacity', 0.15)
+        .attr('stroke-width', 0.5);
+
+      // Draw property dots
+      svg.append('g')
+        .selectAll('circle')
+        .data(geoData)
+        .join('circle')
+        .attr('cx', d => x(d.longitude))
+        .attr('cy', d => y(d.latitude))
+        .attr('r', 2.5)
+        .attr('fill', d => priceColor(d.price_per_sqm))
+        .attr('fill-opacity', 0.5)
+        .attr('stroke', 'none')
+        .on('mouseover', function(evt, d) {
+          d3.select(this).attr('r', 5).attr('fill-opacity', 1);
+          showTooltip(evt,
+            `<strong>${d.title || 'Sin titulo'}</strong><br>` +
+            `${d.neighborhood || 'N/A'}<br>` +
+            `USD/m2: $${d.price_per_sqm.toLocaleString()}<br>` +
+            `Price: USD ${d.price ? d.price.toLocaleString() : 'N/A'}`
+          );
+        })
+        .on('mouseout', function() {
+          d3.select(this).attr('r', 2.5).attr('fill-opacity', 0.5);
+          hideTooltip();
+        });
+
+      // Axes
+      svg.append('g')
+        .attr('transform', `translate(0,${height})`)
+        .call(d3.axisBottom(x).ticks(8).tickFormat(d => d.toFixed(2)))
+        .selectAll('text, line, path').attr('stroke', '#94a3b8').attr('fill', '#94a3b8');
+
+      svg.append('g')
+        .call(d3.axisLeft(y).ticks(8).tickFormat(d => d.toFixed(2)))
+        .selectAll('text, line, path').attr('stroke', '#94a3b8').attr('fill', '#94a3b8');
+
+      // Axis labels
+      svg.append('text')
+        .attr('x', width / 2).attr('y', height + 40)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#94a3b8').attr('font-size', '12px')
+        .text('Longitude');
+
+      svg.append('text')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -height / 2).attr('y', -45)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#94a3b8').attr('font-size', '12px')
+        .text('Latitude');
+
+      // Color legend
+      const legendWidth = 200;
+      const legendG = svg.append('g')
+        .attr('transform', `translate(${width - legendWidth - 10}, 10)`);
+
+      const legendScale = d3.scaleLinear().domain(priceExtent).range([0, legendWidth]);
+      const defs = svg.append('defs');
+      const linearGradient = defs.append('linearGradient').attr('id', 'contour-gradient');
+      linearGradient.selectAll('stop')
+        .data([
+          { offset: '0%', color: '#2d1b69' },
+          { offset: '50%', color: '#e65100' },
+          { offset: '100%', color: '#fdd835' }
+        ])
+        .join('stop')
+        .attr('offset', d => d.offset)
+        .attr('stop-color', d => d.color);
+
+      legendG.append('rect')
+        .attr('width', legendWidth).attr('height', 10)
+        .attr('rx', 3)
+        .style('fill', 'url(#contour-gradient)');
+
+      legendG.append('text')
+        .attr('x', 0).attr('y', 24)
+        .attr('fill', '#94a3b8').attr('font-size', '10px')
+        .text('$' + Math.round(priceExtent[0]) + '/m2');
+
+      legendG.append('text')
+        .attr('x', legendWidth).attr('y', 24)
+        .attr('text-anchor', 'end')
+        .attr('fill', '#94a3b8').attr('font-size', '10px')
+        .text('$' + Math.round(priceExtent[1]) + '/m2');
+    }
+  </script>
+</body>
+</html>

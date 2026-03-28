@@ -4,7 +4,8 @@
     { href: '/', label: 'Dashboard', icon: '📊' },
     { href: '/mapa', label: 'Mapa', icon: '🗺️' },
     { href: '/wave', label: 'Wave', icon: '🌊' },
-    { href: '/analytics', label: 'Analytics', icon: '📈' }
+    { href: '/analytics', label: 'Analytics', icon: '📈' },
+    { href: '/advanced', label: 'Advanced', icon: '🔬' }
   ];
 
   const path = window.location.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
