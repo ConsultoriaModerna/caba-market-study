@@ -3,9 +3,10 @@
  * Geocode properties using Nominatim (OpenStreetMap)
  * Rate limit: 1 request/second (Nominatim policy)
  *
- * Usage: node scripts/geocode-nominatim.mjs [--limit N] [--target-only]
- *   --target-only: only geocode properties ≤200k USD and ≥120m²
- *   --limit N: max properties to geocode (default: all)
+ * Usage: node scripts/geocode-nominatim.mjs [--limit N] [--target-only] [--retry-failed]
+ *   --target-only: only geocode properties <=200k USD and >=120m2
+ *   --limit N: max properties to geocode (default: 500)
+ *   --retry-failed: also retry properties that failed before (address-based)
  */
 
 const SUPABASE_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
@@ -13,36 +14,90 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const args = process.argv.slice(2);
 const targetOnly = args.includes('--target-only');
+const retryFailed = args.includes('--retry-failed');
 const limitIdx = args.indexOf('--limit');
-const limit = limitIdx !== -1 ? parseInt(args[limitIdx + 1]) : null;
+const limit = limitIdx !== -1 ? parseInt(args[limitIdx + 1]) : 500;
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-// Clean address for geocoding
-function cleanAddress(addr, neighborhood) {
-  let clean = addr
-    .replace(/\bal\b/gi, '')         // "al 1400" → "1400"
+// CABA + GBA Norte bounding box
+const VIEWBOX = '-58.60,-34.45,-58.30,-34.72';
+
+// Build address variants for better Nominatim matching
+function buildAddressVariants(addr, neighborhood, city) {
+  const variants = [];
+  if (!addr && !neighborhood) return variants;
+
+  // Clean the raw address
+  const clean = (addr || '')
+    .replace(/\bal\s+/gi, '')           // "al 1400" -> "1400"
+    .replace(/\bNº?\s*/gi, '')          // "Nº 1400" -> "1400"
     .replace(/\s+/g, ' ')
-    .replace(/\. Entre .+$/i, '')    // Remove cross-street info
-    .replace(/e\/.+$/i, '')          // "e/ Cesar Diaz y..."
+    .replace(/\.\s*Entre\s+.+$/i, '')   // Remove cross-street
+    .replace(/\s*e\/.+$/i, '')          // "e/ Cesar Diaz y..."
+    .replace(/\s*entre\s+.+$/i, '')     // "entre X y Y"
+    .replace(/,\s*$/,'')
     .trim();
 
-  return `${clean}, ${neighborhood}, Buenos Aires, Argentina`;
+  const loc = city && city !== 'Capital Federal' ? city : 'Buenos Aires';
+  const barrio = neighborhood || '';
+
+  // Variant 1: full address with barrio and city
+  if (clean) {
+    variants.push(`${clean}, ${barrio}, ${loc}, Argentina`);
+  }
+
+  // Variant 2: without barrio (sometimes confuses Nominatim)
+  if (clean) {
+    variants.push(`${clean}, ${loc}, Argentina`);
+  }
+
+  // Variant 3: street name + number only (extract from "Pasaje Tokio 2000" etc)
+  if (clean) {
+    const match = clean.match(/^(.+?)\s+(\d{2,5})\s*$/);
+    if (match) {
+      variants.push(`${match[1]} ${match[2]}, ${barrio}, ${loc}, Argentina`);
+    }
+  }
+
+  // Variant 4: just barrio (fallback for centroid)
+  if (barrio) {
+    variants.push(`${barrio}, ${loc}, Argentina`);
+  }
+
+  return variants;
+}
+
+// Geocode trying multiple variants
+async function geocodeWithVariants(variants) {
+  for (const address of variants) {
+    const result = await geocodeSingle(address);
+    if (result) {
+      // Determine precision based on which variant matched
+      const isBarrioOnly = address === variants[variants.length - 1] && variants.length > 1;
+      if (isBarrioOnly) {
+        result.precision = 'barrio';
+      }
+      return result;
+    }
+    await sleep(1100);
+  }
+  return null;
 }
 
 // Geocode a single address via Nominatim
-async function geocode(address) {
+async function geocodeSingle(address) {
   const url = `https://nominatim.openstreetmap.org/search?` + new URLSearchParams({
     q: address,
     format: 'json',
     limit: '1',
     countrycodes: 'ar',
-    viewbox: '-58.55,-34.52,-58.33,-34.71', // CABA bounding box
-    bounded: '1'
+    viewbox: VIEWBOX,
+    bounded: '0' // Don't strictly bound, but prefer results in viewbox
   });
 
   const resp = await fetch(url, {
-    headers: { 'User-Agent': 'CABAMarketStudy/1.0 (geocoding for real estate analysis)' }
+    headers: { 'User-Agent': 'InmoFindr/1.0 (geocoding for real estate analysis)' }
   });
 
   if (!resp.ok) {
@@ -52,17 +107,27 @@ async function geocode(address) {
   const results = await resp.json();
   if (results.length === 0) return null;
 
+  const r = results[0];
+  const lat = parseFloat(r.lat);
+  const lon = parseFloat(r.lon);
+
+  // Validate: must be in greater Buenos Aires area
+  if (lat < -35.0 || lat > -34.3 || lon < -58.7 || lon > -58.2) return null;
+
   return {
-    lat: parseFloat(results[0].lat),
-    lng: parseFloat(results[0].lon),
-    display: results[0].display_name,
-    type: results[0].type,
-    importance: results[0].importance
+    lat,
+    lng: lon,
+    display: r.display_name,
+    type: r.type,
+    precision: ['house', 'building'].includes(r.type) ? 'exact'
+      : ['road', 'street', 'residential'].includes(r.type) ? 'address'
+      : 'barrio'
   };
 }
 
 // Update property in Supabase
 async function updateProperty(id, lat, lng, precision) {
+  const enrichLevel = precision === 'exact' ? 2 : precision === 'address' ? 2 : 3;
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/properties?id=eq.${id}`, {
     method: 'PATCH',
     headers: {
@@ -75,7 +140,7 @@ async function updateProperty(id, lat, lng, precision) {
       latitude: lat,
       longitude: lng,
       geo_precision: precision,
-      enrichment_level: 2,
+      enrichment_level: enrichLevel,
       enriched_at: new Date().toISOString()
     })
   });
@@ -88,14 +153,14 @@ async function updateProperty(id, lat, lng, precision) {
 
 // Fetch properties to geocode
 async function fetchProperties() {
-  let filters = 'is_active=eq.true&address_text=not.is.null&latitude=is.null';
+  let filters = 'is_active=eq.true&latitude=is.null';
 
   if (targetOnly) {
     filters += '&price=lte.200000&total_area=gte.120';
   }
 
-  const queryLimit = limit || 5000;
-  const url = `${SUPABASE_URL}/rest/v1/properties?select=id,address_text,neighborhood&${filters}&order=price_per_sqm.asc&limit=${queryLimit}`;
+  // Properties with address OR neighborhood (we can geocode by barrio as fallback)
+  const url = `${SUPABASE_URL}/rest/v1/properties?select=id,address_text,neighborhood,city,state&${filters}&order=price_per_sqm.asc&limit=${limit}`;
 
   const resp = await fetch(url, {
     headers: {
@@ -110,15 +175,15 @@ async function fetchProperties() {
 
 // Main
 async function main() {
-  console.log('🗺️  Nominatim Geocoder for CABA Market Study');
-  console.log(`   Mode: ${targetOnly ? 'Target profile (≤200k, ≥120m²)' : 'All with address'}`);
-  if (limit) console.log(`   Limit: ${limit}`);
+  console.log('Nominatim Geocoder for InmoFindr');
+  console.log(`  Mode: ${targetOnly ? 'Target profile (<=200k, >=120m2)' : 'All without GPS'}`);
+  console.log(`  Limit: ${limit}`);
 
   const properties = await fetchProperties();
-  console.log(`   Found ${properties.length} properties to geocode\n`);
+  console.log(`  Found ${properties.length} properties to geocode\n`);
 
   if (properties.length === 0) {
-    console.log('✅ Nothing to geocode');
+    console.log('Nothing to geocode');
     return;
   }
 
@@ -127,42 +192,40 @@ async function main() {
 
   for (let i = 0; i < properties.length; i++) {
     const p = properties[i];
-    const addr = cleanAddress(p.address_text, p.neighborhood);
+    const variants = buildAddressVariants(p.address_text, p.neighborhood, p.city);
+
+    if (variants.length === 0) {
+      notFound++;
+      continue;
+    }
 
     const progress = `[${i + 1}/${properties.length}]`;
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
-    const eta = i > 0 ? Math.round(((Date.now() - startTime) / i * (properties.length - i)) / 1000) : '?';
 
     try {
-      const result = await geocode(addr);
+      const result = await geocodeWithVariants(variants);
 
       if (result) {
-        // Determine precision based on Nominatim type
-        const precision = ['house', 'building'].includes(result.type) ? 'exact'
-          : ['road', 'street'].includes(result.type) ? 'address'
-          : 'barrio';
-
-        await updateProperty(p.id, result.lat, result.lng, precision);
+        await updateProperty(p.id, result.lat, result.lng, result.precision);
         success++;
-        console.log(`${progress} ✅ ${p.address_text} → ${result.lat.toFixed(5)}, ${result.lng.toFixed(5)} [${precision}] (${elapsed}s, ETA ${eta}s)`);
+        console.log(`${progress} OK ${p.address_text || p.neighborhood} -> ${result.lat.toFixed(5)}, ${result.lng.toFixed(5)} [${result.precision}] (${elapsed}s)`);
       } else {
         notFound++;
-        console.log(`${progress} ⚠️  ${p.address_text} → not found (${elapsed}s)`);
+        console.log(`${progress} -- ${p.address_text || p.neighborhood} -> not found (${elapsed}s)`);
       }
     } catch (err) {
       failed++;
-      console.log(`${progress} ❌ ${p.address_text} → ${err.message}`);
+      console.log(`${progress} ERR ${p.address_text || p.neighborhood} -> ${err.message}`);
     }
 
-    // Rate limit: 1 req/sec for Nominatim
     await sleep(1100);
   }
 
   const totalTime = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
-  console.log(`\n📊 Done in ${totalTime} min`);
-  console.log(`   ✅ Geocoded: ${success}`);
-  console.log(`   ⚠️  Not found: ${notFound}`);
-  console.log(`   ❌ Failed: ${failed}`);
+  console.log(`\nDone in ${totalTime} min`);
+  console.log(`  Geocoded: ${success}`);
+  console.log(`  Not found: ${notFound}`);
+  console.log(`  Failed: ${failed}`);
 }
 
 main().catch(err => {
