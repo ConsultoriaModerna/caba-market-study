@@ -693,7 +693,8 @@ function loadCrimeHeatmap() {
                 radius: 18, blur: 25, maxZoom: 15, minOpacity: 0.3,
                 gradient: { 0.2: '#ffffb2', 0.4: '#fed976', 0.6: '#feb24c', 0.8: '#f03b20', 1: '#bd0026' }
             });
-            crimeHeatLayer = heat;
+            // Add to the wrapper group so layer control toggle works
+            crimeHeatLayer.addLayer(heat);
             console.log(`Crime heatmap: ${points.length} points loaded`);
         })
         .catch(e => console.warn('Crime heatmap failed:', e));
@@ -730,7 +731,7 @@ async function init() {
     railBufferLayer = L.featureGroup();
     religiousLayer = L.featureGroup();
     villasLayer = L.featureGroup();
-    crimeHeatLayer = L.layerGroup(); // placeholder until loaded
+    crimeHeatLayer = L.featureGroup(); // wrapper for heat layer, toggle via layer control
 
     const overlays = {
         'Propiedades': markerCluster,
@@ -742,13 +743,7 @@ async function init() {
     };
     const layerControl = L.control.layers({}, overlays, { position: 'topright', collapsed: false }).addTo(map);
 
-    // Crime heatmap loads async, swap into layer control when ready
     loadCrimeHeatmap();
-    map.on('overlayadd', function(e) {
-        if (e.name === 'Delitos (heatmap)' && crimeHeatLayer instanceof L.HeatLayer) {
-            crimeHeatLayer.addTo(map);
-        }
-    });
 
     initChips();
 
