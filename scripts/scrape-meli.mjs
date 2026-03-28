@@ -1,6 +1,7 @@
-// scrape-meli.mjs — MercadoLibre scraper for CABA casas
-// Usage: node scripts/scrape-meli.mjs [maxPages]
+// scrape-meli.mjs — MercadoLibre scraper for casas en venta (multi-zone)
+// Usage: node scripts/scrape-meli.mjs [maxPages] [--zone=caba|gba-norte|all]
 import { createClient } from '@supabase/supabase-js';
+import { getActiveZones } from './zones-config.mjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -10,8 +11,10 @@ const supabase = createClient(
 const MAX_PAGES = parseInt(process.argv[2] || '20');
 const RESULTS_PER_PAGE = 50;
 const CATEGORY = 'MLA1493';
-const STATE = 'TUxBUENBUGw3M2E1';
 const PROPERTY_TYPE = '242062';
+
+// Parse --zone flag
+const zoneArg = process.argv.find(a => a.startsWith('--zone='))?.split('=')[1] || 'all';
 
 function extractAttr(attrs, id) {
   const attr = (attrs || []).find(a => a.id === id);
@@ -53,53 +56,53 @@ function determineSegment(kw) {
   return 'general';
 }
 
-async function main() {
-  const startTime = Date.now();
-  console.log(`[SCRAPE] Starting ML scrape, max ${MAX_PAGES} pages (${MAX_PAGES * RESULTS_PER_PAGE} results)...`);
-
-  // Get token
-  const { data: tokenRow } = await supabase
-    .from('ml_tokens')
-    .select('access_token, saved_at, expires_in')
-    .eq('id', 'default')
-    .single();
-
-  if (!tokenRow?.access_token) {
-    console.error('[SCRAPE] No ML token found!');
-    process.exit(1);
-  }
-
-  const savedAt = Number(tokenRow.saved_at);
-  const tokenAge = (Date.now() - savedAt) / 1000;
-  if (tokenAge > Number(tokenRow.expires_in) - 300) {
-    console.error(`[SCRAPE] Token expired (age: ${Math.round(tokenAge)}s)`);
-    process.exit(1);
-  }
-
-  const token = tokenRow.access_token;
+async function scrapeZone(zone, token) {
+  console.log(`\n━━━ ${zone.name} (${zone.id}) ━━━`);
   let totalFetched = 0;
   let totalUpserted = 0;
   const errors = [];
 
+  let consecutive403 = 0;
+  let backoffMs = 400;
+
   for (let page = 0; page < MAX_PAGES; page++) {
     const offset = page * RESULTS_PER_PAGE;
-    const searchUrl = `https://api.mercadolibre.com/sites/MLA/search?category=${CATEGORY}&state=${STATE}&PROPERTY_TYPE=${PROPERTY_TYPE}&OPERATION=242075&limit=${RESULTS_PER_PAGE}&offset=${offset}`;
+    const searchUrl = `https://api.mercadolibre.com/sites/MLA/search?category=${CATEGORY}&state=${zone.ml_state}&PROPERTY_TYPE=${PROPERTY_TYPE}&OPERATION=242075&limit=${RESULTS_PER_PAGE}&offset=${offset}`;
 
     try {
-      // Try with auth first
       let resp = await fetch(searchUrl, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
-      // Fallback: try without auth
+      // 403 handling: exponential backoff with max 3 retries per page
       if (resp.status === 403) {
-        resp = await fetch(searchUrl);
+        consecutive403++;
+        if (consecutive403 >= 5) {
+          console.log(`  5 consecutive 403s, stopping zone ${zone.id}. Will retry next run.`);
+          break;
+        }
+        const waitSec = Math.min(30, 5 * Math.pow(2, consecutive403 - 1));
+        console.log(`  403 on page ${page}, backoff ${waitSec}s (attempt ${consecutive403}/5)...`);
+        await new Promise(r => setTimeout(r, waitSec * 1000));
+        // Retry this page
+        resp = await fetch(searchUrl, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (resp.status === 403) {
+          errors.push(`P${page}: 403 after backoff`);
+          continue;
+        }
+      }
+
+      if (resp.ok) {
+        consecutive403 = 0;
+        backoffMs = 400;
       }
 
       if (!resp.ok) {
         const errText = await resp.text();
         errors.push(`P${page}: ${resp.status}`);
-        console.error(`[SCRAPE] Page ${page} failed: ${resp.status} ${errText.substring(0, 100)}`);
+        console.error(`  Page ${page} failed: ${resp.status} ${errText.substring(0, 100)}`);
         if (resp.status === 401) break;
         continue;
       }
@@ -108,12 +111,12 @@ async function main() {
       const results = data.results || [];
 
       if (results.length === 0) {
-        console.log(`[SCRAPE] No more results at page ${page}`);
+        console.log(`  No more results at page ${page}`);
         break;
       }
 
       totalFetched += results.length;
-      console.log(`[SCRAPE] Page ${page + 1}/${MAX_PAGES}: ${results.length} results (total: ${totalFetched})`);
+      console.log(`  Page ${page + 1}/${MAX_PAGES}: ${results.length} results (total: ${totalFetched})`);
 
       const rows = results.map(item => {
         const totalArea = parseNum(extractAttr(item.attributes, 'TOTAL_AREA'));
@@ -136,8 +139,8 @@ async function main() {
           bathrooms: baths !== null ? Math.round(baths) : null,
           ambientes: rooms !== null ? Math.round(rooms) : null,
           neighborhood: item.location?.neighborhood?.name || null,
-          city: item.location?.city?.name || 'Capital Federal',
-          state: 'Capital Federal',
+          city: item.location?.city?.name || zone.name,
+          state: zone.state,
           latitude: item.location?.latitude || null,
           longitude: item.location?.longitude || null,
           permalink: item.permalink,
@@ -153,52 +156,94 @@ async function main() {
         };
       });
 
-      // Upsert in batches of 50
       const { error: upsertErr } = await supabase
         .from('properties')
         .upsert(rows, { onConflict: 'id', ignoreDuplicates: false });
 
       if (upsertErr) {
         errors.push(`Upsert p${page}: ${upsertErr.message}`);
-        console.error(`[SCRAPE] Upsert error:`, upsertErr.message);
+        console.error(`  Upsert error:`, upsertErr.message);
       } else {
         totalUpserted += rows.length;
       }
 
-      // Rate limit: 400ms between pages
       if (page < MAX_PAGES - 1) {
         await new Promise(r => setTimeout(r, 400));
       }
     } catch (err) {
       errors.push(`P${page}: ${err.message}`);
-      console.error(`[SCRAPE] Page ${page} error:`, err.message);
+      console.error(`  Page ${page} error:`, err.message);
     }
+  }
+
+  return { zone: zone.id, totalFetched, totalUpserted, errors };
+}
+
+async function main() {
+  const startTime = Date.now();
+
+  // Get token
+  const { data: tokenRow } = await supabase
+    .from('ml_tokens')
+    .select('access_token, saved_at, expires_in')
+    .eq('id', 'default')
+    .single();
+
+  if (!tokenRow?.access_token) {
+    console.error('[SCRAPE] No ML token found!');
+    process.exit(1);
+  }
+
+  const savedAt = Number(tokenRow.saved_at);
+  const tokenAge = (Date.now() - savedAt) / 1000;
+  if (tokenAge > Number(tokenRow.expires_in) - 300) {
+    console.error(`[SCRAPE] Token expired (age: ${Math.round(tokenAge)}s)`);
+    process.exit(1);
+  }
+
+  const token = tokenRow.access_token;
+  const zones = getActiveZones().filter(z => zoneArg === 'all' || z.id === zoneArg);
+
+  if (zones.length === 0) {
+    console.error(`[SCRAPE] No zones matched "${zoneArg}". Available: ${getActiveZones().map(z => z.id).join(', ')}`);
+    process.exit(1);
+  }
+
+  console.log(`[SCRAPE] ML scrape — ${zones.length} zone(s), max ${MAX_PAGES} pages each`);
+
+  let grandTotal = { fetched: 0, upserted: 0, errors: [] };
+
+  for (const zone of zones) {
+    const result = await scrapeZone(zone, token);
+    grandTotal.fetched += result.totalFetched;
+    grandTotal.upserted += result.totalUpserted;
+    grandTotal.errors.push(...result.errors);
   }
 
   const duration = Date.now() - startTime;
 
-  // Log to scrape_runs
   await supabase.from('scrape_runs').insert({
     source: 'mercadolibre',
-    segment: 'all',
-    total_scraped: totalFetched,
+    segment: zoneArg,
+    total_scraped: grandTotal.fetched,
     total_new: 0,
-    total_updated: totalUpserted,
+    total_updated: grandTotal.upserted,
     total_deactivated: 0,
     duration_ms: duration,
-    error_message: errors.length > 0 ? errors.join('; ') : null,
-    metadata: { pages: MAX_PAGES, runner: 'github-actions', errors_count: errors.length },
+    error_message: grandTotal.errors.length > 0 ? grandTotal.errors.join('; ') : null,
+    metadata: { pages: MAX_PAGES, zones: zones.map(z => z.id), runner: 'local', errors_count: grandTotal.errors.length },
     started_at: new Date(startTime).toISOString(),
     completed_at: new Date().toISOString(),
   });
 
   console.log('\n[SCRAPE] === DONE ===');
-  console.log(`  Fetched: ${totalFetched}`);
-  console.log(`  Upserted: ${totalUpserted}`);
+  console.log(`  Zones: ${zones.map(z => z.name).join(', ')}`);
+  console.log(`  Fetched: ${grandTotal.fetched}`);
+  console.log(`  Upserted: ${grandTotal.upserted}`);
   console.log(`  Duration: ${Math.round(duration / 1000)}s`);
-  console.log(`  Errors: ${errors.length}`);
+  console.log(`  Errors: ${grandTotal.errors.length}`);
 
-  if (errors.length > 0 && totalFetched === 0) {
+  if (grandTotal.errors.length > 0 && grandTotal.fetched === 0) {
     process.exit(1);
   }
 }

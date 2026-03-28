@@ -828,12 +828,29 @@
                     <div class="legend-color" style="background-color: var(--pink);"></div>
                     <span>Sur</span>
                 </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #a78bfa;"></div>
+                    <span>GBA Norte</span>
+                </div>
             </div>
         </div>
 
         <div class="chart-container">
             <div class="chart-title">Distribución de Propiedades por Zona</div>
             <canvas id="zoneChart"></canvas>
+        </div>
+
+        <div class="chart-container" style="height:auto;min-height:400px;">
+            <div class="chart-title">Cobertura por Portal: ZonaProp vs MercadoLibre</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1rem;" id="sourceComparison">
+                <div style="text-align:center;">
+                    <canvas id="sourceShareChart" style="max-height:250px;"></canvas>
+                </div>
+                <div style="text-align:center;">
+                    <canvas id="sourceByRegionChart" style="max-height:250px;"></canvas>
+                </div>
+            </div>
+            <div id="sourceDetailTable" style="margin-top:1.5rem;"></div>
         </div>
     </div>
 
@@ -1022,7 +1039,8 @@
             'Norte': ['Belgrano', 'Belgrano R', 'Núñez', 'Saavedra', 'Coghlan', 'Villa Urquiza', 'Colegiales', 'Palermo'],
             'Centro': ['Caballito', 'Almagro', 'Boedo', 'San Cristóbal', 'Balvanera', 'Recoleta', 'San Telmo'],
             'Oeste': ['Villa Devoto', 'Monte Castro', 'Floresta', 'Versalles', 'Villa Luro', 'Liniers', 'Villa Pueyrredón'],
-            'Sur': ['Flores', 'Mataderos', 'Parque Chacabuco', 'Barracas', 'La Boca', 'Pompeya', 'Villa Lugano', 'Villa Soldati', 'Parque Patricios']
+            'Sur': ['Flores', 'Mataderos', 'Parque Chacabuco', 'Barracas', 'La Boca', 'Pompeya', 'Villa Lugano', 'Villa Soldati', 'Parque Patricios'],
+            'GBA Norte': ['Vicente Lopez', 'Vicente López', 'Olivos', 'Florida', 'La Lucila', 'Munro', 'Carapachay', 'Villa Martelli', 'Martinez', 'Martínez', 'San Isidro', 'Beccar', 'Boulogne', 'Acassuso', 'San Fernando', 'Tigre', 'Don Torcuato']
         };
 
         const ZONE_COLORS = {
@@ -1030,6 +1048,7 @@
             'Centro': '#60a5fa',
             'Oeste': '#fb923c',
             'Sur': '#f472b6',
+            'GBA Norte': '#a78bfa',
             'Otro': '#94a3b8'
         };
 
@@ -1039,6 +1058,8 @@
         let selectedKeywords = [];
         let neighborhoodChart = null;
         let zoneChart = null;
+        let sourceShareChart = null;
+        let sourceByRegionChart = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -1308,6 +1329,7 @@
             // Charts
             renderNeighborhoodChart(neighborhoodArray);
             renderZoneChart();
+            renderSourceCharts();
         }
 
         function computeNeighborhoodStats() {
@@ -1400,12 +1422,13 @@
 
         function renderZoneChart() {
             const zoneData = new Map();
-            ZONES['Norte'].forEach(n => zoneData.set(n, 'Norte'));
-            ZONES['Centro'].forEach(n => zoneData.set(n, 'Centro'));
-            ZONES['Oeste'].forEach(n => zoneData.set(n, 'Oeste'));
-            ZONES['Sur'].forEach(n => zoneData.set(n, 'Sur'));
+            Object.entries(ZONES).forEach(([zone, neighborhoods]) => {
+                neighborhoods.forEach(n => zoneData.set(n, zone));
+            });
 
-            const zoneCounts = { 'Norte': 0, 'Centro': 0, 'Oeste': 0, 'Sur': 0, 'Otro': 0 };
+            const zoneCounts = {};
+            Object.keys(ZONES).forEach(z => { zoneCounts[z] = 0; });
+            zoneCounts['Otro'] = 0;
             allProperties.forEach(prop => {
                 const zone = getZone(prop.neighborhood);
                 zoneCounts[zone]++;
@@ -1435,6 +1458,139 @@
                     }
                 }
             });
+        }
+
+        function renderSourceCharts() {
+            // 1. Overall share: ZP vs ML (doughnut)
+            const zpCount = allProperties.filter(p => p.source === 'zonaprop').length;
+            const mlCount = allProperties.filter(p => p.source === 'mercadolibre').length;
+
+            const ctx1 = document.getElementById('sourceShareChart').getContext('2d');
+            if (sourceShareChart) sourceShareChart.destroy();
+            sourceShareChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['ZonaProp', 'MercadoLibre'],
+                    datasets: [{
+                        data: [zpCount, mlCount],
+                        backgroundColor: ['#60a5fa', '#fbbf24']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Share Global', color: '#cbd5e1', font: { size: 13 } },
+                        legend: { labels: { color: 'rgba(241, 245, 249, 0.8)' } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const total = zpCount + mlCount;
+                                    const pct = Math.round(ctx.raw / total * 100);
+                                    return `${ctx.label}: ${ctx.raw.toLocaleString()} (${pct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. By zone: grouped bar chart ZP vs ML
+            const zoneSourceData = {};
+            allProperties.forEach(p => {
+                const zone = getZone(p.neighborhood);
+                if (!zoneSourceData[zone]) zoneSourceData[zone] = { zp: 0, ml: 0 };
+                if (p.source === 'zonaprop') zoneSourceData[zone].zp++;
+                else zoneSourceData[zone].ml++;
+            });
+
+            // Sort zones by total count desc
+            const sortedZones = Object.entries(zoneSourceData)
+                .sort((a, b) => (b[1].zp + b[1].ml) - (a[1].zp + a[1].ml))
+                .slice(0, 10);
+
+            const ctx2 = document.getElementById('sourceByRegionChart').getContext('2d');
+            if (sourceByRegionChart) sourceByRegionChart.destroy();
+            sourceByRegionChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: sortedZones.map(([z]) => z),
+                    datasets: [
+                        {
+                            label: 'ZonaProp',
+                            data: sortedZones.map(([, d]) => d.zp),
+                            backgroundColor: '#60a5fa',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'MercadoLibre',
+                            data: sortedZones.map(([, d]) => d.ml),
+                            backgroundColor: '#fbbf24',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Por Zona', color: '#cbd5e1', font: { size: 13 } },
+                        legend: { labels: { color: 'rgba(241, 245, 249, 0.8)' } }
+                    },
+                    scales: {
+                        x: { ticks: { color: 'rgba(241, 245, 249, 0.7)' }, grid: { display: false } },
+                        y: { ticks: { color: 'rgba(241, 245, 249, 0.6)' }, grid: { color: 'rgba(51, 65, 85, 0.15)' } }
+                    }
+                }
+            });
+
+            // 3. Detail table: top 10 neighborhoods by source
+            const barrioSource = {};
+            allProperties.forEach(p => {
+                if (!p.neighborhood) return;
+                if (!barrioSource[p.neighborhood]) barrioSource[p.neighborhood] = { zp: 0, ml: 0, zone: getZone(p.neighborhood) };
+                if (p.source === 'zonaprop') barrioSource[p.neighborhood].zp++;
+                else barrioSource[p.neighborhood].ml++;
+            });
+
+            const topBarrios = Object.entries(barrioSource)
+                .map(([name, d]) => ({ name, ...d, total: d.zp + d.ml }))
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 15);
+
+            const tableEl = document.getElementById('sourceDetailTable');
+            tableEl.innerHTML = `
+                <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+                    <thead>
+                        <tr style="border-bottom:1px solid var(--border);color:var(--text-secondary);">
+                            <th style="text-align:left;padding:6px 8px;">Barrio</th>
+                            <th style="text-align:left;padding:6px 8px;">Zona</th>
+                            <th style="text-align:right;padding:6px 8px;">ZP</th>
+                            <th style="text-align:right;padding:6px 8px;">ML</th>
+                            <th style="text-align:right;padding:6px 8px;">Total</th>
+                            <th style="text-align:left;padding:6px 8px;min-width:120px;">Share</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topBarrios.map(b => {
+                            const zpPct = Math.round(b.zp / b.total * 100);
+                            const mlPct = 100 - zpPct;
+                            return `<tr style="border-bottom:1px solid rgba(51,65,85,0.3);">
+                                <td style="padding:5px 8px;font-weight:500;">${b.name}</td>
+                                <td style="padding:5px 8px;"><span style="color:${ZONE_COLORS[b.zone] || ZONE_COLORS['Otro']}">${b.zone}</span></td>
+                                <td style="text-align:right;padding:5px 8px;color:#60a5fa;">${b.zp}</td>
+                                <td style="text-align:right;padding:5px 8px;color:#fbbf24;">${b.ml}</td>
+                                <td style="text-align:right;padding:5px 8px;font-weight:600;">${b.total}</td>
+                                <td style="padding:5px 8px;">
+                                    <div style="display:flex;height:14px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,0.05);">
+                                        <div style="width:${zpPct}%;background:#60a5fa;" title="ZP ${zpPct}%"></div>
+                                        <div style="width:${mlPct}%;background:#fbbf24;" title="ML ${mlPct}%"></div>
+                                    </div>
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>`;
         }
 
         // Compute P75 USD/m² across all neighborhoods

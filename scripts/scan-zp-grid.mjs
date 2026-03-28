@@ -2,14 +2,15 @@
 // scan-zp-grid.mjs — Fast scan of ZP listing grid pages via Chrome AppleScript
 // Navigates ZP search results pages, extracts listing IDs + basic data
 // Compares against DB to detect new listings and mark missing ones
-// Does NOT visit individual property pages — that's enrich-zp-chrome.mjs
+// Does NOT visit individual property pages -- that's enrich-zp-chrome.mjs
 //
-// Usage: node scripts/scan-zp-grid.mjs [maxPages]
+// Usage: node scripts/scan-zp-grid.mjs [maxPages] [--zone=caba|gba-norte|all]
 // ~2 minutes for 20 pages (~400 listings scanned)
 
 import { createClient } from '@supabase/supabase-js';
 import { writeFileSync } from 'fs';
 import { execSync } from 'child_process';
+import { ZP_LOCATIONS } from './zones-config.mjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -18,7 +19,18 @@ const supabase = createClient(
 
 const MAX_PAGES = parseInt(process.argv[2] || '20');
 const SCRIPT_FILE = '/tmp/zp-grid.scpt';
-const BASE_URL = 'https://www.zonaprop.com.ar/casas-venta-capital-federal';
+
+// Parse --zone flag
+const zoneArg = process.argv.find(a => a.startsWith('--zone='))?.split('=')[1] || 'all';
+
+function getLocations() {
+  if (zoneArg === 'all') return ZP_LOCATIONS;
+  if (zoneArg === 'caba') return ZP_LOCATIONS.filter(l => l.state === 'CABA');
+  if (zoneArg === 'gba-norte') return ZP_LOCATIONS.filter(l => l.state === 'Buenos Aires');
+  // Try exact slug match
+  const match = ZP_LOCATIONS.filter(l => l.slug.includes(zoneArg));
+  return match.length ? match : ZP_LOCATIONS;
+}
 
 function runAppleScript(script) {
   try {
@@ -99,9 +111,9 @@ function extractNeighborhood(locText) {
   return parts.length >= 2 ? parts[parts.length - 2] : parts[0];
 }
 
-async function main() {
-  const t0 = Date.now();
-  console.log(`🔍 ZP Grid Scanner — scanning ${MAX_PAGES} pages\n`);
+async function scanLocation(location) {
+  const baseUrl = `https://www.zonaprop.com.ar/${location.slug}`;
+  console.log(`\n━━━ ${location.city} (${location.slug}) ━━━`);
 
   // Get existing ZP IDs for comparison
   const { data: existing } = await supabase
@@ -116,13 +128,13 @@ async function main() {
   let seenSlugs = new Set();
 
   for (let page = 1; page <= MAX_PAGES; page++) {
-    const url = page === 1 ? `${BASE_URL}.html` : `${BASE_URL}-pagina-${page}.html`;
+    const url = page === 1 ? `${baseUrl}.html` : `${baseUrl}-pagina-${page}.html`;
 
     const script = buildGridScript(url);
     const raw = runAppleScript(script);
 
     if (!raw) {
-      console.log(`  ❌ Page ${page}: AppleScript failed`);
+      console.log(`  Page ${page}: AppleScript failed`);
       continue;
     }
 
@@ -130,7 +142,7 @@ async function main() {
       const data = JSON.parse(raw);
 
       if (data.title?.includes('moment')) {
-        console.log(`  ⚠️ Page ${page}: Cloudflare challenge`);
+        console.log(`  Page ${page}: Cloudflare challenge`);
         await new Promise(r => setTimeout(r, 10000));
         continue;
       }
@@ -141,14 +153,14 @@ async function main() {
       }
 
       const newOnPage = data.results.filter(r => r.slug && !existingSlugs.has(r.slug)).length;
-      console.log(`  📄 Page ${page}: ${data.count} listings, ${newOnPage} new`);
+      console.log(`  Page ${page}: ${data.count} listings, ${newOnPage} new`);
 
       if (!data.hasNext) {
-        console.log('  📭 No more pages');
+        console.log('  No more pages');
         break;
       }
     } catch (e) {
-      console.log(`  ❌ Page ${page}: parse error`);
+      console.log(`  Page ${page}: parse error`);
     }
 
     await new Promise(r => setTimeout(r, 3000));
@@ -169,7 +181,7 @@ async function main() {
       id,
       slug: item.slug,
       permalink: 'https://www.zonaprop.com.ar' + item.slug,
-      title: item.title || `Casa en ${neighborhood || 'CABA'}`,
+      title: item.title || `Casa en ${neighborhood || location.city}`,
       price, currency,
       total_area: features.total_area,
       ambientes: features.ambientes,
@@ -178,7 +190,8 @@ async function main() {
       source: 'zonaprop',
       operation: 'venta',
       property_type: 'casa',
-      state: 'CABA',
+      state: location.state,
+      city: location.city,
       is_active: true,
       enrichment_level: 0,
       first_seen_at: new Date().toISOString(),
@@ -201,19 +214,37 @@ async function main() {
     updatedCount++;
   }
 
+  console.log(`  Result: ${allScanned.length} scanned, ${newCount} new, ${updatedCount} refreshed`);
+  return { location: location.city, scanned: allScanned.length, newCount, updatedCount };
+}
+
+async function main() {
+  const t0 = Date.now();
+  const locations = getLocations();
+  console.log(`ZP Grid Scanner -- ${locations.length} location(s), ${MAX_PAGES} pages each\n`);
+
+  let grandTotal = { scanned: 0, new: 0, updated: 0 };
+
+  for (const loc of locations) {
+    const result = await scanLocation(loc);
+    grandTotal.scanned += result.scanned;
+    grandTotal.new += result.newCount;
+    grandTotal.updated += result.updatedCount;
+  }
+
   const dur = Math.round((Date.now() - t0) / 1000);
-  console.log(`\n🏁 Grid scan: ${allScanned.length} scanned, ${newCount} new, ${updatedCount} refreshed (${dur}s)`);
-  console.log(`   New listings need enrichment: run enrich-zp-chrome.mjs`);
+  console.log(`\nGrid scan complete: ${grandTotal.scanned} scanned, ${grandTotal.new} new, ${grandTotal.updated} refreshed (${dur}s)`);
+  console.log(`New listings need enrichment: run enrich-zp-chrome.mjs`);
 
   await supabase.from('scrape_runs').insert({
-    source: 'zonaprop', segment: 'grid-scan',
-    total_scraped: allScanned.length, total_new: newCount,
-    total_updated: updatedCount, total_deactivated: 0,
+    source: 'zonaprop', segment: zoneArg,
+    total_scraped: grandTotal.scanned, total_new: grandTotal.new,
+    total_updated: grandTotal.updated, total_deactivated: 0,
     duration_ms: Date.now() - t0,
-    metadata: { pages: MAX_PAGES, runner: 'local-mac' },
+    metadata: { pages: MAX_PAGES, locations: locations.map(l => l.city), runner: 'local-mac' },
     started_at: new Date(t0).toISOString(),
     completed_at: new Date().toISOString(),
   });
 }
 
-main().catch(e => { console.error('💀', e.message); process.exit(1); });
+main().catch(e => { console.error('Fatal:', e.message); process.exit(1); });
