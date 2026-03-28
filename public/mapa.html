@@ -236,6 +236,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
 <script>
 const SB_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
@@ -261,7 +262,7 @@ const KEYWORDS = [
 const SEGMENTS = ['cheap','refac','recic','general'];
 const SOURCES = ['zonaprop','mercadolibre'];
 
-let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer;
+let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer;
 let allProps = [];
 let filtered = [];
 let activeKws = new Set();
@@ -593,6 +594,22 @@ function loadVillas() {
         .catch(e => console.warn('Villas layer failed:', e));
 }
 
+// Crime heatmap (GCBA 2023 data -- 15K sampled points, yellow-red gradient)
+function loadCrimeHeatmap() {
+    fetch('/data/crime_heatmap.json')
+        .then(r => r.json())
+        .then(points => {
+            const heatData = points.map(p => [p[0], p[1], 0.5]);
+            const heat = L.heatLayer(heatData, {
+                radius: 18, blur: 25, maxZoom: 15, minOpacity: 0.3,
+                gradient: { 0.2: '#ffffb2', 0.4: '#fed976', 0.6: '#feb24c', 0.8: '#f03b20', 1: '#bd0026' }
+            });
+            crimeHeatLayer = heat;
+            console.log(`Crime heatmap: ${points.length} points loaded`);
+        })
+        .catch(e => console.warn('Crime heatmap failed:', e));
+}
+
 // Init
 async function init() {
     map = L.map('map', { zoomControl: true }).setView([-34.62, -58.44], 12);
@@ -611,14 +628,25 @@ async function init() {
     railBufferLayer = L.featureGroup();
     religiousLayer = L.featureGroup();
     villasLayer = L.featureGroup();
+    crimeHeatLayer = L.layerGroup(); // placeholder until loaded
 
-    L.control.layers({}, {
+    const overlays = {
         'Propiedades': markerCluster,
         'Vias de Tren': railwayLayer,
         'Buffer 200m Tren': railBufferLayer,
+        'Delitos (heatmap)': crimeHeatLayer,
         'Lugares de Culto': religiousLayer,
         'Villas / Asentamientos': villasLayer
-    }, { position: 'topright', collapsed: false }).addTo(map);
+    };
+    const layerControl = L.control.layers({}, overlays, { position: 'topright', collapsed: false }).addTo(map);
+
+    // Crime heatmap loads async, swap into layer control when ready
+    loadCrimeHeatmap();
+    map.on('overlayadd', function(e) {
+        if (e.name === 'Delitos (heatmap)' && crimeHeatLayer instanceof L.HeatLayer) {
+            crimeHeatLayer.addTo(map);
+        }
+    });
 
     initChips();
 
