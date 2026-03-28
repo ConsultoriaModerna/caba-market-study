@@ -398,12 +398,21 @@
 
     // -- Fetch data --
     async function fetchData() {
-      const query = '/rest/v1/properties?select=id,title,neighborhood,price,price_per_sqm,total_area,covered_area,bedrooms,bathrooms,segment,currency,source,state,city,latitude,longitude,keywords,permalink,thumbnail&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast&limit=10000';
-      const resp = await fetch(SUPABASE_URL + query, {
-        headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY }
-      });
-      if (!resp.ok) throw new Error('Failed to fetch: ' + resp.status);
-      return resp.json();
+      const fields = 'id,title,neighborhood,price,price_per_sqm,total_area,covered_area,bedrooms,bathrooms,segment,currency,source,state,city,latitude,longitude,keywords,permalink,thumbnail';
+      const filter = '&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast';
+      const headers = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
+      // Paginate in chunks of 1000 (Supabase default limit)
+      let all = [];
+      for (let offset = 0; offset < 15000; offset += 1000) {
+        const url = `${SUPABASE_URL}/rest/v1/properties?select=${fields}${filter}&limit=1000&offset=${offset}`;
+        const resp = await fetch(url, { headers });
+        if (!resp.ok) throw new Error('Failed to fetch: ' + resp.status);
+        const chunk = await resp.json();
+        if (!chunk.length) break;
+        all.push(...chunk);
+        if (chunk.length < 1000) break;
+      }
+      return all;
     }
 
     // -- Main --
