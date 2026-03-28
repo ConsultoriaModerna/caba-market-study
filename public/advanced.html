@@ -189,6 +189,35 @@
 
     <div id="content" style="display:none;">
 
+      <!-- Global Filters -->
+      <div style="display:flex;gap:0.8rem;flex-wrap:wrap;align-items:center;margin-bottom:1.5rem;padding:1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;">
+        <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Filtros:</span>
+        <select id="adv-filter-zone" onchange="applyAdvancedFilters()" style="padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8rem;font-family:inherit;">
+          <option value="">Todas las zonas</option>
+          <option value="Norte">Norte</option>
+          <option value="Centro">Centro</option>
+          <option value="Oeste">Oeste</option>
+          <option value="Sur">Sur</option>
+          <option value="GBA Norte">GBA Norte</option>
+        </select>
+        <select id="adv-filter-segment" onchange="applyAdvancedFilters()" style="padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8rem;font-family:inherit;">
+          <option value="">Todos los segmentos</option>
+          <option value="refac">A Refaccionar</option>
+          <option value="general">General</option>
+          <option value="recic">Reciclada</option>
+        </select>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span style="font-size:0.75rem;color:var(--text-muted);">USD</span>
+          <input type="number" id="adv-filter-price-min" placeholder="Min" value="30000" onchange="applyAdvancedFilters()" style="width:80px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8rem;font-family:inherit;">
+          <span style="color:var(--text-muted);">-</span>
+          <input type="number" id="adv-filter-price-max" placeholder="Max" value="200000" onchange="applyAdvancedFilters()" style="width:80px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8rem;font-family:inherit;">
+        </div>
+        <select id="adv-filter-barrio" onchange="applyAdvancedFilters()" style="padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8rem;font-family:inherit;max-width:180px;">
+          <option value="">Todos los barrios</option>
+        </select>
+        <span id="adv-filter-count" style="font-size:0.75rem;color:var(--accent);font-weight:600;"></span>
+      </div>
+
       <!-- 1. Parallel Coordinates -->
       <div class="section">
         <h2>Parallel Coordinates</h2>
@@ -415,26 +444,63 @@
       return all;
     }
 
+    // -- Filter + Render --
+    function applyAdvancedFilters() {
+      const zone = document.getElementById('adv-filter-zone').value;
+      const segment = document.getElementById('adv-filter-segment').value;
+      const priceMin = parseInt(document.getElementById('adv-filter-price-min').value) || 0;
+      const priceMax = parseInt(document.getElementById('adv-filter-price-max').value) || 9999999;
+      const barrio = document.getElementById('adv-filter-barrio').value;
+
+      const filtered = _rawData.filter(d => {
+        if (d.currency !== 'USD') return false;
+        if (d.price < priceMin || d.price > priceMax) return false;
+        if (!(d.price_per_sqm >= 100 && d.price_per_sqm <= 10000)) return false;
+        if (zone && getZone(d.neighborhood) !== zone) return false;
+        if (segment && d.segment !== segment) return false;
+        if (barrio && d.neighborhood !== barrio) return false;
+        return true;
+      });
+
+      document.getElementById('adv-filter-count').textContent =
+        `${filtered.length.toLocaleString()} / ${_rawData.length.toLocaleString()}`;
+
+      // Clear existing charts
+      ['parallel-coords', 'scatter-3d', 'force-network', 'treemap', 'density-map', 'bivariate-chart'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+      });
+      document.getElementById('network-legend').innerHTML = '';
+      document.getElementById('pc-filter-info').innerHTML = '';
+
+      // Rebuild all
+      buildParallelCoordinates(filtered);
+      build3DScatter(filtered);
+      buildForceNetwork(filtered);
+      buildTreemap(filtered);
+      buildDensityMap(filtered);
+      drawBivariateChoropleth();
+    }
+
     // -- Main --
     fetchData().then(raw => {
-      _rawData = raw; // store for barrio list popup
+      _rawData = raw;
       document.getElementById('loading').style.display = 'none';
       document.getElementById('content').style.display = 'block';
       document.getElementById('header-subtitle').textContent = raw.length.toLocaleString() + ' active listings loaded';
 
-      // Filter for USD properties with valid metrics
-      const filtered = raw.filter(d =>
-        d.currency === 'USD' &&
-        d.price >= 30000 && d.price <= 2000000 &&
-        d.price_per_sqm >= 100 && d.price_per_sqm <= 10000
-      );
+      // Populate barrio dropdown
+      const barrios = [...new Set(raw.map(d => d.neighborhood).filter(Boolean))].sort();
+      const barrioSelect = document.getElementById('adv-filter-barrio');
+      barrios.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b;
+        opt.textContent = b;
+        barrioSelect.appendChild(opt);
+      });
 
-      buildParallelCoordinates(filtered);
-      build3DScatter(filtered);
-      buildForceNetwork(raw);
-      buildTreemap(raw);
-      buildDensityMap(raw);
-      drawBivariateChoropleth();
+      // Initial render with default filters
+      applyAdvancedFilters();
     }).catch(err => {
       document.getElementById('loading').innerHTML = 'Error loading data: ' + err.message;
     });
