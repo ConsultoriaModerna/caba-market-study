@@ -286,7 +286,7 @@ const KEYWORDS = [
 const SEGMENTS = ['cheap','refac','recic','general'];
 const SOURCES = ['zonaprop','mercadolibre'];
 
-let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer;
+let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer;
 let allProps = [];
 let filtered = [];
 let activeKws = new Set();
@@ -623,6 +623,28 @@ function loadVillas() {
         .catch(e => console.warn('Villas layer failed:', e));
 }
 
+// Noise map (GCBA real dBA measurements)
+function loadNoise() {
+    fetch('/data/ruido_diurno.geojson')
+        .then(r => r.json())
+        .then(geojson => {
+            L.geoJSON(geojson, {
+                style: f => {
+                    const dba = f.properties.dba;
+                    // Green (quiet) -> Yellow (moderate) -> Red (loud)
+                    const color = dba >= 85 ? '#dc2626' : dba >= 75 ? '#f97316' :
+                                  dba >= 70 ? '#eab308' : dba >= 65 ? '#a3e635' : '#22c55e';
+                    const opacity = Math.min(0.4, 0.1 + (dba - 60) * 0.01);
+                    return { color, fillColor: color, fillOpacity: opacity, weight: 0.5, opacity: 0.3 };
+                },
+                onEachFeature: (f, layer) => {
+                    layer.bindPopup(`<b>${f.properties.rango}</b><br>Ruido diurno`);
+                }
+            }).addTo(noiseLayer);
+        })
+        .catch(e => console.warn('Noise layer failed:', e));
+}
+
 // Subte lines + stations
 function loadSubte() {
     // Lines
@@ -838,12 +860,14 @@ async function init() {
     subteLayer = L.featureGroup();
     subteProjectedLayer = L.featureGroup();
     isochronePalermoLayer = L.featureGroup();
+    noiseLayer = L.featureGroup();
 
     const overlays = {
         'Propiedades': markerCluster,
         'Subte': subteLayer,
         'Subte Proyectado': subteProjectedLayer,
         'Palermo 10-60min': isochronePalermoLayer,
+        'Ruido (dBA)': noiseLayer,
         'Vias de Tren': railwayLayer,
         'Buffer 200m Tren': railBufferLayer,
         'Delitos (heatmap)': crimeHeatLayer,
@@ -881,6 +905,7 @@ async function init() {
     loadVillas();
     loadSubte();
     loadPalermoIsochrone();
+    loadNoise();
 
     // Enter key applies filters
     document.querySelectorAll('.filter-input').forEach(input => {
