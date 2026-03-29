@@ -725,7 +725,7 @@
 
     <header>
         <div class="header-content">
-            <div class="header-title">InmoFindr</div>
+            <div class="header-title" style="cursor:pointer;" onclick="switchTab('overview')">InmoFindr <span id="headerPropCount" style="font-size:0.7rem;font-weight:400;opacity:0.5;"></span></div>
             <div class="loading-indicator" id="loadingIndicator">
                 <div class="spinner"></div>
                 <span>Cargando datos...</span>
@@ -1551,6 +1551,7 @@
             const segRecic = segmentMedian('recic');
 
             document.getElementById('kpi-total-properties').textContent = totalProps.toLocaleString();
+            document.getElementById('headerPropCount').textContent = `(${totalProps.toLocaleString()})`;
 
             // Source split bar
             const zpN = allProperties.filter(p => p.source === 'zonaprop').length;
