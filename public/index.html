@@ -1049,11 +1049,12 @@
     <div class="tab-content" id="tab-opportunities">
         <div style="max-width:1400px;margin:0 auto;padding:1rem 2rem;">
             <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center;">
-                <button class="opp-filter active" data-opp="value" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Mejor valor (USD/m²)</button>
-                <button class="opp-filter" data-opp="gap" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Mayor gap refac</button>
+                <button class="opp-filter" data-opp="all" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Todas</button>
+                <button class="opp-filter active" data-opp="value" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Mejor valor</button>
+                <button class="opp-filter" data-opp="gap" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Mayor gap</button>
                 <button class="opp-filter" data-opp="exterior" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Con exterior</button>
-                <button class="opp-filter" data-opp="score" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Opportunity Score</button>
-                <button class="opp-filter" data-opp="drops" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Price drops</button>
+                <button class="opp-filter" data-opp="score" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Score</button>
+                <button class="opp-filter" data-opp="drops" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Drops</button>
                 <span style="flex:1;"></span>
                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem;color:var(--text-secondary);user-select:none;">
                     <input type="checkbox" id="oppIncludeZN" checked onchange="populateOpportunities()" style="accent-color:var(--accent);">
@@ -1426,7 +1427,7 @@
 
         async function fetchProperties() {
             try {
-                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,price_per_covered_sqm,segment,source,slug,keywords,covered_ratio,permalink,address_text,contact_phone,contact_name,thumbnail,description,latitude,longitude,cocheras,first_seen_at,published_at,enriched_at,geo_precision';
+                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,price_per_covered_sqm,segment,source,slug,keywords,covered_ratio,permalink,address_text,contact_phone,contact_name,thumbnail,description,latitude,longitude,cocheras,first_seen_at,published_at,enriched_at,geo_precision,livability_score,livability_detail,smp';
                 const base = `${SUPABASE_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast`;
                 const headers = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
 
@@ -2052,7 +2053,11 @@
             const baseProps = includeZN ? allProperties : allProperties.filter(p => !isGBANorte(p.neighborhood));
 
             let ranked;
-            if (oppMode === 'value') {
+            if (oppMode === 'all') {
+                ranked = baseProps
+                    .filter(p => p.currency === 'USD' && p.price > 0)
+                    .slice(0, 500);
+            } else if (oppMode === 'value') {
                 ranked = baseProps
                     .filter(p => p.price_per_sqm > 100 && p.price_per_sqm < 10000 && p.currency === 'USD')
                     .sort((a, b) => a.price_per_sqm - b.price_per_sqm)
