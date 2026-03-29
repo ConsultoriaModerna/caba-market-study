@@ -286,7 +286,7 @@ const KEYWORDS = [
 const SEGMENTS = ['cheap','refac','recic','general'];
 const SOURCES = ['zonaprop','mercadolibre'];
 
-let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer, floodLayer;
+let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer, floodLayer, transportLayer;
 let allProps = [];
 let filtered = [];
 let activeKws = new Set();
@@ -623,6 +623,21 @@ function loadVillas() {
         .catch(e => console.warn('Villas layer failed:', e));
 }
 
+// Transport density heatmap (GCBA trip origins)
+function loadTransport() {
+    fetch('/data/transporte_heatmap.json')
+        .then(r => r.json())
+        .then(points => {
+            const heatData = points.map(p => [p[0], p[1], 0.5]);
+            const heat = L.heatLayer(heatData, {
+                radius: 15, blur: 20, maxZoom: 15, minOpacity: 0.2,
+                gradient: { 0.2: '#1e3a5f', 0.4: '#2563eb', 0.6: '#3b82f6', 0.8: '#60a5fa', 1: '#93c5fd' }
+            });
+            transportLayer.addLayer(heat);
+        })
+        .catch(e => console.warn('Transport heatmap failed:', e));
+}
+
 // Flood risk zones (GCBA 2019)
 function loadFlood() {
     fetch('/data/anegamiento.geojson')
@@ -883,6 +898,7 @@ async function init() {
     isochronePalermoLayer = L.featureGroup();
     noiseLayer = L.featureGroup();
     floodLayer = L.featureGroup();
+    transportLayer = L.featureGroup();
 
     const overlays = {
         'Propiedades': markerCluster,
@@ -895,6 +911,7 @@ async function init() {
         'Buffer 200m Tren': railBufferLayer,
         'Delitos (heatmap)': crimeHeatLayer,
         'Lugares de Culto': religiousLayer,
+        'Transporte (densidad)': transportLayer,
         'Villas / Asentamientos': villasLayer
     };
     const layerControl = L.control.layers({}, overlays, { position: 'topright', collapsed: false }).addTo(map);
@@ -930,6 +947,7 @@ async function init() {
     loadPalermoIsochrone();
     loadNoise();
     loadFlood();
+    loadTransport();
 
     // Enter key applies filters
     document.querySelectorAll('.filter-input').forEach(input => {
