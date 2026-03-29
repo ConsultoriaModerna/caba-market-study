@@ -1,0 +1,434 @@
+[
+  {
+    "file": "frentes-parcelas/frente-parcelas/frente-parcelas.dbf",
+    "size_mb": 1771.23,
+    "type": ".dbf",
+    "dir": "frentes-parcelas/frente-parcelas"
+  },
+  {
+    "file": "parcelas_catastrales/parcelas_catastrales.dbf",
+    "size_mb": 172.89,
+    "type": ".dbf",
+    "dir": "parcelas_catastrales"
+  },
+  {
+    "file": "parcelas_catastrales/parcelas_catastrales.shp",
+    "size_mb": 135.1,
+    "type": ".shp",
+    "dir": "parcelas_catastrales"
+  },
+  {
+    "file": "etapas_transporte.csv",
+    "size_mb": 98.18,
+    "type": ".csv",
+    "dir": "."
+  },
+  {
+    "file": "medicion_de_ruido_diurno.csv",
+    "size_mb": 86.78,
+    "type": ".csv",
+    "dir": "."
+  },
+  {
+    "file": "parcelas_catastrales.zip",
+    "size_mb": 73.43,
+    "type": ".zip",
+    "dir": "."
+  },
+  {
+    "file": "frentes-parcelas.csv",
+    "size_mb": 47.05,
+    "type": ".csv",
+    "dir": "."
+  },
+  {
+    "file": "frentes-parcelas.zip",
+    "size_mb": 37.66,
+    "type": ".zip",
+    "dir": "."
+  },
+  {
+    "file": "frentes-parcelas/frente-parcelas/frente-parcelas.shp",
+    "size_mb": 36.1,
+    "type": ".shp",
+    "dir": "frentes-parcelas/frente-parcelas"
+  },
+  {
+    "file": "medicion_de_ruido_diurno/medicion_de_ruido_diurno.shp",
+    "size_mb": 35.37,
+    "type": ".shp",
+    "dir": "medicion_de_ruido_diurno"
+  },
+  {
+    "file": "medicion_de_ruido_nocturno_2018/mapa_de_ruido_nocturno.shp",
+    "size_mb": 28.58,
+    "type": ".shp",
+    "dir": "medicion_de_ruido_nocturno_2018"
+  },
+  {
+    "file": "medicion_de_ruido_diurno.zip",
+    "size_mb": 24.82,
+    "type": ".zip",
+    "dir": "."
+  },
+  {
+    "file": "medicion_de_ruido_nocturno_2018.zip",
+    "size_mb": 14.63,
+    "type": ".zip",
+    "dir": "."
+  },
+  {
+    "file": "frentes-parcelas/frente-parcelas/frente-parcelas.shx",
+    "size_mb": 3.26,
+    "type": ".shx",
+    "dir": "frentes-parcelas/frente-parcelas"
+  },
+  {
+    "file": "parcelas_catastrales/parcelas_catastrales.shx",
+    "size_mb": 2.43,
+    "type": ".shx",
+    "dir": "parcelas_catastrales"
+  },
+  {
+    "file": "medicion_de_ruido_diurno.xlsx",
+    "size_mb": 1.43,
+    "type": ".xlsx",
+    "dir": "."
+  },
+  {
+    "file": "medicion_de_ruido_nocturno.xlsx",
+    "size_mb": 1.17,
+    "type": ".xlsx",
+    "dir": "."
+  },
+  {
+    "file": "barrios_populares_manzanas.csv",
+    "size_mb": 0.98,
+    "type": ".csv",
+    "dir": "."
+  },
+  {
+    "file": "movements-2932026.pdf",
+    "size_mb": 0.96,
+    "type": ".pdf",
+    "dir": "."
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2014.csv",
+    "size_mb": 0.79,
+    "type": ".csv",
+    "dir": "."
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2019.csv",
+    "size_mb": 0.75,
+    "type": ".csv",
+    "dir": "."
+  },
+  {
+    "file": "RelacionProblemasSalud-2.pdf",
+    "size_mb": 0.46,
+    "type": ".pdf",
+    "dir": "."
+  },
+  {
+    "file": "RelacionIncapacidadesLaborales.pdf",
+    "size_mb": 0.46,
+    "type": ".pdf",
+    "dir": "."
+  },
+  {
+    "file": "barrios_populares_manzanas/barrios_populares_manzanas.shp",
+    "size_mb": 0.41,
+    "type": ".shp",
+    "dir": "barrios_populares_manzanas"
+  },
+  {
+    "file": "barrios_populares_manzanas.xlsx",
+    "size_mb": 0.36,
+    "type": ".xlsx",
+    "dir": "."
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2019/sitios-pasibles-de-anegamiento-por-precipitacion-2019.shp",
+    "size_mb": 0.34,
+    "type": ".shp",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2019"
+  },
+  {
+    "file": "informe-2.pdf",
+    "size_mb": 0.32,
+    "type": ".pdf",
+    "dir": "."
+  },
+  {
+    "file": "informe-3.pdf",
+    "size_mb": 0.31,
+    "type": ".pdf",
+    "dir": "."
+  },
+  {
+    "file": "informe-4.pdf",
+    "size_mb": 0.31,
+    "type": ".pdf",
+    "dir": "."
+  },
+  {
+    "file": "informe-5.pdf",
+    "size_mb": 0.31,
+    "type": ".pdf",
+    "dir": "."
+  },
+  {
+    "file": "barrios_populares_manzanas.zip",
+    "size_mb": 0.29,
+    "type": ".zip",
+    "dir": "."
+  },
+  {
+    "file": "AnaliticasAPM-1.pdf",
+    "size_mb": 0.27,
+    "type": ".pdf",
+    "dir": "."
+  },
+  {
+    "file": "AnaliticasAPM-2.pdf",
+    "size_mb": 0.27,
+    "type": ".pdf",
+    "dir": "."
+  },
+  {
+    "file": "2026 Credito.xls",
+    "size_mb": 0.21,
+    "type": ".xls",
+    "dir": "."
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2019.zip",
+    "size_mb": 0.18,
+    "type": ".zip",
+    "dir": "."
+  },
+  {
+    "file": "medicion_de_ruido_nocturno_2018/mapa_de_ruido_nocturno.dbf",
+    "size_mb": 0.18,
+    "type": ".dbf",
+    "dir": "medicion_de_ruido_nocturno_2018"
+  },
+  {
+    "file": "certificados_urbanisticos.csv",
+    "size_mb": 0.12,
+    "type": ".csv",
+    "dir": "."
+  },
+  {
+    "file": "ParteIncapacidadTemporal-2.pdf",
+    "size_mb": 0.12,
+    "type": ".pdf",
+    "dir": "."
+  },
+  {
+    "file": "ParteIncapacidadTemporal-3.pdf",
+    "size_mb": 0.12,
+    "type": ".pdf",
+    "dir": "."
+  },
+  {
+    "file": "ParteIncapacidadTemporal-4.pdf",
+    "size_mb": 0.12,
+    "type": ".pdf",
+    "dir": "."
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2003-zip/anegamientos-precipitacion.shp",
+    "size_mb": 0.12,
+    "type": ".shp",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2003-zip"
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2003-zip/anegamientos-precipitacion.xml",
+    "size_mb": 0.11,
+    "type": ".xml",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2003-zip"
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2014-zip.zip",
+    "size_mb": 0.1,
+    "type": ".zip",
+    "dir": "."
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2003-zip.zip",
+    "size_mb": 0.1,
+    "type": ".zip",
+    "dir": "."
+  },
+  {
+    "file": "medicion_de_ruido_diurno/medicion_de_ruido_diurno.dbf",
+    "size_mb": 0.1,
+    "type": ".dbf",
+    "dir": "medicion_de_ruido_diurno"
+  },
+  {
+    "file": "barrios_populares_poligono.xlsx",
+    "size_mb": 0.08,
+    "type": ".xlsx",
+    "dir": "."
+  },
+  {
+    "file": "barrios_populares_manzanas/barrios_populares_manzanas.dbf",
+    "size_mb": 0.08,
+    "type": ".dbf",
+    "dir": "barrios_populares_manzanas"
+  },
+  {
+    "file": "2026 Debito.xls",
+    "size_mb": 0.07,
+    "type": ".xls",
+    "dir": "."
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2019/sitios-pasibles-de-anegamiento-por-precipitacion-2019.dbf",
+    "size_mb": 0.02,
+    "type": ".dbf",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2019"
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2019/sitios-pasibles-de-anegamiento-por-precipitacion-2019.xml",
+    "size_mb": 0.02,
+    "type": ".xml",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2019"
+  },
+  {
+    "file": "medicion_de_ruido_nocturno_2018/mapa_de_ruido_nocturno.shp.xml",
+    "size_mb": 0.02,
+    "type": ".xml",
+    "dir": "medicion_de_ruido_nocturno_2018"
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2003-zip/anegamientos-precipitacion.dbf",
+    "size_mb": 0.02,
+    "type": ".dbf",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2003-zip"
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2019/sitios-pasibles-de-anegamiento-por-precipitacion-2019.shp.xml",
+    "size_mb": 0.01,
+    "type": ".xml",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2019"
+  },
+  {
+    "file": "medicion_de_ruido_diurno/medicion_de_ruido_diurno.shx",
+    "size_mb": 0.0,
+    "type": ".shx",
+    "dir": "medicion_de_ruido_diurno"
+  },
+  {
+    "file": "medicion_de_ruido_diurno/medicion_de_ruido_diurno.cpg",
+    "size_mb": 0.0,
+    "type": ".cpg",
+    "dir": "medicion_de_ruido_diurno"
+  },
+  {
+    "file": "medicion_de_ruido_diurno/medicion_de_ruido_diurno.prj",
+    "size_mb": 0.0,
+    "type": ".prj",
+    "dir": "medicion_de_ruido_diurno"
+  },
+  {
+    "file": "barrios_populares_manzanas/barrios_populares_manzanas.prj",
+    "size_mb": 0.0,
+    "type": ".prj",
+    "dir": "barrios_populares_manzanas"
+  },
+  {
+    "file": "barrios_populares_manzanas/barrios_populares_manzanas.shx",
+    "size_mb": 0.0,
+    "type": ".shx",
+    "dir": "barrios_populares_manzanas"
+  },
+  {
+    "file": "barrios_populares_manzanas/barrios_populares_manzanas.cpg",
+    "size_mb": 0.0,
+    "type": ".cpg",
+    "dir": "barrios_populares_manzanas"
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2019/sitios-pasibles-de-anegamiento-por-precipitacion-2019.sbx",
+    "size_mb": 0.0,
+    "type": ".sbx",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2019"
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2019/sitios-pasibles-de-anegamiento-por-precipitacion-2019.shx",
+    "size_mb": 0.0,
+    "type": ".shx",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2019"
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2019/sitios-pasibles-de-anegamiento-por-precipitacion-2019.sbn",
+    "size_mb": 0.0,
+    "type": ".sbn",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2019"
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2019/sitios-pasibles-de-anegamiento-por-precipitacion-2019.prj",
+    "size_mb": 0.0,
+    "type": ".prj",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2019"
+  },
+  {
+    "file": "medicion_de_ruido_nocturno_2018/mapa_de_ruido_nocturno.shx",
+    "size_mb": 0.0,
+    "type": ".shx",
+    "dir": "medicion_de_ruido_nocturno_2018"
+  },
+  {
+    "file": "medicion_de_ruido_nocturno_2018/mapa_de_ruido_nocturno.prj",
+    "size_mb": 0.0,
+    "type": ".prj",
+    "dir": "medicion_de_ruido_nocturno_2018"
+  },
+  {
+    "file": "parcelas_catastrales/parcelas_catastrales.cpg",
+    "size_mb": 0.0,
+    "type": ".cpg",
+    "dir": "parcelas_catastrales"
+  },
+  {
+    "file": "parcelas_catastrales/parcelas_catastrales.prj",
+    "size_mb": 0.0,
+    "type": ".prj",
+    "dir": "parcelas_catastrales"
+  },
+  {
+    "file": "frentes-parcelas/frente-parcelas/frente-parcelas.qpj",
+    "size_mb": 0.0,
+    "type": ".qpj",
+    "dir": "frentes-parcelas/frente-parcelas"
+  },
+  {
+    "file": "frentes-parcelas/frente-parcelas/frente-parcelas.prj",
+    "size_mb": 0.0,
+    "type": ".prj",
+    "dir": "frentes-parcelas/frente-parcelas"
+  },
+  {
+    "file": "frentes-parcelas/frente-parcelas/frente-parcelas.cpg",
+    "size_mb": 0.0,
+    "type": ".cpg",
+    "dir": "frentes-parcelas/frente-parcelas"
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2003-zip/anegamientos-precipitacion.prj",
+    "size_mb": 0.0,
+    "type": ".prj",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2003-zip"
+  },
+  {
+    "file": "sitios-pasibles-de-anegamiento-por-precipitacion-2003-zip/anegamientos-precipitacion.shx",
+    "size_mb": 0.0,
+    "type": ".shx",
+    "dir": "sitios-pasibles-de-anegamiento-por-precipitacion-2003-zip"
+  }
+]
