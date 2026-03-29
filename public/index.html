@@ -798,7 +798,7 @@
                 <div class="kpi-value" id="kpi-neighborhoods">-</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label" title="USD/m2 mediano por estado: A Refaccionar / General / Reciclada">Por estado USD/m²</div>
+                <div class="kpi-label" title="USD/m2 mediano: Usado (a refaccionar) / Estandar / Renovado (reciclado)">USD/m² por estado</div>
                 <div class="kpi-value" id="kpi-segments" style="font-size:0.85rem;">-</div>
             </div>
             <div class="kpi-card" style="cursor:pointer;" onclick="switchTab('opportunities')">
@@ -1564,33 +1564,31 @@
             document.getElementById('kpi-opportunities').textContent = allOpportunities.length;
 
             // Segment KPI
-            // Segment display: chips + gaps + renovation budget per m²
+            // Segment display: Usado / Estandar / Renovado with absolute gaps
             let segHtml = '';
             if (segRefac && segGeneral && segRecic) {
-                const gapRefacRecic = Math.round((segRecic - segRefac) / segRefac * 100);
-                const gapGeneralRecic = Math.round((segRecic - segGeneral) / segGeneral * 100);
-                const budgetRefac = segRecic - segRefac; // $/m² available for reno
-                const budgetGeneral = segRecic - segGeneral;
+                const gapUsadoRenovado = segRecic - segRefac;
+                const gapEstandarRenovado = segRecic - segGeneral;
+                const gapTotalPct = Math.round((segRecic - segRefac) / segRefac * 100);
                 segHtml = `
                     <div style="display:flex;flex-direction:column;gap:4px;">
                         <div style="display:flex;align-items:center;gap:3px;flex-wrap:nowrap;">
-                            <span style="background:rgba(249,115,22,0.15);color:var(--orange);padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:600;">R $${segRefac}/m²</span>
-                            <span style="color:var(--accent);font-size:0.55rem;">+${gapRefacRecic}%→</span>
-                            <span style="background:rgba(148,163,184,0.1);color:var(--text-secondary);padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:600;">G $${segGeneral}/m²</span>
-                            <span style="color:var(--accent);font-size:0.55rem;">+${gapGeneralRecic}%→</span>
-                            <span style="background:rgba(74,222,128,0.15);color:var(--green);padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:600;">RC $${segRecic}/m²</span>
+                            <span style="background:rgba(249,115,22,0.15);color:var(--orange);padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:600;">Usado $${segRefac}</span>
+                            <span style="color:var(--text-secondary);font-size:0.55rem;">→</span>
+                            <span style="background:rgba(148,163,184,0.1);color:var(--text-secondary);padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:600;">Estandar $${segGeneral}</span>
+                            <span style="color:var(--text-secondary);font-size:0.55rem;">→</span>
+                            <span style="background:rgba(74,222,128,0.15);color:var(--green);padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:600;">Renovado $${segRecic}</span>
                         </div>
                         <div style="font-size:0.55rem;color:var(--text-secondary);line-height:1.3;">
-                            Max reno/m²: <span style="color:var(--orange);font-weight:600;">$${budgetRefac}</span> (R→RC) |
-                            <span style="color:var(--text-primary);font-weight:600;">$${budgetGeneral}</span> (G→RC) |
-                            Tu costo ~$200/m²: <span style="color:${budgetRefac > 200 ? 'var(--green)' : 'var(--red)'};">${budgetRefac > 200 ? 'viable' : 'ajustado'}</span>
+                            Gap total: <span style="color:var(--accent);font-weight:700;">$${gapUsadoRenovado}/m² (+${gapTotalPct}%)</span> |
+                            Reno DIY ~$200/m²: <span style="color:${gapUsadoRenovado > 200 ? 'var(--green)' : 'var(--red)'};;font-weight:600;">ganancia $${gapUsadoRenovado - 200}/m²</span>
                         </div>
                     </div>`;
             } else {
                 const segParts = [];
-                if (segRefac) segParts.push(`<span style="color:var(--orange)">R $${segRefac}</span>`);
-                if (segGeneral) segParts.push(`<span style="color:var(--text-secondary)">G $${segGeneral}</span>`);
-                if (segRecic) segParts.push(`<span style="color:var(--green)">RC $${segRecic}</span>`);
+                if (segRefac) segParts.push(`<span style="color:var(--orange)">Usado $${segRefac}</span>`);
+                if (segGeneral) segParts.push(`<span style="color:var(--text-secondary)">Estandar $${segGeneral}</span>`);
+                if (segRecic) segParts.push(`<span style="color:var(--green)">Renovado $${segRecic}</span>`);
                 segHtml = segParts.length ? segParts.join(' · ') : '-';
             }
             document.getElementById('kpi-segments').innerHTML = segHtml;
