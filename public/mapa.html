@@ -377,7 +377,7 @@ function initChips() {
 
 // Fetch properties with GPS from Supabase
 async function fetchProperties() {
-    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,bathrooms,bedrooms,neighborhood,address_text,latitude,longitude,geo_precision,permalink,keywords,segment,source,description,covered_ratio';
+    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,bathrooms,bedrooms,neighborhood,address_text,latitude,longitude,geo_precision,permalink,keywords,segment,source,description,covered_ratio,livability_score,first_seen_at,thumbnail,currency,cocheras,contact_phone,contact_name,smp';
     const base = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&latitude=not.is.null&order=price_per_sqm.asc`;
     let all = [];
     for (let offset = 0; offset < 20000; offset += 1000) {
@@ -533,6 +533,7 @@ function renderList() {
                 <div class="prop-metric"><span class="val">${dbStr || p.ambientes || '—'}</span><span class="lbl">${dbStr ? 'Dorm/Baño' : 'Amb'}</span></div>
             </div>
             ${kwsHtml ? `<div class="prop-keywords">${kwsHtml}</div>` : ''}
+            ${p.livability_score ? `<div style="margin-top:4px;font-size:9px;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444'};font-weight:700;">Livability: ${p.livability_score}/100</div>` : ''}
             ${p.permalink ? `<a href="${p.permalink}" target="_blank" class="prop-link" onclick="event.stopPropagation()">Ver aviso &rarr;</a>` : ''}
         </div>`;
     }).join('');
