@@ -2,11 +2,5 @@
   "buildCommand": "",
   "outputDirectory": "public",
   "framework": null,
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/analytics", "destination": "/d3-analytics.html" },
-    { "source": "/mapa", "destination": "/mapa.html" },
-    { "source": "/wave", "destination": "/wave.html" },
-    { "source": "/advanced", "destination": "/advanced.html" }
-  ]
+  "cleanUrls": true
 }

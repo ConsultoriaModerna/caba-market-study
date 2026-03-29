@@ -949,8 +949,6 @@ async function init() {
     };
     const layerControl = L.control.layers({}, overlays, { position: 'topright', collapsed: false }).addTo(map);
 
-    loadCrimeHeatmap();
-
     initChips();
 
     try {
@@ -973,15 +971,29 @@ async function init() {
     }
 
     document.getElementById('loading').classList.add('hidden');
+
+    // Essential layers (load immediately)
     loadRailways();
-    loadReligious();
-    loadVillas();
     loadSubte();
-    loadPalermoIsochrone();
-    loadNoise();
-    loadFlood();
-    loadTransport();
-    loadZonaMicrocentro();
+    loadVillas();
+
+    // Heavy layers (lazy load when user toggles them on)
+    const lazyLayers = {
+        'Ruido (dBA)': loadNoise,
+        'Anegamiento': loadFlood,
+        'Delitos (heatmap)': loadCrimeHeatmap,
+        'Transporte (densidad)': loadTransport,
+        'Palermo 10-60min': loadPalermoIsochrone,
+        'Lugares de Culto': loadReligious,
+        'Zona Ley 6508 / IA': loadZonaMicrocentro
+    };
+    const lazyLoaded = {};
+    map.on('overlayadd', function(e) {
+        if (lazyLayers[e.name] && !lazyLoaded[e.name]) {
+            lazyLoaded[e.name] = true;
+            lazyLayers[e.name]();
+        }
+    });
 
     // Enter key applies filters
     document.querySelectorAll('.filter-input').forEach(input => {
