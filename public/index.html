@@ -876,6 +876,11 @@
             <div id="zoneMapChart" style="width:100%;min-height:320px;"></div>
         </div>
 
+        <div class="chart-container" style="height:auto;">
+            <div class="chart-title">Livability vs Precio: donde esta el sweet spot?</div>
+            <div id="livPriceScatter" style="width:100%;height:300px;"></div>
+        </div>
+
         <div class="chart-container" style="height:auto;min-height:400px;">
             <div class="chart-title">Cobertura por Portal y Zona</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1rem;">
@@ -1760,6 +1765,7 @@
             renderNeighborhoodChart(neighborhoodArray);
             renderZoneChart();
             renderSourceCharts();
+            renderLivPriceScatter();
         }
 
         function computeNeighborhoodStats() {
@@ -1935,6 +1941,66 @@
                 g.append('text').attr('x', 14).attr('y', 9).attr('fill', '#94a3b8').attr('font-size', '9px')
                     .text(`${zone} (${zoneCt})`);
             });
+        }
+
+        function renderLivPriceScatter() {
+            const container = document.getElementById('livPriceScatter');
+            if (!container) return;
+            const withLiv = allProperties.filter(p => p.livability_score > 0 && p.price_per_sqm > 100 && p.price_per_sqm < 5000);
+            if (withLiv.length < 10) {
+                container.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:2rem;">Insuficientes propiedades con Livability Score</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            const w = container.clientWidth;
+            const h = 280;
+            const m = { top: 20, right: 20, bottom: 40, left: 50 };
+
+            const svg = d3.select('#livPriceScatter').append('svg')
+                .attr('viewBox', `0 0 ${w} ${h}`).attr('preserveAspectRatio', 'xMidYMid meet');
+
+            const x = d3.scaleLinear().domain([0, 80]).range([m.left, w - m.right]);
+            const y = d3.scaleLinear().domain([0, 3000]).range([h - m.bottom, m.top]);
+
+            // Sweet spot highlight
+            svg.append('rect')
+                .attr('x', x(45)).attr('y', y(1400))
+                .attr('width', x(75) - x(45)).attr('height', y(600) - y(1400))
+                .attr('fill', 'rgba(74,222,128,0.06)').attr('stroke', '#4ade80')
+                .attr('stroke-width', 1).attr('stroke-dasharray', '4,3');
+            svg.append('text').attr('x', x(60)).attr('y', y(1350))
+                .attr('text-anchor', 'middle').attr('fill', '#4ade80').attr('font-size', '9px')
+                .text('Sweet Spot');
+
+            // Dots
+            svg.selectAll('circle').data(withLiv).join('circle')
+                .attr('cx', d => x(d.livability_score))
+                .attr('cy', d => y(d.price_per_sqm))
+                .attr('r', 3)
+                .attr('fill', d => {
+                    const usd = convertToUSD(d);
+                    return usd >= 100000 && usd <= 180000 ? '#4ade80' : '#334155';
+                })
+                .attr('opacity', d => {
+                    const usd = convertToUSD(d);
+                    return usd >= 100000 && usd <= 180000 ? 0.7 : 0.2;
+                })
+                .style('cursor', 'pointer')
+                .on('click', (e, d) => openPropModal(d.id));
+
+            // Axes
+            svg.append('g').attr('transform', `translate(0,${h-m.bottom})`)
+                .call(d3.axisBottom(x).ticks(6)).call(g => g.selectAll('text').attr('fill', '#94a3b8').attr('font-size', '10px'))
+                .call(g => g.selectAll('line').attr('stroke', '#1e293b')).call(g => g.select('.domain').attr('stroke', '#1e293b'));
+            svg.append('g').attr('transform', `translate(${m.left},0)`)
+                .call(d3.axisLeft(y).ticks(5).tickFormat(v => '$'+v)).call(g => g.selectAll('text').attr('fill', '#94a3b8').attr('font-size', '10px'))
+                .call(g => g.selectAll('line').attr('stroke', '#1e293b')).call(g => g.select('.domain').attr('stroke', '#1e293b'));
+
+            svg.append('text').attr('x', w/2).attr('y', h - 2).attr('text-anchor', 'middle')
+                .attr('fill', '#64748b').attr('font-size', '10px').text('Livability Score →');
+            svg.append('text').attr('transform', 'rotate(-90)').attr('x', -h/2).attr('y', 14)
+                .attr('text-anchor', 'middle').attr('fill', '#64748b').attr('font-size', '10px').text('USD/m²');
         }
 
         function renderSourceCharts() {
