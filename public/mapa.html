@@ -519,7 +519,9 @@ function renderList() {
         const dbStr = [dormInfo, bathInfo].filter(Boolean).join('/');
         const days = p.first_seen_at ? Math.round((Date.now() - new Date(p.first_seen_at).getTime()) / 86400000) : null;
         const ageBadge = days !== null && days <= 2 ? '<span style="background:rgba(74,222,128,0.2);color:#4ade80;padding:1px 5px;border-radius:6px;font-size:8px;font-weight:700;">NEW</span> ' : days !== null ? `<span style="color:#64748b;font-size:9px;">${days}d</span> ` : '';
-        const srcBadge = p.source === 'zonaprop' ? '<span style="background:rgba(96,165,250,0.15);color:#60a5fa;padding:1px 4px;border-radius:6px;font-size:8px;font-weight:600;">ZP</span> ' : '<span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:1px 4px;border-radius:6px;font-size:8px;font-weight:600;">ML</span> ';
+        const srcBadge = p.source === 'zonaprop' ? '<span style="background:rgba(96,165,250,0.15);color:#60a5fa;padding:1px 4px;border-radius:6px;font-size:8px;font-weight:600;">ZP</span> ' :
+            p.source === 'argenprop' ? '<span style="background:rgba(236,72,153,0.15);color:#ec4899;padding:1px 4px;border-radius:6px;font-size:8px;font-weight:600;">AP</span> ' :
+            '<span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:1px 4px;border-radius:6px;font-size:8px;font-weight:600;">ML</span> ';
 
         return `<div class="prop-card" data-id="${p.id}" onclick="selectProp('${p.id}')">
             <div class="prop-title">${srcBadge}${ageBadge}${p.title || 'Sin título'}${segBadge}</div>
