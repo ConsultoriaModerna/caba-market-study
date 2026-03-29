@@ -293,7 +293,7 @@ const KEYWORDS = [
 const SEGMENTS = ['cheap','refac','recic','general'];
 const SOURCES = ['zonaprop','mercadolibre'];
 
-let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer, floodLayer, transportLayer, zonaLey6508Layer;
+let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer, floodLayer, transportLayer, zonaLey6508Layer, busStopsLayer, busRoutesLayer;
 let allProps = [];
 let filtered = [];
 let activeKws = new Set();
@@ -669,6 +669,32 @@ function loadTransport() {
         .catch(e => console.warn('Transport heatmap failed:', e));
 }
 
+// Bus stops heatmap
+function loadBusStops() {
+    fetch('/data/bus_stops.json')
+        .then(r => r.json())
+        .then(points => {
+            const heat = L.heatLayer(points.map(p => [p[0], p[1], 0.4]), {
+                radius: 12, blur: 18, maxZoom: 15, minOpacity: 0.15,
+                gradient: { 0.2: '#1e3a5f', 0.4: '#3b82f6', 0.6: '#60a5fa', 0.8: '#93c5fd', 1: '#bfdbfe' }
+            });
+            busStopsLayer.addLayer(heat);
+        })
+        .catch(e => console.warn('Bus stops failed:', e));
+}
+
+// Bus routes
+function loadBusRoutes() {
+    fetch('/data/bus_routes.geojson')
+        .then(r => r.json())
+        .then(geojson => {
+            L.geoJSON(geojson, {
+                style: { color: '#3b82f6', weight: 1, opacity: 0.15 }
+            }).addTo(busRoutesLayer);
+        })
+        .catch(e => console.warn('Bus routes failed:', e));
+}
+
 // Flood risk zones (GCBA 2019)
 function loadFlood() {
     fetch('/data/anegamiento.geojson')
@@ -931,6 +957,8 @@ async function init() {
     floodLayer = L.featureGroup();
     transportLayer = L.featureGroup();
     zonaLey6508Layer = L.featureGroup();
+    busStopsLayer = L.featureGroup();
+    busRoutesLayer = L.featureGroup();
 
     const overlays = {
         'Propiedades': markerCluster,
@@ -944,6 +972,8 @@ async function init() {
         'Delitos (heatmap)': crimeHeatLayer,
         'Lugares de Culto': religiousLayer,
         'Zona Ley 6508 / IA': zonaLey6508Layer,
+        'Colectivos (paradas)': busStopsLayer,
+        'Colectivos (recorridos)': busRoutesLayer,
         'Transporte (densidad)': transportLayer,
         'Villas / Asentamientos': villasLayer
     };
@@ -982,6 +1012,8 @@ async function init() {
         'Ruido (dBA)': loadNoise,
         'Anegamiento': loadFlood,
         'Delitos (heatmap)': loadCrimeHeatmap,
+        'Colectivos (paradas)': loadBusStops,
+        'Colectivos (recorridos)': loadBusRoutes,
         'Transporte (densidad)': loadTransport,
         'Palermo 10-60min': loadPalermoIsochrone,
         'Lugares de Culto': loadReligious,
