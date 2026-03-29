@@ -1452,7 +1452,7 @@
 
         async function fetchProperties() {
             try {
-                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,price_per_covered_sqm,segment,source,slug,keywords,covered_ratio,permalink,address_text,contact_phone,contact_name,thumbnail,description,latitude,longitude,cocheras,first_seen_at,published_at,enriched_at,geo_precision,livability_score,livability_detail,smp';
+                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,price_per_covered_sqm,segment,source,slug,keywords,covered_ratio,permalink,address_text,contact_phone,contact_name,thumbnail,description,latitude,longitude,cocheras,first_seen_at,published_at,enriched_at,geo_precision,livability_score,livability_detail,smp,fot,m2_construibles,distrito_urbanistico';
                 const base = `${SUPABASE_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast`;
                 const headers = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
 
@@ -2681,7 +2681,27 @@
                                 </div>`;
                             }).join('')}
                         </div>` : ''}
-                        ${p.smp ? `<div style="font-size:0.6rem;color:var(--text-secondary);margin-top:6px;">SMP: ${p.smp}</div>` : ''}
+                        ${p.smp ? `<div style="font-size:0.6rem;color:var(--text-secondary);margin-top:6px;">SMP: ${p.smp}${p.distrito_urbanistico ? ' | Distrito: ' + p.distrito_urbanistico : ''}</div>` : ''}
+                    </div>` : ''}
+
+                    ${p.fot ? `
+                    <!-- Urbanistico -->
+                    <div style="margin-bottom:1.2rem;padding:0.8rem;background:linear-gradient(135deg,rgba(0,212,255,0.05),rgba(167,139,250,0.05));border:1px solid rgba(0,212,255,0.15);border-radius:10px;">
+                        <div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;margin-bottom:0.5rem;">Potencial Urbanistico</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;text-align:center;">
+                            <div>
+                                <div style="font-size:1.2rem;font-weight:700;color:var(--accent);">${p.fot}</div>
+                                <div style="font-size:0.6rem;color:var(--text-secondary);">FOT permitido</div>
+                            </div>
+                            <div>
+                                <div style="font-size:1.2rem;font-weight:700;color:var(--green);">${p.m2_construibles || '-'}</div>
+                                <div style="font-size:0.6rem;color:var(--text-secondary);">m² construibles</div>
+                            </div>
+                            <div>
+                                <div style="font-size:1.2rem;font-weight:700;color:${p.m2_construibles && p.covered_area && p.m2_construibles > p.covered_area ? 'var(--green)' : 'var(--text-secondary)'};">${p.m2_construibles && p.covered_area ? Math.round(p.m2_construibles - p.covered_area) : '-'}</div>
+                                <div style="font-size:0.6rem;color:var(--text-secondary);">m² ampliables</div>
+                            </div>
+                        </div>
                     </div>` : ''}
 
                     <!-- Location -->
