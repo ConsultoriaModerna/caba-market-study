@@ -703,6 +703,7 @@
                             <th style="text-align:right;padding:8px;">USD/m²</th>
                             <th style="text-align:right;padding:8px;">m²</th>
                             <th style="text-align:center;padding:8px;">Seg</th>
+                            <th style="text-align:center;padding:8px;">Liv</th>
                             <th style="text-align:left;padding:8px;">Tags</th>
                             <th style="text-align:center;padding:8px;">Link</th>
                             <th style="text-align:center;padding:8px;">Quitar</th>
@@ -1239,6 +1240,7 @@
                     <td style="text-align:right;padding:6px 8px;color:var(--accent);font-weight:600;">${p.price_per_sqm ? '$' + Math.round(p.price_per_sqm).toLocaleString() : '-'}</td>
                     <td style="text-align:right;padding:6px 8px;">${p.total_area || '-'}</td>
                     <td style="text-align:center;padding:6px 8px;color:${segColor};font-weight:600;font-size:0.7rem;">${segLabel}</td>
+                    <td style="text-align:center;padding:6px 8px;font-size:0.75rem;font-weight:600;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : p.livability_score > 0 ? '#ef4444' : '#334155'};">${p.livability_score || '-'}</td>
                     <td style="padding:6px 4px;max-width:160px;">${tags}</td>
                     <td style="text-align:center;padding:6px 8px;">${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.75rem;" onclick="event.stopPropagation()">→</a>` : ''}</td>
                     <td style="text-align:center;padding:6px 8px;">
