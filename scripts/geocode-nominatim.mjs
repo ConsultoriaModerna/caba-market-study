@@ -68,12 +68,53 @@ function buildAddressVariants(addr, neighborhood, city) {
   return variants;
 }
 
-// Geocode trying multiple variants
-async function geocodeWithVariants(variants) {
+// USIG geocoder (GCBA official, best for CABA addresses)
+async function geocodeUSIG(addr, neighborhood) {
+  if (!addr) return null;
+  const clean = addr
+    .replace(/\bal\s+/gi, '')
+    .replace(/\bNº?\s*/gi, '')
+    .replace(/\s+/g, ' ')
+    .replace(/,.*$/, '')
+    .trim();
+
+  if (!clean || clean.length < 3) return null;
+
+  const query = `${clean}, caba`;
+  const url = `https://servicios.usig.buenosaires.gob.ar/normalizar/?direccion=${encodeURIComponent(query)}&geocodificar=1&srid=4326&maxOptions=1`;
+
+  try {
+    const resp = await fetch(url, { headers: { 'User-Agent': 'InmoFindr/1.0' } });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const dirs = data.direccionesNormalizadas || [];
+    if (dirs.length === 0 || !dirs[0].coordenadas) return null;
+
+    const c = dirs[0].coordenadas;
+    const lat = parseFloat(c.y);
+    const lon = parseFloat(c.x);
+
+    if (lat < -35.0 || lat > -34.3 || lon < -58.7 || lon > -58.2) return null;
+
+    return { lat, lng: lon, display: dirs[0].direccion, precision: 'exact' };
+  } catch {
+    return null;
+  }
+}
+
+// Geocode trying USIG first (CABA), then Nominatim variants as fallback
+async function geocodeWithVariants(variants, addr, neighborhood, state) {
+  // Try USIG first for CABA properties
+  if (!state || state === 'CABA') {
+    const usigResult = await geocodeUSIG(addr, neighborhood);
+    if (usigResult) return usigResult;
+    await sleep(500);
+  }
+
+  // Fallback to Nominatim variants
   for (const address of variants) {
     const result = await geocodeSingle(address);
     if (result) {
-      // Determine precision based on which variant matched
       const isBarrioOnly = address === variants[variants.length - 1] && variants.length > 1;
       if (isBarrioOnly) {
         result.precision = 'barrio';
@@ -85,7 +126,7 @@ async function geocodeWithVariants(variants) {
   return null;
 }
 
-// Geocode a single address via Nominatim
+// Geocode a single address via Nominatim (fallback)
 async function geocodeSingle(address) {
   const url = `https://nominatim.openstreetmap.org/search?` + new URLSearchParams({
     q: address,
@@ -203,7 +244,7 @@ async function main() {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
 
     try {
-      const result = await geocodeWithVariants(variants);
+      const result = await geocodeWithVariants(variants, p.address_text, p.neighborhood, p.state);
 
       if (result) {
         await updateProperty(p.id, result.lat, result.lng, result.precision);
