@@ -293,7 +293,7 @@ const KEYWORDS = [
 const SEGMENTS = ['cheap','refac','recic','general'];
 const SOURCES = ['zonaprop','mercadolibre'];
 
-let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer, floodLayer, transportLayer, zonaLey6508Layer, busStopsLayer, busRoutesLayer;
+let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer, floodLayer, transportLayer, zonaLey6508Layer, busStopsLayer, busRoutesLayer, greenLayer;
 let allProps = [];
 let filtered = [];
 let activeKws = new Set();
@@ -669,6 +669,20 @@ function loadTransport() {
         .catch(e => console.warn('Transport heatmap failed:', e));
 }
 
+// Green density (arbolado publico 354K trees)
+function loadGreen() {
+    fetch('/data/arbolado_heatmap.json')
+        .then(r => r.json())
+        .then(points => {
+            const heat = L.heatLayer(points.map(p => [p[0], p[1], 0.5]), {
+                radius: 14, blur: 20, maxZoom: 15, minOpacity: 0.15,
+                gradient: { 0.2: '#064e3b', 0.4: '#065f46', 0.6: '#059669', 0.8: '#34d399', 1: '#6ee7b7' }
+            });
+            greenLayer.addLayer(heat);
+        })
+        .catch(e => console.warn('Green layer failed:', e));
+}
+
 // Bus stops heatmap
 function loadBusStops() {
     fetch('/data/bus_stops.json')
@@ -959,6 +973,7 @@ async function init() {
     zonaLey6508Layer = L.featureGroup();
     busStopsLayer = L.featureGroup();
     busRoutesLayer = L.featureGroup();
+    greenLayer = L.featureGroup();
 
     const overlays = {
         'Propiedades': markerCluster,
@@ -972,6 +987,7 @@ async function init() {
         'Delitos (heatmap)': crimeHeatLayer,
         'Lugares de Culto': religiousLayer,
         'Zona Ley 6508 / IA': zonaLey6508Layer,
+        'Verde urbano': greenLayer,
         'Colectivos (paradas)': busStopsLayer,
         'Colectivos (recorridos)': busRoutesLayer,
         'Transporte (densidad)': transportLayer,
@@ -1012,6 +1028,7 @@ async function init() {
         'Ruido (dBA)': loadNoise,
         'Anegamiento': loadFlood,
         'Delitos (heatmap)': loadCrimeHeatmap,
+        'Verde urbano': loadGreen,
         'Colectivos (paradas)': loadBusStops,
         'Colectivos (recorridos)': loadBusRoutes,
         'Transporte (densidad)': loadTransport,
