@@ -286,7 +286,7 @@ const KEYWORDS = [
 const SEGMENTS = ['cheap','refac','recic','general'];
 const SOURCES = ['zonaprop','mercadolibre'];
 
-let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer;
+let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer, floodLayer;
 let allProps = [];
 let filtered = [];
 let activeKws = new Set();
@@ -623,6 +623,27 @@ function loadVillas() {
         .catch(e => console.warn('Villas layer failed:', e));
 }
 
+// Flood risk zones (GCBA 2019)
+function loadFlood() {
+    fetch('/data/anegamiento.geojson')
+        .then(r => r.json())
+        .then(geojson => {
+            L.geoJSON(geojson, {
+                style: f => ({
+                    color: f.properties.clasif === 'Sector Crítico' ? '#dc2626' : '#eab308',
+                    fillColor: f.properties.clasif === 'Sector Crítico' ? '#dc2626' : '#eab308',
+                    fillOpacity: 0.2,
+                    weight: 1.5,
+                    opacity: 0.6
+                }),
+                onEachFeature: (f, layer) => {
+                    layer.bindPopup(`<b>Zona inundable</b><br>${f.properties.clasif}`);
+                }
+            }).addTo(floodLayer);
+        })
+        .catch(e => console.warn('Flood layer failed:', e));
+}
+
 // Noise map (GCBA real dBA measurements)
 function loadNoise() {
     fetch('/data/ruido_diurno.geojson')
@@ -861,6 +882,7 @@ async function init() {
     subteProjectedLayer = L.featureGroup();
     isochronePalermoLayer = L.featureGroup();
     noiseLayer = L.featureGroup();
+    floodLayer = L.featureGroup();
 
     const overlays = {
         'Propiedades': markerCluster,
@@ -868,6 +890,7 @@ async function init() {
         'Subte Proyectado': subteProjectedLayer,
         'Palermo 10-60min': isochronePalermoLayer,
         'Ruido (dBA)': noiseLayer,
+        'Anegamiento': floodLayer,
         'Vias de Tren': railwayLayer,
         'Buffer 200m Tren': railBufferLayer,
         'Delitos (heatmap)': crimeHeatLayer,
@@ -906,6 +929,7 @@ async function init() {
     loadSubte();
     loadPalermoIsochrone();
     loadNoise();
+    loadFlood();
 
     // Enter key applies filters
     document.querySelectorAll('.filter-input').forEach(input => {
