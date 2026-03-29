@@ -17,12 +17,16 @@ echo "╔═══════════════════════�
 echo "║  🌙 Nightly Update — $(date '+%Y-%m-%d %H:%M')       ║"
 echo "╚══════════════════════════════════════════╝"
 
-# Step 1: ML scan (API, ~5 min)
-echo "━━━ [1/5] ML Incremental Scan ━━━"
-ML_OUT=$(node scripts/incremental-update.mjs 10 2>&1) || ERRORS="${ERRORS}ML scan failed. "
-echo "$ML_OUT"
-ML_NEW=$(echo "$ML_OUT" | grep -oP '\d+ new' | grep -oP '\d+' || echo "0")
-ML_STALE=$(echo "$ML_OUT" | grep -oP '\d+ marked inactive' | grep -oP '\d+' || echo "0")
+# Step 1: ML scan -- DISABLED while API ban is active
+# Re-enable when ban lifts. Do NOT auto-retry: each failed attempt may extend the ban.
+echo "━━━ [1/5] ML Scan — SKIPPED (API ban active) ━━━"
+ML_NEW="0"
+ML_STALE="0"
+# To re-enable: uncomment below and remove the lines above
+# ML_OUT=$(node scripts/incremental-update.mjs 10 2>&1) || ERRORS="${ERRORS}ML scan failed. "
+# echo "$ML_OUT"
+# ML_NEW=$(echo "$ML_OUT" | grep -oP '\d+ new' | grep -oP '\d+' || echo "0")
+# ML_STALE=$(echo "$ML_OUT" | grep -oP '\d+ marked inactive' | grep -oP '\d+' || echo "0")
 
 # Step 2: ZP grid scan (Puppeteer headless, all zones, ~10 min)
 echo "━━━ [2/5] ZP Grid Scan (headless) ━━━"
