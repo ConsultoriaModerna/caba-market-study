@@ -2535,6 +2535,30 @@
                         ${daysOnMarket ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${daysOnMarket}d</div><div style="font-size:0.65rem;color:var(--text-secondary);">en mercado</div></div>` : ''}
                     </div>
 
+                    ${p.livability_score ? `
+                    <!-- Livability Score -->
+                    <div style="margin-bottom:1.2rem;padding:1rem;background:var(--bg-primary);border-radius:10px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+                            <span style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;">Livability Score</span>
+                            <span style="font-size:1.4rem;font-weight:800;color:${p.livability_score >= 60 ? 'var(--green)' : p.livability_score >= 40 ? 'var(--yellow)' : 'var(--red)'};">${p.livability_score}/100</span>
+                        </div>
+                        ${p.livability_detail ? `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;">
+                            ${['Ruido','Inundacion','Seguridad','Subte','Transporte'].map((label, i) => {
+                                const keys = ['noise','flood','crime','subte','transport'];
+                                const val = p.livability_detail[keys[i]] || 0;
+                                const color = val >= 70 ? '#4ade80' : val >= 40 ? '#eab308' : '#ef4444';
+                                return `<div style="text-align:center;">
+                                    <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.05);margin-bottom:3px;">
+                                        <div style="height:100%;width:${val}%;background:${color};border-radius:2px;"></div>
+                                    </div>
+                                    <div style="font-size:0.55rem;color:var(--text-secondary);">${label}</div>
+                                    <div style="font-size:0.7rem;font-weight:600;color:${color};">${val}</div>
+                                </div>`;
+                            }).join('')}
+                        </div>` : ''}
+                        ${p.smp ? `<div style="font-size:0.6rem;color:var(--text-secondary);margin-top:6px;">SMP: ${p.smp}</div>` : ''}
+                    </div>` : ''}
+
                     <!-- Location -->
                     <div style="margin-bottom:1rem;">
                         <div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;margin-bottom:0.3rem;">Ubicacion</div>
