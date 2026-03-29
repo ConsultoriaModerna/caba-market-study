@@ -901,13 +901,16 @@
         </div>
 
         <div class="chart-container" style="height:auto;min-height:400px;">
-            <div class="chart-title">Cobertura por Portal: ZonaProp vs MercadoLibre</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1rem;" id="sourceComparison">
-                <div style="text-align:center;">
-                    <canvas id="sourceShareChart" style="max-height:250px;"></canvas>
-                </div>
-                <div style="text-align:center;">
-                    <canvas id="sourceByRegionChart" style="max-height:250px;"></canvas>
+            <div class="chart-title">Cobertura por Portal y Zona</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1rem;">
+                <div id="sourceMapChart" style="min-height:320px;"></div>
+                <div style="display:flex;flex-direction:column;gap:0.8rem;">
+                    <canvas id="sourceShareChart" style="max-height:200px;"></canvas>
+                    <div style="font-size:0.7rem;color:var(--text-secondary);text-align:center;">
+                        <span style="color:#60a5fa;">&#9632; ZP</span>
+                        <span style="color:#fbbf24;margin-left:8px;">&#9632; ML</span>
+                        <span style="color:#ec4899;margin-left:8px;">&#9632; AP</span>
+                    </div>
                 </div>
             </div>
             <div id="sourceDetailTable" style="margin-top:1.5rem;"></div>
@@ -1561,7 +1564,8 @@
                 sparkEl.innerHTML = '';
             }
             document.getElementById('kpi-neighborhoods').textContent = neighborhoods;
-            document.getElementById('kpi-opportunities').textContent = allOpportunities.length;
+            const oppPct = totalProps > 0 ? Math.round(allOpportunities.length / totalProps * 100) : 0;
+            document.getElementById('kpi-opportunities').textContent = `${allOpportunities.length} (${oppPct}%)`;
 
             // Segment KPI
             // Segment display: Usado / Estandar / Renovado with absolute gaps
@@ -1664,7 +1668,8 @@
             const newProps = withAge.filter(p => (now - new Date(p.first_seen_at).getTime()) < 3 * 86400000);
             const ages = withAge.map(p => Math.round((now - new Date(p.first_seen_at).getTime()) / 86400000));
             const avgAge = ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : 0;
-            document.getElementById('kpi-new').textContent = newProps.length;
+            const newPct = totalProps > 0 ? Math.round(newProps.length / totalProps * 100) : 0;
+            document.getElementById('kpi-new').textContent = `${newProps.length} (${newPct}%)`;
 
             // Published age (real portal date) vs detected age
             const withPublished = allProperties.filter(p => p.published_at);
@@ -1686,7 +1691,7 @@
 
             // Covered ratio stats
             const withCovered = allProperties.filter(p => p.covered_ratio && p.covered_ratio > 0);
-            document.getElementById('kpi-covered-data').textContent = withCovered.length;
+            document.getElementById('kpi-covered-data').textContent = `${withCovered.length} (${covPct}%)`;
             const covPct = totalProps > 0 ? Math.round(withCovered.length / totalProps * 100) : 0;
             document.getElementById('kpi-covered-pct').textContent = `${covPct}% del total`;
             if (withCovered.length > 0) {
@@ -1879,32 +1884,32 @@
         }
 
         function renderSourceCharts() {
-            // 1. Overall share: ZP vs ML (doughnut)
+            // 1. Overall share: ZP vs ML vs AP (doughnut)
             const zpCount = allProperties.filter(p => p.source === 'zonaprop').length;
             const mlCount = allProperties.filter(p => p.source === 'mercadolibre').length;
+            const apCount = allProperties.filter(p => p.source === 'argenprop').length;
+            const totalSrc = zpCount + mlCount + apCount;
 
             const ctx1 = document.getElementById('sourceShareChart').getContext('2d');
             if (sourceShareChart) sourceShareChart.destroy();
             sourceShareChart = new Chart(ctx1, {
                 type: 'doughnut',
                 data: {
-                    labels: ['ZonaProp', 'MercadoLibre'],
+                    labels: ['ZonaProp', 'MercadoLibre', 'Argenprop'],
                     datasets: [{
-                        data: [zpCount, mlCount],
-                        backgroundColor: ['#60a5fa', '#fbbf24']
+                        data: [zpCount, mlCount, apCount],
+                        backgroundColor: ['#60a5fa', '#fbbf24', '#ec4899']
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        title: { display: true, text: 'Share Global', color: '#cbd5e1', font: { size: 13 } },
-                        legend: { labels: { color: 'rgba(241, 245, 249, 0.8)' } },
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(ctx) {
-                                    const total = zpCount + mlCount;
-                                    const pct = Math.round(ctx.raw / total * 100);
+                                    const pct = Math.round(ctx.raw / totalSrc * 100);
                                     return `${ctx.label}: ${ctx.raw.toLocaleString()} (${pct}%)`;
                                 }
                             }
@@ -1913,66 +1918,65 @@
                 }
             });
 
-            // 2. By zone: grouped bar chart ZP vs ML
-            const zoneSourceData = {};
-            allProperties.forEach(p => {
-                const zone = getZone(p.neighborhood);
-                if (!zoneSourceData[zone]) zoneSourceData[zone] = { zp: 0, ml: 0 };
-                if (p.source === 'zonaprop') zoneSourceData[zone].zp++;
-                else zoneSourceData[zone].ml++;
-            });
-
-            // Sort zones by total count desc
-            const sortedZones = Object.entries(zoneSourceData)
-                .sort((a, b) => (b[1].zp + b[1].ml) - (a[1].zp + a[1].ml))
-                .slice(0, 10);
-
-            const ctx2 = document.getElementById('sourceByRegionChart').getContext('2d');
-            if (sourceByRegionChart) sourceByRegionChart.destroy();
-            sourceByRegionChart = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: sortedZones.map(([z]) => z),
-                    datasets: [
-                        {
-                            label: 'ZonaProp',
-                            data: sortedZones.map(([, d]) => d.zp),
-                            backgroundColor: '#60a5fa',
-                            borderRadius: 4
-                        },
-                        {
-                            label: 'MercadoLibre',
-                            data: sortedZones.map(([, d]) => d.ml),
-                            backgroundColor: '#fbbf24',
-                            borderRadius: 4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Por Zona', color: '#cbd5e1', font: { size: 13 } },
-                        legend: { labels: { color: 'rgba(241, 245, 249, 0.8)' } }
-                    },
-                    scales: {
-                        x: { ticks: { color: 'rgba(241, 245, 249, 0.7)' }, grid: { display: false } },
-                        y: { ticks: { color: 'rgba(241, 245, 249, 0.6)' }, grid: { color: 'rgba(51, 65, 85, 0.15)' } }
-                    }
-                }
-            });
-
-            // 3. Detail table: top 10 neighborhoods by source
+            // 2. Source map: choropleth by dominant source per barrio
             const barrioSource = {};
             allProperties.forEach(p => {
                 if (!p.neighborhood) return;
-                if (!barrioSource[p.neighborhood]) barrioSource[p.neighborhood] = { zp: 0, ml: 0, zone: getZone(p.neighborhood) };
+                if (!barrioSource[p.neighborhood]) barrioSource[p.neighborhood] = { zp: 0, ml: 0, ap: 0, zone: getZone(p.neighborhood) };
                 if (p.source === 'zonaprop') barrioSource[p.neighborhood].zp++;
-                else barrioSource[p.neighborhood].ml++;
+                else if (p.source === 'mercadolibre') barrioSource[p.neighborhood].ml++;
+                else if (p.source === 'argenprop') barrioSource[p.neighborhood].ap++;
             });
 
+            const mapContainer = document.getElementById('sourceMapChart');
+            if (zoneGeoData && mapContainer) {
+                mapContainer.innerHTML = '';
+                const mw = mapContainer.clientWidth || 500;
+                const mh = Math.max(300, mw * 0.6);
+                const mapSvg = d3.select('#sourceMapChart').append('svg')
+                    .attr('viewBox', `0 0 ${mw} ${mh}`).attr('preserveAspectRatio', 'xMidYMid meet');
+                const proj = d3.geoMercator().fitSize([mw - 20, mh - 20], zoneGeoData);
+                const pathGen = d3.geoPath().projection(proj);
+
+                const srcColors = { zp: '#60a5fa', ml: '#fbbf24', ap: '#ec4899' };
+
+                mapSvg.selectAll('path')
+                    .data(zoneGeoData.features)
+                    .join('path')
+                    .attr('d', pathGen)
+                    .attr('fill', f => {
+                        const name = f.properties.nombre;
+                        const s = barrioSource[name] || {};
+                        const max = Math.max(s.zp || 0, s.ml || 0, s.ap || 0);
+                        if (max === 0) return '#1e293b';
+                        const dominant = (s.zp || 0) === max ? 'zp' : (s.ml || 0) === max ? 'ml' : 'ap';
+                        const total = (s.zp || 0) + (s.ml || 0) + (s.ap || 0);
+                        const opacity = Math.min(0.9, 0.2 + (total / 300));
+                        return srcColors[dominant] + Math.round(opacity * 255).toString(16).padStart(2, '0');
+                    })
+                    .attr('stroke', '#1e293b').attr('stroke-width', 0.8)
+                    .append('title')
+                    .text(f => {
+                        const name = f.properties.nombre;
+                        const s = barrioSource[name] || {};
+                        return `${name}: ZP ${s.zp||0} / ML ${s.ml||0} / AP ${s.ap||0}`;
+                    });
+
+                mapSvg.selectAll('text')
+                    .data(zoneGeoData.features.filter(f => {
+                        const s = barrioSource[f.properties.nombre] || {};
+                        return ((s.zp||0) + (s.ml||0) + (s.ap||0)) >= 30;
+                    }))
+                    .join('text')
+                    .attr('transform', f => `translate(${pathGen.centroid(f)})`)
+                    .attr('text-anchor', 'middle').attr('fill', '#e2e8f0')
+                    .attr('font-size', '7px').attr('pointer-events', 'none')
+                    .text(f => f.properties.nombre);
+            }
+
+            // 3. Detail table with 3 sources
             const topBarrios = Object.entries(barrioSource)
-                .map(([name, d]) => ({ name, ...d, total: d.zp + d.ml }))
+                .map(([name, d]) => ({ name, ...d, total: d.zp + d.ml + d.ap }))
                 .sort((a, b) => b.total - a.total)
                 .slice(0, 15);
 
@@ -1985,6 +1989,7 @@
                             <th style="text-align:left;padding:6px 8px;">Zona</th>
                             <th style="text-align:right;padding:6px 8px;">ZP</th>
                             <th style="text-align:right;padding:6px 8px;">ML</th>
+                            <th style="text-align:right;padding:6px 8px;">AP</th>
                             <th style="text-align:right;padding:6px 8px;">Total</th>
                             <th style="text-align:left;padding:6px 8px;min-width:120px;">Share</th>
                         </tr>
@@ -1992,17 +1997,20 @@
                     <tbody>
                         ${topBarrios.map(b => {
                             const zpPct = Math.round(b.zp / b.total * 100);
-                            const mlPct = 100 - zpPct;
+                            const mlPct = Math.round(b.ml / b.total * 100);
+                            const apPctB = 100 - zpPct - mlPct;
                             return `<tr style="border-bottom:1px solid rgba(51,65,85,0.3);">
                                 <td style="padding:5px 8px;font-weight:500;">${b.name}</td>
                                 <td style="padding:5px 8px;"><span style="color:${ZONE_COLORS[b.zone] || ZONE_COLORS['Otro']}">${b.zone}</span></td>
                                 <td style="text-align:right;padding:5px 8px;color:#60a5fa;">${b.zp}</td>
                                 <td style="text-align:right;padding:5px 8px;color:#fbbf24;">${b.ml}</td>
+                                <td style="text-align:right;padding:5px 8px;color:#ec4899;">${b.ap}</td>
                                 <td style="text-align:right;padding:5px 8px;font-weight:600;">${b.total}</td>
                                 <td style="padding:5px 8px;">
                                     <div style="display:flex;height:14px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,0.05);">
                                         <div style="width:${zpPct}%;background:#60a5fa;" title="ZP ${zpPct}%"></div>
                                         <div style="width:${mlPct}%;background:#fbbf24;" title="ML ${mlPct}%"></div>
+                                        <div style="width:${apPctB}%;background:#ec4899;" title="AP ${apPctB}%"></div>
                                     </div>
                                 </td>
                             </tr>`;
