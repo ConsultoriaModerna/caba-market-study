@@ -605,20 +605,20 @@ function loadReligious() {
         .catch(e => console.warn('Religious layer failed:', e));
 }
 
-// Villas / asentamientos
+// Villas / asentamientos (GCBA barrios populares, 468 manzanas)
 function loadVillas() {
     fetch('/data/villas.json')
         .then(r => r.json())
-        .then(places => {
-            places.forEach(p => {
-                if (!p.lat || !p.lon) return;
-                L.circle([p.lat, p.lon], {
-                    radius: 300, color: '#f97316', fillColor: '#f97316',
-                    fillOpacity: 0.15, weight: 1.5, opacity: 0.6
-                })
-                    .bindPopup(`<b>${p.name}</b><br>Asentamiento informal`)
-                    .addTo(villasLayer);
-            });
+        .then(geojson => {
+            L.geoJSON(geojson, {
+                style: {
+                    color: '#f97316', fillColor: '#f97316',
+                    fillOpacity: 0.2, weight: 1, opacity: 0.5
+                },
+                onEachFeature: (f, layer) => {
+                    layer.bindPopup(`<b>${f.properties.barrio}</b><br>Barrio popular`);
+                }
+            }).addTo(villasLayer);
         })
         .catch(e => console.warn('Villas layer failed:', e));
 }
