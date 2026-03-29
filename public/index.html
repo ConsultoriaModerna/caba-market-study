@@ -664,34 +664,6 @@
 </head>
 <body>
     <!-- TAB 6: SEMANTIC SEARCH -->
-    <div class="tab-content" id="tab-semantic">
-        <div style="max-width:1400px;margin:0 auto;padding:1.5rem 2rem;">
-            <div style="text-align:center;margin-bottom:1.5rem;">
-                <h2 style="font-size:1.3rem;font-weight:600;margin-bottom:0.3rem;">🧠 Semantic Search</h2>
-                <p style="color:var(--text-secondary);font-size:0.85rem;">Describe lo que buscas en lenguaje natural. No necesitas keywords exactos.</p>
-            </div>
-
-            <div style="max-width:700px;margin:0 auto 1.5rem;">
-                <div style="display:flex;gap:0.5rem;">
-                    <input type="text" id="semanticInput" placeholder="Ej: casa luminosa con jardin grande cerca de parques, ideal para familia con ninos"
-                        style="flex:1;padding:0.8rem 1.2rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:1rem;font-family:inherit;outline:none;">
-                    <button id="semanticBtn" style="padding:0.8rem 1.5rem;background:linear-gradient(135deg,#a78bfa,#00d4ff);color:#000;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;font-family:inherit;">Buscar</button>
-                </div>
-                <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.8rem;">
-                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">casa con pileta y parrilla para fines de semana</button>
-                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">propiedad a refaccionar con potencial en zona sur</button>
-                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">casa grande con cochera y espacio para home office</button>
-                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">PH luminoso con terraza y vista abierta</button>
-                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">inversion para alquiler turistico en barrio con onda</button>
-                </div>
-            </div>
-
-            <div id="semanticResults" class="opportunities-list">
-                <div class="empty-state">Describe lo que buscas y encontramos propiedades por similitud conceptual</div>
-            </div>
-        </div>
-    </div>
-
     <!-- TAB 5: INMOBILIARIAS -->
     <div class="tab-content" id="tab-publishers">
         <div style="max-width:1400px;margin:0 auto;padding:1rem 2rem;">
@@ -771,10 +743,9 @@
 
     <div class="tabs">
         <button class="tab-button active" data-tab="overview" title="Resumen del mercado: KPIs, barrios por precio, distribucion por zona">📊 Overview</button>
-        <button class="tab-button" data-tab="search" title="Busqueda full-text en descripciones con filtros avanzados (area, dormitorios, segmento, exterior)">🔍 Super Search</button>
+        <button class="tab-button" data-tab="search" title="Busqueda por keywords, filtros avanzados, o lenguaje natural (semantica)">🔍 Search</button>
         <button class="tab-button" data-tab="opportunities" title="Propiedades rankeadas por valor, gap de refaccion, espacio exterior, y Opportunity Score">⭐ Oportunidades</button>
         <button class="tab-button" data-tab="hunter" title="Anomaly Detector: propiedades con precio anomalo vs su barrio. Comparables: analisis cruzado por segmento">🎯 Hunter</button>
-        <button class="tab-button" data-tab="semantic" title="Busqueda por concepto: describe lo que buscas en lenguaje natural">🧠 Semantic</button>
         <button class="tab-button" data-tab="publishers" title="Perfiles de inmobiliarias agrupadas por telefono. Ver su inventario, especializacion por barrio, y nivel de foco">🏢 Inmobiliarias</button>
         <button class="tab-button" data-tab="favorites" title="Propiedades marcadas como favoritas" id="favTabBtn">★ Favoritas <span id="favCount" style="background:rgba(251,191,36,0.2);color:#fbbf24;padding:1px 6px;border-radius:8px;font-size:0.7rem;font-weight:700;">0</span></button>
     </div>
@@ -922,12 +893,18 @@
         <div class="search-container">
             <div id="enrichmentStats" class="enrichment-stats"></div>
 
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                <button class="search-mode-btn active" data-mode="keyword" onclick="switchSearchMode('keyword')" style="padding:0.4rem 1rem;border-radius:20px;border:1px solid var(--accent);background:rgba(0,212,255,0.12);color:var(--text-primary);cursor:pointer;font-size:0.8rem;font-family:inherit;">🔍 Keywords</button>
+                <button class="search-mode-btn" data-mode="semantic" onclick="switchSearchMode('semantic')" style="padding:0.4rem 1rem;border-radius:20px;border:1px solid var(--border);background:var(--bg-tertiary);color:var(--text-secondary);cursor:pointer;font-size:0.8rem;font-family:inherit;">🧠 Semantica</button>
+            </div>
+
+            <div id="keywordSearchUI">
             <div class="search-input-wrapper">
                 <input
                     type="text"
                     class="search-input"
                     id="searchInput"
-                    placeholder="Ej: pileta luminoso parrilla (separa términos con espacios)..."
+                    placeholder="Ej: pileta luminoso parrilla (separa terminos con espacios)..."
                 >
                 <button class="search-button" id="searchButton">🔍 Buscar</button>
             </div>
@@ -1041,7 +1018,27 @@
         </div>
 
         <div class="results-container" id="searchResults">
-            <div class="empty-state">Ingresa palabras clave para comenzar la búsqueda</div>
+            <div class="empty-state">Ingresa palabras clave o usa los filtros avanzados</div>
+        </div>
+        </div><!-- end keywordSearchUI -->
+
+        <div id="semanticSearchUI" style="display:none;">
+            <div style="max-width:700px;margin:0 auto 1.5rem;">
+                <div style="display:flex;gap:0.5rem;">
+                    <input type="text" id="semanticInput" placeholder="Ej: casa luminosa con jardin grande cerca de parques, ideal para familia"
+                        style="flex:1;padding:0.8rem 1.2rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:1rem;font-family:inherit;outline:none;">
+                    <button id="semanticBtn" style="padding:0.8rem 1.5rem;background:linear-gradient(135deg,#a78bfa,#00d4ff);color:#000;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;font-family:inherit;">Buscar</button>
+                </div>
+                <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.8rem;">
+                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">casa con pileta y parrilla</button>
+                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">propiedad a refaccionar con potencial zona sur</button>
+                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">casa grande con cochera y home office</button>
+                    <button class="sem-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">PH luminoso con terraza</button>
+                </div>
+            </div>
+            <div id="semanticResults" class="opportunities-list">
+                <div class="empty-state">Describe lo que buscas en lenguaje natural</div>
+            </div>
         </div>
     </div>
 
@@ -1075,6 +1072,7 @@
                             <th style="text-align:center;padding:8px;">Seg</th>
                             <th style="text-align:left;padding:8px;">Tags</th>
                             <th style="text-align:center;padding:8px;">Fuente</th>
+                            <th style="text-align:center;padding:8px;cursor:pointer;" onclick="sortOppTable('livability_score')">Liv ↕</th>
                             <th style="text-align:center;padding:8px;cursor:pointer;" onclick="sortOppTable('age')">Edad ↕</th>
                             <th style="text-align:center;padding:8px;">Link</th>
                         </tr>
@@ -1266,6 +1264,21 @@
             a.download = `inmofindr-favoritas-${new Date().toISOString().slice(0,10)}.csv`;
             a.click();
             URL.revokeObjectURL(url);
+        }
+
+        function switchSearchMode(mode) {
+            document.querySelectorAll('.search-mode-btn').forEach(b => {
+                b.style.background = 'var(--bg-tertiary)';
+                b.style.borderColor = 'var(--border)';
+                b.style.color = 'var(--text-secondary)';
+                b.classList.remove('active');
+            });
+            document.querySelector(`.search-mode-btn[data-mode="${mode}"]`).classList.add('active');
+            document.querySelector(`.search-mode-btn[data-mode="${mode}"]`).style.background = 'rgba(0,212,255,0.12)';
+            document.querySelector(`.search-mode-btn[data-mode="${mode}"]`).style.borderColor = 'var(--accent)';
+            document.querySelector(`.search-mode-btn[data-mode="${mode}"]`).style.color = 'var(--text-primary)';
+            document.getElementById('keywordSearchUI').style.display = mode === 'keyword' ? 'block' : 'none';
+            document.getElementById('semanticSearchUI').style.display = mode === 'semantic' ? 'block' : 'none';
         }
 
         function applyGlobalPriceFilter() {
@@ -1627,12 +1640,35 @@
 
             const regionCount = new Set(allProperties.map(p => p.state || 'CABA')).size;
             const regionLabel = regionCount > 1 ? `${regionCount} regiones` : 'CABA';
-            document.getElementById('insight-market').innerHTML = `${totalProps.toLocaleString()} propiedades de ${sources.size} fuentes en ${regionLabel}. USD/m² mediano: <strong>$${medianSqm}</strong> (filtrado $100-$10K/m²).`;
+            // Smart insights with correlations
+            const withLiv = allProperties.filter(p => p.livability_score > 0);
+            const sweetSpotProps = allProperties.filter(p => convertToUSD(p) >= 100000 && convertToUSD(p) <= 180000 && p.currency === 'USD');
+            const sweetPct = totalProps > 0 ? Math.round(sweetSpotProps.length / totalProps * 100) : 0;
+
+            // Zone concentration
+            const zoneConc = {};
+            allProperties.forEach(p => { const z = getZone(p.neighborhood); zoneConc[z] = (zoneConc[z]||0) + 1; });
+            const topZone = Object.entries(zoneConc).sort((a,b) => b[1]-a[1])[0];
+
+            // Livability correlation
+            let livInsight = '';
+            if (withLiv.length > 20) {
+                const highLiv = withLiv.filter(p => p.livability_score >= 55);
+                const lowLiv = withLiv.filter(p => p.livability_score < 35);
+                const highMedian = highLiv.length > 5 ? Math.round(getMedian(highLiv.map(p => +p.price_per_sqm).filter(v => v > 100))) : 0;
+                const lowMedian = lowLiv.length > 5 ? Math.round(getMedian(lowLiv.map(p => +p.price_per_sqm).filter(v => v > 100))) : 0;
+                if (highMedian && lowMedian) {
+                    const premium = Math.round((highMedian - lowMedian) / lowMedian * 100);
+                    livInsight = `Vivir mejor cuesta <strong>+${premium}%</strong>: zonas con Livability 55+ tienen mediana $${highMedian}/m² vs $${lowMedian}/m² en zonas <35.`;
+                }
+            }
+
+            document.getElementById('insight-market').innerHTML = `${totalProps.toLocaleString()} propiedades de ${sources.size} fuentes en ${regionLabel}. <strong>${sweetSpotProps.length}</strong> (${sweetPct}%) en sweet spot $100-180K.`;
             document.getElementById('insight-cheapest').innerHTML = `<strong>${cheapest}</strong>`;
             document.getElementById('insight-expensive').innerHTML = `<strong>${expensive}</strong>`;
-            document.getElementById('insight-refac').innerHTML = `${refacCount} propiedades marcadas con oportunidades de refacción. Potencial de inversión identificado.`;
-            document.getElementById('insight-concentration').innerHTML = `${topBarrio ? topBarrio.name : 'N/A'} concentra la mayor oferta con ${topBarrio ? topBarrio.count : 0} propiedades.`;
-            document.getElementById('insight-spread').innerHTML = `Brecha de ${spread}x entre los barrios más caros y más económicos.`;
+            document.getElementById('insight-refac').innerHTML = `${refacCount} a refaccionar. Con reno DIY a ~$200/m² y gap de $${segRecic && segRefac ? segRecic - segRefac : '?'}/m², cada propiedad es potencial de ganancia.`;
+            document.getElementById('insight-concentration').innerHTML = `<strong>${topZone ? topZone[0] : '?'}</strong> concentra ${topZone ? Math.round(topZone[1]/totalProps*100) : 0}% de la oferta (${topZone ? topZone[1] : 0} props). ${topBarrio ? topBarrio.name + ' lidera con ' + topBarrio.count : ''}.`;
+            document.getElementById('insight-spread').innerHTML = livInsight || `Brecha de ${spread}x entre barrios. ${withLiv.length} propiedades con Livability Score calculado.`;
 
             // Latest properties
             const latest = [...allProperties]
@@ -2209,6 +2245,7 @@
                     <td style="text-align:center;padding:6px 8px;color:${segColor};font-weight:600;font-size:0.7rem;">${segLabel}</td>
                     <td style="padding:6px 4px;max-width:180px;">${tags}</td>
                     <td style="text-align:center;padding:6px 8px;">${sourceBadge(p.source)}</td>
+                    <td style="text-align:center;padding:6px 8px;font-size:0.75rem;font-weight:600;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : p.livability_score > 0 ? '#ef4444' : '#334155'};">${p.livability_score || '-'}</td>
                     <td style="text-align:center;padding:6px 8px;font-size:0.75rem;">${age}d</td>
                     <td style="text-align:center;padding:6px 8px;">${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.75rem;" onclick="event.stopPropagation()">→</a>` : ''}</td>
                 </tr>`;
