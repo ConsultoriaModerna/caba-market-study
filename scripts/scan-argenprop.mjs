@@ -130,8 +130,12 @@ function extractKeywords(title) {
 }
 
 function extractNeighborhood(href) {
-  const m = href.match(/en-([a-z-]+?)(?:-\d+-amb|--\d)/);
-  if (m) return m[1].split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  // href: /casa-en-venta-en-villa-devoto-4-ambientes--19301642
+  const m = href.match(/venta-en-([a-z-]+?)(?:-\d+-amb|--\d)/);
+  if (m) {
+    const raw = m[1].split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    return raw;
+  }
   return null;
 }
 

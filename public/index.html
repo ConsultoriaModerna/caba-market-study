@@ -1478,7 +1478,7 @@
         function sourceBadge(source) {
             if (source === 'zonaprop') return '<span style="background:rgba(96,165,250,0.15);color:#60a5fa;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">ZP</span>';
             if (source === 'mercadolibre') return '<span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">ML</span>';
-            if (source === 'argenprop') return '<span style="background:rgba(167,139,250,0.15);color:#a78bfa;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">AP</span>';
+            if (source === 'argenprop') return '<span style="background:rgba(236,72,153,0.15);color:#ec4899;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">AP</span>';
             return '';
         }
 
@@ -1536,9 +1536,9 @@
                 <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,0.05);margin-bottom:2px;">
                     <div style="width:${zpPct}%;background:#60a5fa;" title="ZP ${zpN}"></div>
                     <div style="width:${mlPct}%;background:#fbbf24;" title="ML ${mlN}"></div>
-                    <div style="width:${apPct}%;background:#a78bfa;" title="AP ${apN}"></div>
+                    <div style="width:${apPct}%;background:#ec4899;" title="AP ${apN}"></div>
                 </div>
-                <span style="color:#60a5fa;">ZP ${zpN}</span> · <span style="color:#fbbf24;">ML ${mlN}</span>${apN > 0 ? ` · <span style="color:#a78bfa;">AP ${apN}</span>` : ''}`;
+                <span style="color:#60a5fa;">ZP ${zpN}</span> · <span style="color:#fbbf24;">ML ${mlN}</span>${apN > 0 ? ` · <span style="color:#ec4899;">AP ${apN}</span>` : ''}`;
             document.getElementById('kpi-median-sqm').textContent = medianSqm > 0 ? `$${medianSqm.toLocaleString()}` : '-';
             const rangeLabels = { 'all': 'todas', '50-200': '$50-200K', '50-150': '$50-150K', '100-250': '$100-250K' };
             document.getElementById('kpi-median-sqm-range').textContent = `rango: ${rangeLabels[globalPriceRange] || 'todas'}`;
