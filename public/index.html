@@ -1478,6 +1478,7 @@
         function sourceBadge(source) {
             if (source === 'zonaprop') return '<span style="background:rgba(96,165,250,0.15);color:#60a5fa;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">ZP</span>';
             if (source === 'mercadolibre') return '<span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">ML</span>';
+            if (source === 'argenprop') return '<span style="background:rgba(167,139,250,0.15);color:#a78bfa;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">AP</span>';
             return '';
         }
 
@@ -1527,13 +1528,17 @@
             // Source split bar
             const zpN = allProperties.filter(p => p.source === 'zonaprop').length;
             const mlN = allProperties.filter(p => p.source === 'mercadolibre').length;
+            const apN = allProperties.filter(p => p.source === 'argenprop').length;
             const zpPct = totalProps > 0 ? Math.round(zpN / totalProps * 100) : 0;
+            const mlPct = totalProps > 0 ? Math.round(mlN / totalProps * 100) : 0;
+            const apPct = totalProps > 0 ? Math.round(apN / totalProps * 100) : 0;
             document.getElementById('kpi-source-split').innerHTML = `
                 <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,0.05);margin-bottom:2px;">
                     <div style="width:${zpPct}%;background:#60a5fa;" title="ZP ${zpN}"></div>
-                    <div style="width:${100-zpPct}%;background:#fbbf24;" title="ML ${mlN}"></div>
+                    <div style="width:${mlPct}%;background:#fbbf24;" title="ML ${mlN}"></div>
+                    <div style="width:${apPct}%;background:#a78bfa;" title="AP ${apN}"></div>
                 </div>
-                <span style="color:#60a5fa;">ZP ${zpN}</span> · <span style="color:#fbbf24;">ML ${mlN}</span>`;
+                <span style="color:#60a5fa;">ZP ${zpN}</span> · <span style="color:#fbbf24;">ML ${mlN}</span>${apN > 0 ? ` · <span style="color:#a78bfa;">AP ${apN}</span>` : ''}`;
             document.getElementById('kpi-median-sqm').textContent = medianSqm > 0 ? `$${medianSqm.toLocaleString()}` : '-';
             const rangeLabels = { 'all': 'todas', '50-200': '$50-200K', '50-150': '$50-150K', '100-250': '$100-250K' };
             document.getElementById('kpi-median-sqm-range').textContent = `rango: ${rangeLabels[globalPriceRange] || 'todas'}`;
