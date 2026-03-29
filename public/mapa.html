@@ -286,7 +286,7 @@ const KEYWORDS = [
 const SEGMENTS = ['cheap','refac','recic','general'];
 const SOURCES = ['zonaprop','mercadolibre'];
 
-let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer, floodLayer, transportLayer;
+let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer, floodLayer, transportLayer, zonaLey6508Layer;
 let allProps = [];
 let filtered = [];
 let activeKws = new Set();
@@ -623,6 +623,25 @@ function loadVillas() {
         .catch(e => console.warn('Villas layer failed:', e));
 }
 
+// Zona Ley 6.508 / Distrito IA (Microcentro)
+function loadZonaMicrocentro() {
+    fetch('/data/zona_microcentro.geojson')
+        .then(r => r.json())
+        .then(geojson => {
+            L.geoJSON(geojson, {
+                style: {
+                    color: '#a78bfa', fillColor: '#a78bfa',
+                    fillOpacity: 0.08, weight: 2.5, opacity: 0.7,
+                    dashArray: '8,4'
+                },
+                onEachFeature: (f, layer) => {
+                    layer.bindPopup(`<b>${f.properties.name}</b><br>${f.properties.description}<br><br>Creditos preferenciales Banco Ciudad para adquisicion, refaccion o reconversion.`);
+                }
+            }).addTo(zonaLey6508Layer);
+        })
+        .catch(e => console.warn('Zona microcentro failed:', e));
+}
+
 // Transport density heatmap (GCBA trip origins)
 function loadTransport() {
     fetch('/data/transporte_heatmap.json')
@@ -899,6 +918,7 @@ async function init() {
     noiseLayer = L.featureGroup();
     floodLayer = L.featureGroup();
     transportLayer = L.featureGroup();
+    zonaLey6508Layer = L.featureGroup();
 
     const overlays = {
         'Propiedades': markerCluster,
@@ -911,6 +931,7 @@ async function init() {
         'Buffer 200m Tren': railBufferLayer,
         'Delitos (heatmap)': crimeHeatLayer,
         'Lugares de Culto': religiousLayer,
+        'Zona Ley 6508 / IA': zonaLey6508Layer,
         'Transporte (densidad)': transportLayer,
         'Villas / Asentamientos': villasLayer
     };
@@ -948,6 +969,7 @@ async function init() {
     loadNoise();
     loadFlood();
     loadTransport();
+    loadZonaMicrocentro();
 
     // Enter key applies filters
     document.querySelectorAll('.filter-input').forEach(input => {
