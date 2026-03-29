@@ -211,6 +211,13 @@
                 <div class="chip-group" id="src-chips"></div>
             </div>
             <div class="filter-section">
+                <div class="filter-label">Livability minimo</div>
+                <div class="filter-row">
+                    <input type="range" class="filter-input" id="f-liv-min" min="0" max="80" value="0" step="5" style="flex:1;" oninput="document.getElementById('liv-val').textContent=this.value">
+                    <span id="liv-val" style="color:var(--accent);font-weight:600;min-width:20px;text-align:right;">0</span>
+                </div>
+            </div>
+            <div class="filter-section">
                 <div class="filter-label">Isocrona (click en mapa para origen)</div>
                 <div class="filter-row" style="gap:6px;">
                     <select class="filter-input" id="f-iso-time" style="flex:1;">
@@ -399,12 +406,14 @@ function applyFilters() {
     const aMax = Number(document.getElementById('f-area-max').value) || Infinity;
     const uMax = Number(document.getElementById('f-usdm2-max').value) || Infinity;
     const ambMin = Number(document.getElementById('f-amb-min').value) || 0;
+    const livMin = Number(document.getElementById('f-liv-min').value) || 0;
 
     filtered = allProps.filter(p => {
         if (p.price < pMin || p.price > pMax) return false;
         if (p.total_area < aMin || p.total_area > aMax) return false;
         if (p.price_per_sqm > uMax) return false;
         if (p.ambientes && p.ambientes < ambMin) return false;
+        if (livMin > 0 && (!p.livability_score || p.livability_score < livMin)) return false;
         if (activeSegs.size > 0 && !activeSegs.has(p.segment)) return false;
         if (activeSrcs.size > 0 && !activeSrcs.has(p.source)) return false;
         if (activeKws.size > 0) {
