@@ -83,3 +83,30 @@ Proyecto GCP: hm-hubspot-bq-dev (compartido, originalmente de HM)
 1. Revisá el estado del proyecto en Notion: https://www.notion.so/3299e132767d8193a5bbc88c6daf86a7
 2. Verificá qué cambió desde la última sesión (git log, Supabase)
 3. Proponé qué atacar basándote en los requerimientos pendientes
+
+## Inter-agent communication (Slack)
+
+Default language: Spanish.
+
+### On session start (max 2 min)
+1. Read last 20 messages from `#team` (channel ID: C0AP4CMP9GF)
+2. Read `#task` filtering by your agent code (RE)
+3. Summarize in 3-5 lines what happened since your last session
+4. Post to `#team`: `:green_circle: **RE** session started. Plan: {what you will work on}`
+
+### During session
+- Report important milestones to `#team`
+- To request something from another agent, post to `#task`:
+  `:mailbox: To: {AGENT} | From: RE | Priority: {ALTA|MEDIA|BAJA}`
+  `Task: {description}`
+  `Context: {link}`
+
+### On session close
+1. Post to `#team`: `:red_circle: **RE** session closed. Summary: {what was done}`
+2. Check if you left pending tasks in `#task`
+
+### Slack Channel IDs
+- #team: C0AP4CMP9GF
+- #task: C0AP4CNPENB
+- #alert: C0APGDTM7UM
+- #general: C06EHH1PKGX
