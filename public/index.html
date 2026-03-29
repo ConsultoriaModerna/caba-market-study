@@ -832,6 +832,11 @@
                 <div class="insight-title">Espacio Exterior</div>
                 <div class="insight-content" id="insight-covered"></div>
             </div>
+            <div class="insight-card">
+                <div class="insight-icon">🧠</div>
+                <div class="insight-title">Livability Intelligence</div>
+                <div class="insight-content" id="insight-livability"></div>
+            </div>
         </div>
 
         <div style="max-width:1400px;margin:1rem auto;padding:0 2rem;">
@@ -1669,6 +1674,20 @@
             document.getElementById('insight-refac').innerHTML = `${refacCount} a refaccionar. Con reno DIY a ~$200/m² y gap de $${segRecic && segRefac ? segRecic - segRefac : '?'}/m², cada propiedad es potencial de ganancia.`;
             document.getElementById('insight-concentration').innerHTML = `<strong>${topZone ? topZone[0] : '?'}</strong> concentra ${topZone ? Math.round(topZone[1]/totalProps*100) : 0}% de la oferta (${topZone ? topZone[1] : 0} props). ${topBarrio ? topBarrio.name + ' lidera con ' + topBarrio.count : ''}.`;
             document.getElementById('insight-spread').innerHTML = livInsight || `Brecha de ${spread}x entre barrios. ${withLiv.length} propiedades con Livability Score calculado.`;
+
+            // Livability insight
+            if (withLiv.length > 20) {
+                const topLiv = [...withLiv].sort((a, b) => b.livability_score - a.livability_score).slice(0, 5);
+                const topLivBarrios = [...new Set(topLiv.map(p => p.neighborhood))].slice(0, 3);
+                const avgLiv = Math.round(withLiv.reduce((s, p) => s + p.livability_score, 0) / withLiv.length);
+                const inSweetWithLiv = withLiv.filter(p => convertToUSD(p) >= 100000 && convertToUSD(p) <= 180000 && p.livability_score >= 50);
+                document.getElementById('insight-livability').innerHTML =
+                    `${withLiv.length} propiedades analizadas. Livability promedio: <strong>${avgLiv}/100</strong>. ` +
+                    `Mejores zonas: <strong>${topLivBarrios.join(', ')}</strong>. ` +
+                    `<strong>${inSweetWithLiv.length}</strong> propiedades combinan sweet spot ($100-180K) + Livability 50+.`;
+            } else {
+                document.getElementById('insight-livability').innerHTML = 'Livability Score disponible para propiedades geocodeadas. Geocodear mas propiedades para ampliar el analisis.';
+            }
 
             // Latest properties
             const latest = [...allProperties]
@@ -2637,7 +2656,8 @@
                     <!-- Actions -->
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
                         ${p.permalink ? `<a href="${p.permalink}" target="_blank" style="flex:1;text-align:center;padding:0.7rem;background:var(--accent);color:#000;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.9rem;">Ver anuncio original</a>` : ''}
-                        ${p.latitude ? `<a href="https://www.google.com/maps/@${p.latitude},${p.longitude},17z" target="_blank" style="flex:1;text-align:center;padding:0.7rem;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:8px;text-decoration:none;font-size:0.9rem;">Ver en Google Maps</a>` : ''}
+                        ${p.latitude ? `<a href="https://www.google.com/maps/@${p.latitude},${p.longitude},17z" target="_blank" style="flex:1;text-align:center;padding:0.7rem;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:8px;text-decoration:none;font-size:0.9rem;">Google Maps</a>` : ''}
+                        ${p.address_text ? `<a href="https://epok.buenosaires.gob.ar/cur3d/?dir=${encodeURIComponent(p.address_text)}" target="_blank" style="text-align:center;padding:0.7rem;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:8px;text-decoration:none;font-size:0.8rem;">Catastro</a>` : ''}
                         <button onclick="analyzeProperty('${p.id}')" style="flex:1;padding:0.7rem;background:linear-gradient(135deg,#a78bfa,#f472b6);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;font-family:inherit;">🧠 Analizar con AI</button>
                     </div>
 
