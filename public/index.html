@@ -45,7 +45,7 @@
             border-bottom: 1px solid var(--border);
             padding: 1.5rem 2rem;
             position: sticky;
-            top: 0;
+            top: 37px;
             z-index: 100;
         }
 
@@ -1389,14 +1389,12 @@
                 document.getElementById('filtersContainer').classList.toggle('active');
             });
 
-            // Filter Changes
+            // Filter Changes -- trigger search even without keywords
             ['filterPriceMin', 'filterPriceMax', 'filterCurrency', 'filterNeighborhood', 'filterLimit', 'filterAreaMin', 'filterBedrooms', 'filterSegment', 'filterExterior'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.addEventListener('change', () => {
-                        if (selectedKeywords.length > 0) {
-                            performSearch();
-                        }
+                        performSearch();
                     });
                 }
             });
@@ -2263,11 +2261,7 @@
         function removeKeyword(keyword) {
             selectedKeywords = selectedKeywords.filter(k => k !== keyword);
             updateKeywordPills();
-            if (selectedKeywords.length > 0) {
-                performSearch();
-            } else {
-                document.getElementById('searchResults').innerHTML = '<div class="empty-state">Ingresa palabras clave para comenzar la búsqueda</div>';
-            }
+            performSearch();
         }
 
         async function performSearch() {
