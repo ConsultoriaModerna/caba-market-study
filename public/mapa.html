@@ -286,7 +286,7 @@ const KEYWORDS = [
 const SEGMENTS = ['cheap','refac','recic','general'];
 const SOURCES = ['zonaprop','mercadolibre'];
 
-let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer;
+let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer;
 let allProps = [];
 let filtered = [];
 let activeKws = new Set();
@@ -623,6 +623,59 @@ function loadVillas() {
         .catch(e => console.warn('Villas layer failed:', e));
 }
 
+// Subte lines + stations
+function loadSubte() {
+    // Lines
+    fetch('/data/subte.geojson')
+        .then(r => r.json())
+        .then(geojson => {
+            geojson.features.forEach(f => {
+                const props = f.properties;
+                const coords = f.geometry.coordinates.map(c => [c[1], c[0]]);
+                const layer = props.projected ? subteProjectedLayer : subteLayer;
+                L.polyline(coords, {
+                    color: props.color,
+                    weight: props.projected ? 2 : 3.5,
+                    opacity: props.projected ? 0.4 : 0.8,
+                    dashArray: props.projected ? '8,6' : null
+                }).bindPopup(`<b>Linea ${props.line}</b>${props.projected ? ' (proyectada)' : ''}`).addTo(layer);
+            });
+        })
+        .catch(e => console.warn('Subte lines failed:', e));
+
+    // Stations
+    fetch('/data/subte_stations.json')
+        .then(r => r.json())
+        .then(stations => {
+            stations.forEach(s => {
+                L.circleMarker([s.lat, s.lon], {
+                    radius: 4, color: s.color, fillColor: s.color,
+                    fillOpacity: 0.9, weight: 1.5, opacity: 1
+                }).bindPopup(`<b>${s.name}</b><br>Linea ${s.line}`).addTo(subteLayer);
+            });
+        })
+        .catch(e => console.warn('Subte stations failed:', e));
+}
+
+// Pre-computed isochrone from Palermo (30min + 60min driving)
+function loadPalermoIsochrone() {
+    fetch('/data/isochrone_palermo.geojson')
+        .then(r => r.json())
+        .then(geojson => {
+            const colors = ['rgba(0,212,255,0.08)', 'rgba(0,212,255,0.04)'];
+            geojson.features.forEach((f, i) => {
+                L.geoJSON(f, {
+                    style: {
+                        color: '#00d4ff', weight: 1.5, opacity: 0.3,
+                        fillColor: '#00d4ff', fillOpacity: i === 0 ? 0.08 : 0.03,
+                        dashArray: i === 0 ? null : '4,4'
+                    }
+                }).bindPopup(`${i === 0 ? '30' : '60'} min en auto desde Palermo`).addTo(isochronePalermoLayer);
+            });
+        })
+        .catch(e => console.warn('Isochrone failed:', e));
+}
+
 // Isochrone (OpenRouteService)
 const ORS_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImYyOTg5OGVjZWRhNzRhYmFhZDg5M2NmNjJmYTAxMmQzIiwiaCI6Im11cm11cjY0In0=';
 let isoLayer = null;
@@ -756,10 +809,16 @@ async function init() {
     railBufferLayer = L.featureGroup();
     religiousLayer = L.featureGroup();
     villasLayer = L.featureGroup();
-    crimeHeatLayer = L.featureGroup(); // wrapper for heat layer, toggle via layer control
+    crimeHeatLayer = L.featureGroup();
+    subteLayer = L.featureGroup();
+    subteProjectedLayer = L.featureGroup();
+    isochronePalermoLayer = L.featureGroup();
 
     const overlays = {
         'Propiedades': markerCluster,
+        'Subte': subteLayer,
+        'Subte Proyectado': subteProjectedLayer,
+        '30/60 min Palermo': isochronePalermoLayer,
         'Vias de Tren': railwayLayer,
         'Buffer 200m Tren': railBufferLayer,
         'Delitos (heatmap)': crimeHeatLayer,
@@ -795,6 +854,8 @@ async function init() {
     loadRailways();
     loadReligious();
     loadVillas();
+    loadSubte();
+    loadPalermoIsochrone();
 
     // Enter key applies filters
     document.querySelectorAll('.filter-input').forEach(input => {
