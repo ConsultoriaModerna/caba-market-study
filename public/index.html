@@ -1227,6 +1227,28 @@
         let sourceByRegionChart = null;
         let globalPriceRange = 'all';
 
+        // Data quality helpers
+        function bestPricePerSqm(p) {
+            // Prefer covered_area price when available and total_area seems inflated
+            if (p.price_per_covered_sqm && p.covered_area && p.total_area && p.covered_area < p.total_area * 0.8) {
+                return { value: Math.round(p.price_per_covered_sqm), label: '/m² cub.', suspicious: false };
+            }
+            if (p.price_per_sqm) {
+                const suspicious = p.total_area > 400 && p.price_per_sqm < 500;
+                return { value: Math.round(p.price_per_sqm), label: '/m²', suspicious };
+            }
+            return { value: null, label: '', suspicious: false };
+        }
+
+        function dataQualityBadge(p) {
+            const issues = [];
+            if (p.total_area > 500 && (!p.covered_area || p.covered_area > 400)) issues.push('area');
+            if (p.price_per_sqm && p.price_per_sqm < 300) issues.push('precio');
+            if (p.total_area && p.covered_area && p.covered_area > p.total_area) issues.push('cub>tot');
+            if (issues.length === 0) return '';
+            return `<span title="Dato sospechoso: ${issues.join(', ')}" style="padding:1px 5px;border-radius:6px;font-size:0.6rem;background:rgba(251,191,36,0.15);color:#fbbf24;font-weight:600;cursor:help;">⚠ verificar</span>`;
+        }
+
         // Favorites (localStorage)
         function getFavorites() {
             try { return JSON.parse(localStorage.getItem('inmofindr_favs') || '[]'); } catch { return []; }
@@ -1770,15 +1792,17 @@
 
             document.getElementById('latest-props').innerHTML = latest.map(p => {
                 const price = convertToUSD(p);
-                const usdM2 = p.price_per_sqm ? `$${Math.round(p.price_per_sqm).toLocaleString()}/m²` : '';
+                const pm2 = bestPricePerSqm(p);
+                const usdM2 = pm2.value ? `$${pm2.value.toLocaleString()}${pm2.label}` : '';
                 const features = [];
-                if (p.total_area) features.push(`${p.total_area}m²`);
+                if (p.covered_area) features.push(`${p.covered_area}m² cub.`);
+                else if (p.total_area) features.push(`${p.total_area}m²`);
                 if (p.bedrooms) features.push(`${p.bedrooms}d`);
                 if (p.bathrooms) features.push(`${p.bathrooms}b`);
 
                 return `<div class="opportunity-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="openPropModal('${p.id}')">
                     <div style="flex:1;min-width:200px;">
-                        <div style="font-weight:600;font-size:0.9rem;">${sourceBadge(p.source)} ${ageBadge(p)} ${p.title || 'Sin titulo'}</div>
+                        <div style="font-weight:600;font-size:0.9rem;">${sourceBadge(p.source)} ${ageBadge(p)} ${p.title || 'Sin titulo'} ${dataQualityBadge(p)}</div>
                         <div style="color:var(--text-secondary);font-size:0.75rem;margin-top:2px;">📍 ${p.neighborhood} ${features.length ? '· ' + features.join(' · ') : ''}</div>
                     </div>
                     <div style="text-align:right;min-width:130px;">
@@ -2704,8 +2728,9 @@
                     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1.2rem;padding:1rem;background:var(--bg-primary);border-radius:10px;">
                         <div>
                             <div style="font-size:1.8rem;font-weight:700;color:var(--accent);">${p.currency} ${price?.toLocaleString()}</div>
-                            <div style="color:var(--text-secondary);font-size:0.85rem;">${p.price_per_sqm ? '$' + Math.round(p.price_per_sqm).toLocaleString() + '/m² tot.' : ''}</div>
-                            ${p.price_per_covered_sqm ? `<div style="color:var(--accent);font-size:0.85rem;font-weight:600;">$${Math.round(p.price_per_covered_sqm).toLocaleString()}/m² cub.</div>` : ''}
+                            ${p.price_per_covered_sqm ? `<div style="color:var(--accent);font-size:0.95rem;font-weight:700;">$${Math.round(p.price_per_covered_sqm).toLocaleString()}/m² cub.</div>` : ''}
+                            <div style="color:var(--text-secondary);font-size:0.8rem;">${p.price_per_sqm ? '$' + Math.round(p.price_per_sqm).toLocaleString() + '/m² tot.' : ''} ${p.total_area ? '· ' + p.total_area + 'm² tot.' : ''} ${p.covered_area ? '· ' + p.covered_area + 'm² cub.' : ''}</div>
+                            ${dataQualityBadge(p)}
                         </div>
                         <div style="text-align:right;">
                             ${vsBarrio !== null ? `<div style="color:${vsBarrio < 0 ? 'var(--green)' : 'var(--red)'};font-size:1.1rem;font-weight:700;">${vsBarrio > 0 ? '+' : ''}${vsBarrio}%</div><div style="font-size:0.7rem;color:var(--text-secondary);">vs mediana ${p.neighborhood}</div>` : ''}
