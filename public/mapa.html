@@ -851,19 +851,38 @@ function loadDistritos() {
 
 // Flood risk zones (GCBA 2019)
 function loadFlood() {
+    const riskColors = { 'ALTO': '#dc2626', 'MODERADO': '#f59e0b', 'BAJO': '#60a5fa' };
+    const riskOpacity = { 'ALTO': 0.3, 'MODERADO': 0.2, 'BAJO': 0.12 };
     fetch('/data/anegamiento.geojson')
         .then(r => r.json())
         .then(geojson => {
             L.geoJSON(geojson, {
-                style: f => ({
-                    color: f.properties.clasif === 'Sector Crítico' ? '#dc2626' : '#eab308',
-                    fillColor: f.properties.clasif === 'Sector Crítico' ? '#dc2626' : '#eab308',
-                    fillOpacity: 0.2,
-                    weight: 1.5,
-                    opacity: 0.6
-                }),
+                style: f => {
+                    const r = f.properties.riesgo || 'BAJO';
+                    return {
+                        color: riskColors[r] || '#60a5fa',
+                        fillColor: riskColors[r] || '#60a5fa',
+                        fillOpacity: riskOpacity[r] || 0.12,
+                        weight: r === 'ALTO' ? 2 : 1.5,
+                        opacity: r === 'ALTO' ? 0.8 : 0.5
+                    };
+                },
                 onEachFeature: (f, layer) => {
-                    layer.bindPopup(`<b>Zona inundable</b><br>${f.properties.clasif}`);
+                    const p = f.properties;
+                    const r = p.riesgo || 'BAJO';
+                    const rColor = riskColors[r] || '#60a5fa';
+                    layer.bindPopup(`
+                        <div style="min-width:240px;font-family:'Inter',sans-serif;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                <span style="font-size:14px;font-weight:700;">${p.barrio || 'Zona'}</span>
+                                <span style="background:${rColor};color:#fff;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;">RIESGO ${r}</span>
+                            </div>
+                            <div style="font-size:11px;color:#666;margin-bottom:6px;">${p.clasif}</div>
+                            <div style="font-size:11px;margin-bottom:4px;"><b>Max registrado:</b> ${p.max_mm}mm</div>
+                            ${p.arroyo ? `<div style="font-size:11px;margin-bottom:4px;"><b>Arroyo entubado:</b> ${p.arroyo}</div>` : ''}
+                            <div style="font-size:10px;color:#555;padding:5px 7px;background:#fef2f2;border-radius:4px;border:1px solid #fecaca;margin-top:4px;">${p.eventos}</div>
+                        </div>
+                    `, { maxWidth: 300 });
                 }
             }).addTo(floodLayer);
         })
