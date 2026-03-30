@@ -147,12 +147,12 @@
         .spinner { border: 3px solid var(--border); border-top: 3px solid var(--accent); border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .marker-cluster-small { background-color: rgba(6,182,212,0.3); }
-        .marker-cluster-small div { background-color: rgba(6,182,212,0.6); color: #fff; }
-        .marker-cluster-medium { background-color: rgba(251,191,36,0.3); }
-        .marker-cluster-medium div { background-color: rgba(251,191,36,0.6); color: #000; }
-        .marker-cluster-large { background-color: rgba(239,68,68,0.3); }
-        .marker-cluster-large div { background-color: rgba(239,68,68,0.6); color: #fff; }
+        .marker-cluster-small { background-color: rgba(6,182,212,0.4); box-shadow: 0 0 8px rgba(6,182,212,0.5); }
+        .marker-cluster-small div { background-color: rgba(6,182,212,0.8); color: #fff; font-weight: 700; }
+        .marker-cluster-medium { background-color: rgba(251,191,36,0.4); box-shadow: 0 0 8px rgba(251,191,36,0.5); }
+        .marker-cluster-medium div { background-color: rgba(251,191,36,0.8); color: #000; font-weight: 700; }
+        .marker-cluster-large { background-color: rgba(239,68,68,0.4); box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+        .marker-cluster-large div { background-color: rgba(239,68,68,0.8); color: #fff; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -465,9 +465,9 @@ function renderMarkers() {
         const color = priceColor(p.price_per_sqm);
         const icon = L.divIcon({
             className: '',
-            html: `<div style="width:12px;height:12px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.6);box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
-            iconSize: [12, 12],
-            iconAnchor: [6, 6]
+            html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.85);box-shadow:0 0 6px 2px ${color}88, 0 1px 4px rgba(0,0,0,0.5);"></div>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7]
         });
 
         const marker = L.marker([p.latitude, p.longitude], { icon, _pricePerSqm: p.price_per_sqm || 0 })
@@ -491,6 +491,15 @@ function createPopup(p) {
     const trashBtn = `<button onclick="event.stopPropagation();deactivateProp('${p.id}')" title="Aviso dado de baja" style="background:none;border:1px solid #dc2626;color:#dc2626;border-radius:8px;padding:2px 8px;font-size:10px;cursor:pointer;margin-left:6px;opacity:0.7;transition:opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">🗑 Baja</button>`;
     const covRatio = p.covered_area && p.total_area ? `${Math.round(p.covered_area / p.total_area * 100)}%` : '—';
 
+    const fotInfo = p.fot_em ? `<div style="margin-top:6px;padding:6px 8px;background:#f0fdf4;border-radius:6px;border:1px solid #bbf7d0;">
+        <div style="font-size:10px;font-weight:700;color:#166534;margin-bottom:2px;">Urbanistico${p.distrito ? ' - ' + p.distrito : ''}</div>
+        <div style="display:flex;gap:10px;font-size:11px;">
+            <span>FOT <b>${p.fot_em}</b></span>
+            ${p.m2_construibles ? `<span>Construibles <b style="color:#15803d;">${fmt(p.m2_construibles)} m²</b></span>` : ''}
+        </div>
+        ${p.catalogado ? '<div style="font-size:9px;color:#dc2626;margin-top:2px;">Catalogado (restricciones)</div>' : ''}
+    </div>` : '';
+
     return `<div class="popup-content">
         <div class="popup-title">${p.title || 'Sin título'}</div>
         <div class="popup-addr">${p.address_text || p.neighborhood}</div>
@@ -504,6 +513,7 @@ function createPopup(p) {
             <dt>Segmento</dt><dd>${p.segment || '—'}</dd>
             <dt>Fuente</dt><dd>${p.source}</dd>
         </dl>
+        ${fotInfo}
         ${kwsHtml ? `<div class="popup-kws">${kwsHtml}</div>` : ''}
         <div style="display:flex;align-items:center;gap:4px;margin-top:8px;">${link}${trashBtn}</div>
     </div>`;
@@ -543,7 +553,12 @@ function renderList() {
                 <div class="prop-metric"><span class="val">${dbStr || p.ambientes || '—'}</span><span class="lbl">${dbStr ? 'Dorm/Baño' : 'Amb'}</span></div>
             </div>
             ${kwsHtml ? `<div class="prop-keywords">${kwsHtml}</div>` : ''}
-            ${p.livability_score ? `<div style="margin-top:4px;font-size:9px;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444'};font-weight:700;">Livability: ${p.livability_score}/100</div>` : ''}
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+                ${p.livability_score ? `<span style="font-size:9px;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444'};font-weight:700;">Liv ${p.livability_score}</span>` : ''}
+                ${p.fot_em ? `<span style="font-size:9px;color:#4ade80;font-weight:600;">FOT ${p.fot_em}</span>` : ''}
+                ${p.m2_construibles ? `<span style="font-size:9px;color:#22d3ee;font-weight:600;">${fmt(p.m2_construibles)}m² constr.</span>` : ''}
+                ${p.distrito ? `<span style="font-size:9px;color:#a78bfa;">${p.distrito}</span>` : ''}
+            </div>
             <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
                 ${p.permalink ? `<a href="${p.permalink}" target="_blank" class="prop-link" onclick="event.stopPropagation()" style="margin:0;">Ver aviso &rarr;</a>` : ''}
                 <button onclick="event.stopPropagation();deactivateProp('${p.id}')" title="Aviso dado de baja" style="background:none;border:1px solid rgba(220,38,38,0.4);color:#ef4444;border-radius:6px;padding:1px 6px;font-size:9px;cursor:pointer;opacity:0.6;transition:opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">🗑</button>
@@ -1040,18 +1055,37 @@ async function init() {
     initChips();
 
     try {
-        allProps = await fetchProperties();
-        allProps = allProps.map(p => ({
-            ...p,
-            price: Number(p.price) || 0,
-            price_per_sqm: Number(p.price_per_sqm) || 0,
-            total_area: Number(p.total_area) || 0,
-            covered_area: Number(p.covered_area) || 0,
-            ambientes: Number(p.ambientes) || 0,
-            bathrooms: Number(p.bathrooms) || 0,
-            latitude: Number(p.latitude),
-            longitude: Number(p.longitude)
-        }));
+        const [rawProps, fotData] = await Promise.all([
+            fetchProperties(),
+            fetch(`${SB_URL}/rest/v1/rpc/get_property_fot`, {
+                method: 'POST', headers: { ...HEADERS, 'Content-Type': 'application/json' }, body: '{}'
+            }).then(r => r.ok ? r.json() : [])
+        ]);
+        const fotMap = {};
+        fotData.forEach(f => { fotMap[f.property_id] = f; });
+        allProps = rawProps.map(p => {
+            const fot = fotMap[p.id];
+            const totalArea = Number(p.total_area) || 0;
+            const fotEm = fot ? Number(fot.fot_em) || 0 : 0;
+            return {
+                ...p,
+                price: Number(p.price) || 0,
+                price_per_sqm: Number(p.price_per_sqm) || 0,
+                total_area: totalArea,
+                covered_area: Number(p.covered_area) || 0,
+                ambientes: Number(p.ambientes) || 0,
+                bathrooms: Number(p.bathrooms) || 0,
+                latitude: Number(p.latitude),
+                longitude: Number(p.longitude),
+                fot_em: fotEm,
+                fot_pl: fot ? Number(fot.fot_pl) || 0 : 0,
+                distrito: fot ? fot.distrito : null,
+                uso_suelo: fot ? fot.uso_1 : null,
+                m2_construibles: fotEm > 0 && totalArea > 0 ? Math.round(totalArea * fotEm) : null,
+                catalogado: fot ? fot.catalogado : false,
+                microcentro: fot ? fot.microcentro : false
+            };
+        });
         applyFilters();
     } catch (e) {
         console.error('Init error:', e);
