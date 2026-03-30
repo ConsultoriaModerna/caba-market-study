@@ -3052,7 +3052,7 @@
                 container.innerHTML = `
                     <div style="background:var(--bg-tertiary);border-radius:12px;padding:1.5rem;border:1px solid var(--border);">
                         <div style="font-size:0.7rem;color:var(--accent);margin-bottom:0.5rem;">Pregunta: ${question}</div>
-                        <div style="font-size:0.9rem;color:var(--text-primary);line-height:1.6;white-space:pre-wrap;">${result.analysis || result.message || JSON.stringify(result)}</div>
+                        <div style="font-size:1.15rem;color:var(--text-primary);line-height:1.7;white-space:pre-wrap;">${result.analysis || result.message || JSON.stringify(result)}</div>
                     </div>`;
             } catch (error) {
                 container.innerHTML = `<div style="color:var(--red);padding:1rem;">Error: ${error.message}</div>`;
@@ -3319,14 +3319,14 @@
 
                 const formatted = data.analysis
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/^(\d\.\s+.+)$/gm, '<h4 style="color:var(--accent);margin:0.8rem 0 0.3rem;font-size:0.85rem;">$1</h4>')
+                    .replace(/^(\d\.\s+.+)$/gm, '<h4 style="color:var(--accent);margin:0.8rem 0 0.3rem;font-size:1.05rem;">$1</h4>')
                     .replace(/^[-•]\s+(.+)$/gm, '<div style="padding-left:1rem;margin:0.2rem 0;">- $1</div>')
                     .replace(/\n\n/g, '<br>');
 
                 container.innerHTML = `
                     <div style="background:linear-gradient(135deg,rgba(167,139,250,0.06),rgba(244,114,182,0.06));border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:1.2rem;">
-                        <div style="display:inline-block;background:linear-gradient(135deg,#a78bfa,#f472b6);color:#0a0e1a;font-size:0.6rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:8px;margin-bottom:0.8rem;letter-spacing:0.05em;">CLAUDE HAIKU ANALYSIS</div>
-                        <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7;">${formatted}</div>
+                        <div style="display:inline-block;background:linear-gradient(135deg,#a78bfa,#f472b6);color:#0a0e1a;font-size:0.7rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:8px;margin-bottom:0.8rem;letter-spacing:0.05em;">CLAUDE HAIKU ANALYSIS</div>
+                        <div style="font-size:1.1rem;color:var(--text-secondary);line-height:1.7;">${formatted}</div>
                     </div>
                 `;
             } catch (e) {
