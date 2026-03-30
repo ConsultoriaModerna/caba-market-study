@@ -22,17 +22,22 @@ if ! pgrep -x Xvfb > /dev/null; then
   sleep 2
 fi
 
-# Step 1: ML token refresh
-echo "━━━ [1/4] ML Token Refresh ━━━"
-node scripts/refresh-ml-token.mjs 2>&1 || echo "⚠️ Token refresh failed (may be expired)"
+# ML steps disabled until ban lifts (2026-04-02)
+# Set ML_ENABLED=true in .env to re-enable
+ML_ENABLED="${ML_ENABLED:-false}"
 
-# Step 2: ML scrape (new listings)
-echo "━━━ [2/4] ML Scrape ━━━"
-node scrape-meli-local.mjs 40 2>&1 || echo "⚠️ ML scrape failed"
+if [ "$ML_ENABLED" = "true" ]; then
+  echo "━━━ [1/4] ML Token Refresh ━━━"
+  node scripts/refresh-ml-token.mjs 2>&1 || echo "⚠️ Token refresh failed (may be expired)"
 
-# Step 3: ML description enrichment
-echo "━━━ [3/4] ML Descriptions ━━━"
-node scripts/enrich-ml-details.mjs 400 2>&1 || echo "⚠️ ML enrichment failed"
+  echo "━━━ [2/4] ML Scrape ━━━"
+  node scrape-meli-local.mjs 40 2>&1 || echo "⚠️ ML scrape failed"
+
+  echo "━━━ [3/4] ML Descriptions ━━━"
+  node scripts/enrich-ml-details.mjs 400 2>&1 || echo "⚠️ ML enrichment failed"
+else
+  echo "━━━ [1-3/4] ML steps SKIPPED (ML_ENABLED=false, ban active until 2026-04-02) ━━━"
+fi
 
 # Step 4: ZP enrichment (via Puppeteer)
 echo "━━━ [4/4] ZP Enrichment ━━━"

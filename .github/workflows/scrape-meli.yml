@@ -1,9 +1,9 @@
 name: Weekly ML Scrape
 
 on:
-  schedule:
-    # Lunes 09:00 UTC (06:00 BsAs)
-    - cron: '0 9 * * 1'
+  # schedule DISABLED - ML API ban active until 2026-04-02
+  # schedule:
+  #   - cron: '0 9 * * 1'
   workflow_dispatch:
     inputs:
       max_pages:
