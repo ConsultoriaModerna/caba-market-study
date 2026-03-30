@@ -387,9 +387,9 @@
 
 
     <div class="filters" id="filters">
-        <button class="filter-btn active" data-sort="total">Por volumen</button>
+        <button class="filter-btn" data-sort="total">Por volumen</button>
         <button class="filter-btn" data-sort="churn">Por churn %</button>
-        <button class="filter-btn" data-sort="price">Por precio mediana</button>
+        <button class="filter-btn active" data-sort="price">Por precio mediana</button>
         <button class="filter-btn" data-sort="alpha">Alfabético</button>
     </div>
 
@@ -495,7 +495,7 @@
             return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
         }
 
-        let currentSort = 'total';
+        let currentSort = 'price';
         let barrios = [];
 
         function sortBarrios(data, sortBy) {
@@ -673,7 +673,7 @@
         }
 
         function renderChurnGrid(data) {
-            const sorted = [...data].sort((a, b) => b.churnPct - a.churnPct);
+            const sorted = [...data];
             const maxTotal = d3.max(data, d => d.total);
             const maxChurn = d3.max(data, d => d.churnPct) || 1;
 
@@ -745,9 +745,9 @@
         function render(data, sortBy) {
             const sorted = sortBarrios(data, sortBy);
             renderWave(sorted);
-            renderStats(data);
-            renderChurnGrid(data);
-            renderGapGrid(data);
+            renderStats(sorted);
+            renderChurnGrid(sorted);
+            renderGapGrid(sorted);
         }
 
         // Setup filter buttons
