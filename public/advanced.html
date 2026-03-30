@@ -329,7 +329,7 @@
     function hideTooltip() {
       setTimeout(() => {
         if (!tooltip.node().matches(':hover')) tooltip.style('display', 'none');
-      }, 200);
+      }, 500);
     }
 
     // Tooltip self-hide on mouseleave
@@ -857,10 +857,10 @@
         .attr('preserveAspectRatio', 'xMidYMid meet');
 
       const simulation = d3.forceSimulation(nodes)
-        .force('link', d3.forceLink(links).id(d => d.id).distance(80).strength(d => d.strength * 0.3))
-        .force('charge', d3.forceManyBody().strength(-200))
+        .force('link', d3.forceLink(links).id(d => d.id).distance(100).strength(d => d.strength * 0.25))
+        .force('charge', d3.forceManyBody().strength(-300))
         .force('center', d3.forceCenter(width / 2, height / 2))
-        .force('collision', d3.forceCollide().radius(d => d.radius + 4));
+        .force('collision', d3.forceCollide().radius(d => d.radius + 12));
 
       const link = svg.append('g')
         .selectAll('line')
@@ -889,13 +889,13 @@
           );
         })
         .on('mouseout', function(evt) {
-          // Delay hide to allow clicking the link
+          const circle = this;
           setTimeout(() => {
             if (!tooltip.node().matches(':hover')) {
-              d3.select(this).attr('fill-opacity', 0.8).attr('stroke-opacity', 0.4);
+              d3.select(circle).attr('fill-opacity', 0.8).attr('stroke-opacity', 0.4);
               hideTooltip();
             }
-          }, 300);
+          }, 800);
         })
         .call(d3.drag()
           .on('start', (evt, d) => { if (!evt.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
@@ -903,14 +903,16 @@
           .on('end', (evt, d) => { if (!evt.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
         );
 
-      // Labels for neighborhoods with count >= 50
+      // Labels for all neighborhoods, sized by count
       const labels = svg.append('g')
         .selectAll('text')
-        .data(nodes.filter(d => d.count >= 50))
+        .data(nodes)
         .join('text')
         .attr('class', 'node-label')
-        .attr('dy', d => -d.radius - 4)
-        .text(d => d.id);
+        .attr('dy', d => -d.radius - 3)
+        .attr('font-size', d => d.count >= 80 ? '11px' : d.count >= 30 ? '9px' : '7px')
+        .attr('fill-opacity', d => d.count >= 30 ? 1 : 0.7)
+        .text(d => d.count >= 20 ? d.id : d.id.slice(0, 8));
 
       simulation.on('tick', () => {
         link
