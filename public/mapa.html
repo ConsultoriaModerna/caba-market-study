@@ -834,47 +834,39 @@ function loadSubte() {
 }
 
 // Pre-computed isochrones from Palermo (10-60min, car + walk)
-let isoMode = 'car';
 function loadPalermoIsochrone() {
-    renderIsoMode();
-}
-
-function renderIsoMode() {
     isochronePalermoLayer.clearLayers();
-    const file = isoMode === 'car' ? '/data/iso_palermo_car.geojson' : '/data/iso_palermo_walk.geojson';
-    const label = isoMode === 'car' ? 'auto' : 'a pie';
 
-    // Color gradient: 10min=dark cyan -> 60min=very faint
-    const ringColors = ['#00d4ff', '#06b6d4', '#22d3ee', '#67e8f9', '#a5f3fc', '#cffafe'];
-    const ringOpacity = [0.12, 0.09, 0.07, 0.05, 0.03, 0.02];
+    // Car: cyan tones
+    const carColors = ['#00d4ff', '#06b6d4', '#22d3ee', '#67e8f9', '#a5f3fc', '#cffafe'];
+    const carOpacity = [0.12, 0.09, 0.07, 0.05, 0.03, 0.02];
+    // Walk: orange/amber tones
+    const walkColors = ['#f59e0b', '#fbbf24', '#fcd34d', '#fde68a', '#fef3c7', '#fffbeb'];
+    const walkOpacity = [0.12, 0.09, 0.07, 0.05, 0.03, 0.02];
 
-    fetch(file)
-        .then(r => r.json())
-        .then(geojson => {
-            // Features come inner-to-outer (10min first, 60min last)
-            // Render outer first so inner overlaps
+    function renderMode(file, label, colors, opacities) {
+        return fetch(file).then(r => r.json()).then(geojson => {
             const reversed = [...geojson.features].reverse();
             reversed.forEach((f, i) => {
-                const ri = geojson.features.length - 1 - i; // original index
+                const ri = geojson.features.length - 1 - i;
                 const mins = (ri + 1) * 10;
                 L.geoJSON(f, {
                     style: {
-                        color: ringColors[ri] || '#cffafe',
+                        color: colors[ri] || colors[colors.length - 1],
                         weight: ri === 0 ? 2 : 1,
                         opacity: ri === 0 ? 0.5 : 0.2,
-                        fillColor: ringColors[ri] || '#cffafe',
-                        fillOpacity: ringOpacity[ri] || 0.02
+                        fillColor: colors[ri] || colors[colors.length - 1],
+                        fillOpacity: opacities[ri] || 0.02
                     }
                 }).bindPopup(`${mins} min en ${label} desde Palermo`).addTo(isochronePalermoLayer);
             });
-        })
-        .catch(e => console.warn('Isochrone failed:', e));
-}
+        }).catch(e => console.warn('Isochrone failed:', e));
+    }
 
-function toggleIsoMode() {
-    isoMode = isoMode === 'car' ? 'walk' : 'car';
-    document.getElementById('iso-mode-label').textContent = isoMode === 'car' ? 'Auto' : 'A pie';
-    renderIsoMode();
+    Promise.all([
+        renderMode('/data/iso_palermo_car.geojson', 'auto', carColors, carOpacity),
+        renderMode('/data/iso_palermo_walk.geojson', 'a pie', walkColors, walkOpacity)
+    ]);
 }
 
 // Isochrone (OpenRouteService)
@@ -1027,7 +1019,7 @@ async function init() {
         'Propiedades': markerCluster,
         'Subte': subteLayer,
         'Subte Proyectado': subteProjectedLayer,
-        'Palermo 10-60min': isochronePalermoLayer,
+        'Palermo 10-60min (auto+pie)': isochronePalermoLayer,
         'Ruido (dBA)': noiseLayer,
         'Anegamiento': floodLayer,
         'Vias de Tren': railwayLayer,
@@ -1081,7 +1073,7 @@ async function init() {
         'Colectivos (paradas)': loadBusStops,
         'Colectivos (recorridos)': loadBusRoutes,
         'Transporte (densidad)': loadTransport,
-        'Palermo 10-60min': loadPalermoIsochrone,
+        'Palermo 10-60min (auto+pie)': loadPalermoIsochrone,
         'Lugares de Culto': loadReligious,
         'Distritos Economicos': loadDistritos,
         'Zona Ley 6508 / IA': loadZonaMicrocentro
