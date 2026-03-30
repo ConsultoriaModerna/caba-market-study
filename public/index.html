@@ -718,6 +718,48 @@
         </div>
     </div>
 
+    <!-- TAB: INTEL -->
+    <div class="tab-content" id="tab-intel">
+        <div style="max-width:1000px;margin:0 auto;padding:1.5rem 2rem;">
+            <div style="text-align:center;margin-bottom:1.5rem;">
+                <h2 style="font-size:1.3rem;font-weight:600;margin-bottom:0.3rem;">Inteligencia Urbana</h2>
+                <p style="color:var(--text-secondary);font-size:0.85rem;">Preguntale a la AI sobre Buenos Aires. Consulta datos de propiedades, barrios, urbanismo, transporte, seguridad, y mas.</p>
+            </div>
+
+            <div style="max-width:700px;margin:0 auto 1.5rem;">
+                <div style="display:flex;gap:0.5rem;">
+                    <input type="text" id="intelInput" placeholder="Ej: que barrios tienen mas verde y menos ruido? o cuales propiedades tienen FOT alto?"
+                        style="flex:1;padding:0.8rem 1.2rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:1rem;font-family:inherit;outline:none;">
+                    <button onclick="askIntel()" id="intelBtn" style="padding:0.8rem 1.5rem;background:linear-gradient(135deg,#a78bfa,#00d4ff);color:#000;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;font-family:inherit;">Preguntar</button>
+                </div>
+                <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.8rem;">
+                    <button class="intel-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">barrios mas verdes y silenciosos</button>
+                    <button class="intel-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">propiedades con FOT alto y precio bajo</button>
+                    <button class="intel-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">que usos del suelo predominan en Palermo</button>
+                    <button class="intel-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">tendencia de precios por barrio 2015-2019</button>
+                    <button class="intel-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">distritos economicos con beneficios fiscales</button>
+                </div>
+            </div>
+
+            <div id="intelResults" style="min-height:200px;">
+                <div class="empty-state">Haceme una pregunta sobre Buenos Aires y sus datos</div>
+            </div>
+
+            <div style="margin-top:2rem;padding:1rem;background:var(--bg-tertiary);border-radius:10px;">
+                <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.5rem;">Datos disponibles para consulta:</div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    <span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">10K propiedades</span>
+                    <span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">318K parcelas + FOT</span>
+                    <span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">417K usos del suelo</span>
+                    <span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">3K precios historicos</span>
+                    <span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">3K espacios culturales</span>
+                    <span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">Delitos 2023</span>
+                    <span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">Demograficos</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- PROPERTY DETAIL MODAL -->
     <div id="propModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);overflow-y:auto;" onclick="if(event.target===this)closePropModal()">
         <div id="propModalContent" style="max-width:800px;margin:40px auto;background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;padding:0;overflow:hidden;"></div>
@@ -749,6 +791,7 @@
         <button class="tab-button" data-tab="hunter" title="Anomaly Detector: propiedades con precio anomalo vs su barrio. Comparables: analisis cruzado por segmento">🎯 Hunter</button>
         <button class="tab-button" data-tab="publishers" title="Perfiles de inmobiliarias agrupadas por telefono. Ver su inventario, especializacion por barrio, y nivel de foco">🏢 Inmobiliarias</button>
         <button class="tab-button" data-tab="favorites" title="Propiedades marcadas como favoritas" id="favTabBtn">★ Favoritas <span id="favCount" style="background:rgba(251,191,36,0.2);color:#fbbf24;padding:1px 6px;border-radius:8px;font-size:0.7rem;font-weight:700;">0</span></button>
+        <button class="tab-button" data-tab="intel" title="Inteligencia urbana: preguntale a la AI sobre CABA">🧠 Intel</button>
     </div>
 
     <!-- TAB 1: OVERVIEW -->
@@ -2895,6 +2938,91 @@
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closePropModal(); });
 
         // ── AI PROPERTY ANALYSIS ──
+
+        // Intel tab - AI queries on Supabase data
+        async function askIntel() {
+            const input = document.getElementById('intelInput');
+            const question = input.value.trim();
+            if (!question) return;
+
+            const container = document.getElementById('intelResults');
+            container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary);"><div class="spinner" style="display:inline-block;margin-bottom:0.5rem;"></div><br>Analizando datos...</div>';
+
+            try {
+                // First, gather context from local data
+                const totalProps = allPropertiesRaw.length;
+                const zpN = allPropertiesRaw.filter(p => p.source === 'zonaprop').length;
+                const mlN = allPropertiesRaw.filter(p => p.source === 'mercadolibre').length;
+                const apN = allPropertiesRaw.filter(p => p.source === 'argenprop').length;
+
+                // Barrio stats
+                const barrioStats = {};
+                allPropertiesRaw.forEach(p => {
+                    if (!p.neighborhood) return;
+                    if (!barrioStats[p.neighborhood]) barrioStats[p.neighborhood] = { count: 0, prices: [], areas: [], livScores: [] };
+                    barrioStats[p.neighborhood].count++;
+                    if (p.price_per_sqm > 100 && p.price_per_sqm < 10000) barrioStats[p.neighborhood].prices.push(+p.price_per_sqm);
+                    if (p.total_area > 0) barrioStats[p.neighborhood].areas.push(+p.total_area);
+                    if (p.livability_score > 0) barrioStats[p.neighborhood].livScores.push(p.livability_score);
+                });
+
+                const topBarrios = Object.entries(barrioStats)
+                    .map(([name, s]) => ({
+                        name, count: s.count,
+                        median_usd_m2: s.prices.length ? Math.round(s.prices.sort((a,b)=>a-b)[Math.floor(s.prices.length/2)]) : null,
+                        avg_area: s.areas.length ? Math.round(s.areas.reduce((a,b)=>a+b,0) / s.areas.length) : null,
+                        avg_livability: s.livScores.length ? Math.round(s.livScores.reduce((a,b)=>a+b,0) / s.livScores.length) : null
+                    }))
+                    .sort((a,b) => b.count - a.count)
+                    .slice(0, 30);
+
+                // Sweet spot
+                const sweetSpot = allPropertiesRaw.filter(p => p.currency === 'USD' && p.price >= 100000 && p.price <= 180000);
+
+                const context = `Datos de InmoFindr Buenos Aires (CABA + GBA Norte):
+- ${totalProps} propiedades activas (ZP: ${zpN}, ML: ${mlN}, AP: ${apN})
+- ${sweetSpot.length} en sweet spot $100-180K
+- Barrios top: ${topBarrios.slice(0,10).map(b => `${b.name}(${b.count} props, $${b.median_usd_m2}/m2, liv:${b.avg_livability||'?'})`).join(', ')}
+- DB tiene: 318K parcelas con FOT, 417K usos del suelo, 3K precios historicos, 3K espacios culturales, demograficos
+- Tablas Supabase: properties, codigo_urbanistico, usos_suelo, precios_historicos, espacios_culturales, demografico_barrios
+- Livability Score (0-100): ruido, inundacion, seguridad, subte, transporte`;
+
+                const resp = await fetch(`${SUPABASE_URL}/functions/v1/analyze-property`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        property: { title: 'Intel Query', description: question },
+                        comparables: [],
+                        barrio_median: null,
+                        system_prompt: `Eres un analista de inteligencia urbana de Buenos Aires. Respondes preguntas sobre el mercado inmobiliario, barrios, urbanismo, transporte, y calidad de vida en CABA usando los datos disponibles. Responde en espanol, conciso, con datos concretos. ${context}`,
+                        user_prompt: question
+                    })
+                });
+
+                if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+                const result = await resp.json();
+
+                container.innerHTML = `
+                    <div style="background:var(--bg-tertiary);border-radius:12px;padding:1.5rem;border:1px solid var(--border);">
+                        <div style="font-size:0.7rem;color:var(--accent);margin-bottom:0.5rem;">Pregunta: ${question}</div>
+                        <div style="font-size:0.9rem;color:var(--text-primary);line-height:1.6;white-space:pre-wrap;">${result.analysis || result.message || JSON.stringify(result)}</div>
+                    </div>`;
+            } catch (error) {
+                container.innerHTML = `<div style="color:var(--red);padding:1rem;">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Intel example clicks
+        document.addEventListener('click', e => {
+            if (e.target.classList.contains('intel-example')) {
+                document.getElementById('intelInput').value = e.target.textContent;
+                askIntel();
+            }
+        });
+
+        document.getElementById('intelInput')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') askIntel();
+        });
 
         async function analyzeProperty(propId) {
             const container = document.getElementById('ai-prop-analysis');
