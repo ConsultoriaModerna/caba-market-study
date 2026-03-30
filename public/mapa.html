@@ -852,7 +852,7 @@ function toggleIsoMode() {
 const ORS_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImYyOTg5OGVjZWRhNzRhYmFhZDg5M2NmNjJmYTAxMmQzIiwiaCI6Im11cm11cjY0In0=';
 let isoLayer = null;
 let isoMarker = null;
-let isoMode = false;
+let isoClickMode = false;
 
 function activateIsoMode() {
     const time = parseInt(document.getElementById('f-iso-time').value);
@@ -861,10 +861,10 @@ function activateIsoMode() {
         if (isoMarker) { map.removeLayer(isoMarker); isoMarker = null; }
         document.getElementById('iso-status').textContent = '';
         document.getElementById('iso-btn').textContent = 'Activar isocrona';
-        isoMode = false;
+        isoClickMode = false;
         return;
     }
-    isoMode = true;
+    isoClickMode = true;
     document.getElementById('iso-btn').textContent = 'Click en el mapa...';
     document.getElementById('iso-btn').style.background = 'rgba(0,212,255,0.15)';
     document.getElementById('iso-status').textContent = 'Haciendo click en el mapa para definir origen';
@@ -915,7 +915,7 @@ async function handleIsoClick(e) {
 
     document.getElementById('iso-btn').textContent = 'Recalcular isocrona';
     document.getElementById('iso-btn').style.background = 'transparent';
-    isoMode = false;
+    isoClickMode = false;
 }
 
 // Crime heatmap (GCBA 2023 data -- 15K sampled points, yellow-red gradient)
