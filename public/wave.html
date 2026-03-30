@@ -388,7 +388,7 @@
 
     <div class="filters" id="filters">
         <button class="filter-btn" data-sort="total">Por volumen</button>
-        <button class="filter-btn" data-sort="churn">Por churn %</button>
+        <button class="filter-btn" data-sort="churn">Por demanda L7D</button>
         <button class="filter-btn active" data-sort="price">Por precio mediana</button>
         <button class="filter-btn" data-sort="alpha">Alfabético</button>
     </div>
@@ -401,14 +401,14 @@
     <div class="stats-grid" id="stats-grid"></div>
 
     <div class="churn-section">
-        <h2>Churn por barrio — listings que desaparecieron esta semana</h2>
+        <h2>Demand por barrio — rotacion de listings (L7D vs P7D)</h2>
         <div class="churn-grid" id="churn-grid"></div>
     </div>
 
     <!-- GAP TO CONVERGENCE -->
     <div class="gap-section">
         <h2>Gap to Convergence — potencial de apreciación por barrio</h2>
-        <p class="subtitle">Distancia al P75 de CABA (USD/m²). Los barrios con mayor gap + mayor churn son el sweet spot.</p>
+        <p class="subtitle">Distancia al P75 de CABA (USD/m²). Los barrios con mayor gap + mayor demanda son el sweet spot.</p>
         <div class="gap-grid" id="gap-grid"></div>
     </div>
 
@@ -464,28 +464,42 @@
         }
 
         async function fetchData() {
-            // Use pre-aggregated view to avoid 1000 row limit
-            const url = `${SUPABASE_URL}/rest/v1/barrio_stats?select=*`;
-            const resp = await fetch(url, {
-                headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` }
-            });
-            return resp.json();
+            const headers = { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` };
+            const [statsResp, demandResp] = await Promise.all([
+                fetch(`${SUPABASE_URL}/rest/v1/barrio_stats?select=*`, { headers }),
+                fetch(`${SUPABASE_URL}/rest/v1/barrio_demand?select=*`, { headers })
+            ]);
+            const stats = await statsResp.json();
+            const demand = await demandResp.json();
+            // Merge demand data into stats
+            const demandMap = {};
+            demand.forEach(d => { demandMap[d.name] = d; });
+            return stats.map(s => ({ ...s, ...(demandMap[s.name] || {}) }));
         }
 
         function processData(raw) {
-            return raw.map(b => ({
-                name: b.name,
-                total: b.total,
-                active: b.active,
-                inactive: b.inactive,
-                zone: getZone(b.name),
-                churnPct: b.total > 0 ? +(b.inactive / b.total * 100).toFixed(1) : 0,
-                medianPrice: +b.median_price || 0,
-                medianPriceCovered: +b.median_price_covered || 0,
-                medianArea: +b.median_area || 0,
-                medianCovered: +b.avg_covered || 0,
-                coverRatio: (b.avg_covered && b.median_area) ? +(b.avg_covered / b.median_area).toFixed(2) : null
-            }));
+            return raw.map(b => {
+                const demandL7D = +b.demand_l7d || 0;
+                const demandP7D = +b.demand_p7d || 0;
+                const demandVar = demandP7D > 0 ? Math.round((demandL7D - demandP7D) / demandP7D * 100) : (demandL7D > 0 ? 100 : 0);
+                return {
+                    name: b.name,
+                    total: b.total,
+                    active: b.active,
+                    inactive: b.inactive,
+                    zone: getZone(b.name),
+                    demandL7D,
+                    demandP7D,
+                    demandVar,
+                    demandPct: +b.demand_pct_l7d || 0,
+                    churnPct: b.total > 0 ? +(b.inactive / b.total * 100).toFixed(1) : 0,
+                    medianPrice: +b.median_price || 0,
+                    medianPriceCovered: +b.median_price_covered || 0,
+                    medianArea: +b.median_area || 0,
+                    medianCovered: +b.avg_covered || 0,
+                    coverRatio: (b.avg_covered && b.median_area) ? +(b.avg_covered / b.median_area).toFixed(2) : null
+                };
+            });
         }
 
         function median(arr) {
@@ -502,7 +516,7 @@
             const sorted = [...data];
             switch (sortBy) {
                 case 'total': sorted.sort((a, b) => b.total - a.total); break;
-                case 'churn': sorted.sort((a, b) => b.churnPct - a.churnPct); break;
+                case 'churn': sorted.sort((a, b) => b.demandL7D - a.demandL7D || b.demandPct - a.demandPct); break;
                 case 'price': sorted.sort((a, b) => b.medianPrice - a.medianPrice); break;
                 case 'alpha': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
             }
@@ -614,14 +628,14 @@
             svg.append('text')
                 .attr('x', width - 15).attr('y', baseline + 16)
                 .attr('text-anchor', 'end').attr('fill', '#475569').attr('font-size', '10px')
-                .text('bajadas');
+                .text('rotadas');
         }
 
         function showTooltip(event, d) {
             const tt = document.getElementById('tooltip');
             tt.innerHTML = `
                 <div class="tt-name">${d.name} <span style="color:${ZONE_COLORS[d.zone]}">${d.zone}</span></div>
-                <div class="tt-row">${d.active} activas / ${d.inactive} bajadas (${d.churnPct}%)</div>
+                <div class="tt-row">${d.active} activas / ${d.inactive} rotadas${d.demandL7D ? ` | <span style="color:#10b981;">L7D: ${d.demandL7D}</span>` : ''}</div>
                 <div class="tt-row">Mediana: USD ${d.medianPrice.toLocaleString()}/m² tot.</div>
                 ${d.medianPriceCovered ? `<div class="tt-row" style="color:#4ade80;">USD ${d.medianPriceCovered.toLocaleString()}/m² cub.</div>` : ''}
                 ${d.medianArea ? `<div class="tt-row">Área mediana: ${d.medianArea} m²</div>` : ''}
@@ -659,7 +673,7 @@
                 </div>
                 <div class="stat-card">
                     <div class="value">${avgChurn.toFixed(1)}%</div>
-                    <div class="label">Churn semanal</div>
+                    <div class="label">Demand rate</div>
                 </div>
                 <div class="stat-card">
                     <div class="value">${data.length}</div>
@@ -675,22 +689,24 @@
         function renderChurnGrid(data) {
             const sorted = [...data];
             const maxTotal = d3.max(data, d => d.total);
-            const maxChurn = d3.max(data, d => d.churnPct) || 1;
+            const maxDemand = d3.max(data, d => d.demandL7D) || 1;
 
             document.getElementById('churn-grid').innerHTML = sorted.map((d, i) => {
                 const color = ZONE_COLORS[d.zone] || ZONE_COLORS['Otro'];
                 const fillW = (d.total / maxTotal * 100).toFixed(0);
-                const churnIntensity = d.churnPct / maxChurn;
-                const borderColor = d.churnPct > 5 ? `rgba(244,114,182,${0.3 + churnIntensity * 0.5})` : 'var(--border)';
-                const bgTint = d.churnPct > 5 ? `rgba(244,114,182,${churnIntensity * 0.08})` : '';
+                const hasDemand = d.demandL7D > 0;
+                const demandIntensity = d.demandL7D / maxDemand;
+                const borderColor = hasDemand ? `rgba(16,185,129,${0.3 + demandIntensity * 0.5})` : 'var(--border)';
+                const bgTint = hasDemand ? `rgba(16,185,129,${demandIntensity * 0.08})` : '';
+                const varArrow = d.demandVar > 0 ? `<span style="color:#10b981;">+${d.demandVar}%</span>` : d.demandVar < 0 ? `<span style="color:#ef4444;">${d.demandVar}%</span>` : '<span style="color:#64748b;">—</span>';
                 return `
                     <div class="churn-bar" style="border-color:${borderColor};${bgTint ? 'background:'+bgTint+';' : ''}">
                         <div class="bg-fill" style="width:${fillW}%;background:${color}"></div>
-                        ${d.churnPct > 3 ? `<div class="churn-indicator" style="color:${color};">${i + 1}</div>` : ''}
+                        ${hasDemand ? `<div class="churn-indicator" style="color:${color};">${i + 1}</div>` : ''}
                         <div class="name">${d.name}</div>
                         <div class="numbers">
-                            ${d.active} activas / ${d.inactive} bajadas
-                            ${d.churnPct > 0 ? `<br><span class="churn">${d.churnPct}% churn</span>` : ''}
+                            ${d.active} activas
+                            ${hasDemand ? `<br><span class="churn" style="color:#10b981;">L7D: ${d.demandL7D} vendidas (${d.demandPct}%)</span> ${varArrow} vs P7D` : d.inactive > 0 ? `<br><span style="color:#64748b;font-size:0.7rem;">${d.inactive} rotadas total</span>` : ''}
                         </div>
                     </div>
                 `;
@@ -707,8 +723,9 @@
                 .map(d => {
                     const gap = p75 - d.medianPrice;
                     const gapPct = d.medianPrice < p75 ? +((gap / d.medianPrice) * 100).toFixed(0) : 0;
-                    // Score: gap upside * sqrt(churn signal) * log(volume)
-                    const score = gapPct > 0 ? gapPct * Math.sqrt(1 + d.churnPct) * Math.log2(1 + d.total) : 0;
+                    // Score: gap upside * sqrt(demand signal) * log(volume)
+                    const demandSignal = d.demandL7D > 0 ? d.demandL7D * 5 : d.churnPct;
+                    const score = gapPct > 0 ? gapPct * Math.sqrt(1 + demandSignal) * Math.log2(1 + d.total) : 0;
                     return { ...d, gap, gapPct, p75, score };
                 })
                 .sort((a, b) => b.score - a.score);
@@ -935,7 +952,10 @@
             const allPrices = data.filter(d => d.medianPrice > 0);
             const cheapest = [...allPrices].sort((a, b) => a.medianPrice - b.medianPrice).slice(0, 3);
             const expensive = [...allPrices].sort((a, b) => b.medianPrice - a.medianPrice).slice(0, 3);
-            const highChurn = [...data].sort((a, b) => b.churnPct - a.churnPct).filter(d => d.inactive > 2).slice(0, 3);
+            const totalDemandL7D = data.reduce((s, d) => s + d.demandL7D, 0);
+            const totalDemandP7D = data.reduce((s, d) => s + d.demandP7D, 0);
+            const demandVarTotal = totalDemandP7D > 0 ? Math.round((totalDemandL7D - totalDemandP7D) / totalDemandP7D * 100) : 0;
+            const highDemand = [...data].sort((a, b) => b.demandL7D - a.demandL7D).filter(d => d.demandL7D > 0).slice(0, 3);
             const topWords = words.slice(0, 8).map(w => w.word);
 
             const el = document.getElementById('ai-analysis');
@@ -945,22 +965,22 @@
                 <h3>El mercado en un vistazo</h3>
                 <p>El mercado tiene <span class="metric">${totalActive.toLocaleString()} casas activas</span> distribuidas en <span class="metric">${data.length} barrios</span>. La mediana de precio se ubica en <span class="metric">USD ${median(allPrices.map(d => d.medianPrice)).toLocaleString()}/m²</span>, con una dispersión significativa entre zonas.</p>
 
-                <h3>Dónde está el valor</h3>
-                <p>Los barrios más accesibles por USD/m² son <span class="highlight">${cheapest.map(d => d.name + ' ($' + d.medianPrice + ')').join(', ')}</span>. En el otro extremo, <span class="highlight">${expensive.map(d => d.name + ' ($' + d.medianPrice + ')').join(', ')}</span> lideran el segmento premium. La brecha entre el barrio más caro y el más económico es de <span class="metric">${(expensive[0]?.medianPrice / (cheapest[0]?.medianPrice || 1)).toFixed(1)}x</span>.</p>
+                <h3>Donde esta el valor</h3>
+                <p>Los barrios mas accesibles por USD/m² son <span class="highlight">${cheapest.map(d => d.name + ' ($' + d.medianPrice + ')').join(', ')}</span>. En el otro extremo, <span class="highlight">${expensive.map(d => d.name + ' ($' + d.medianPrice + ')').join(', ')}</span> lideran el segmento premium. La brecha entre el barrio mas caro y el mas economico es de <span class="metric">${(expensive[0]?.medianPrice / (cheapest[0]?.medianPrice || 1)).toFixed(1)}x</span>.</p>
 
-                <h3>Velocidad del mercado</h3>
-                <p>El churn semanal es <span class="metric">${churnRate}%</span> (${totalInactive} listings desaparecieron en 7 días). ${highChurn.length > 0 ? 'Los barrios con mayor rotación son <span class="highlight">' + highChurn.map(d => d.name + ' (' + d.churnPct + '%)').join(', ') + '</span> — señal de demanda activa o repricing agresivo.' : ''}</p>
+                <h3>Demand L7D</h3>
+                <p><span class="metric">${totalDemandL7D} propiedades rotaron en los ultimos 7 dias</span> (${churnRate}% del total). ${demandVarTotal !== 0 ? `Variacion vs P7D: <span class="metric" style="color:${demandVarTotal > 0 ? '#10b981' : '#ef4444'};">${demandVarTotal > 0 ? '+' : ''}${demandVarTotal}%</span>.` : ''} ${highDemand.length > 0 ? 'Mayor demanda en <span class="highlight">' + highDemand.map(d => d.name + ' (' + d.demandL7D + ')').join(', ') + '</span> — signal de mercado activo.' : ''}</p>
 
                 <h3>El ADN de las descripciones</h3>
-                <p>Las palabras más frecuentes en las descripciones revelan qué vende: <span class="highlight">${topWords.join(', ')}</span>. Las propiedades "a refaccionar" enfatizan <em>lote, metros, servicios</em> (el potencial), mientras que las recicladas hablan de <em>cocina, comedor, living, amplio</em> (el resultado). Este patrón sugiere que el mercado valora la narrativa de transformación.</p>
+                <p>Las palabras mas frecuentes revelan que vende: <span class="highlight">${topWords.join(', ')}</span>. Las propiedades "a refaccionar" enfatizan <em>lote, metros, servicios</em> (el potencial), mientras que las recicladas hablan de <em>cocina, comedor, living, amplio</em> (el resultado).</p>
 
                 <h3>Gap to Convergence</h3>
-                <p>La brecha de <span class="metric">${(expensive[0]?.medianPrice / (cheapest[0]?.medianPrice || 1)).toFixed(1)}x</span> entre barrios es la oportunidad central. Buenos Aires muestra señales de un proceso similar al de Ciudad de México: demanda externa en USD presionando precios en barrios accesibles. Los barrios del sur y oeste con <span class="highlight">gap alto + churn activo</span> son los que primero capturan esa convergencia.</p>
+                <p>La brecha de <span class="metric">${(expensive[0]?.medianPrice / (cheapest[0]?.medianPrice || 1)).toFixed(1)}x</span> entre barrios es la oportunidad central. Los barrios del sur y oeste con <span class="highlight">gap alto + demanda activa</span> son los que primero capturan esa convergencia.</p>
 
                 <h3>Sweet spot</h3>
-                <p>Con ${churnRate}% de listings desapareciendo semanalmente, las oportunidades tienen ventana corta. ${highChurn.length > 0 ? '<span class="highlight">' + highChurn[0].name + '</span> lidera en rotación — ' : ''}los barrios que combinan <span class="highlight">volumen + precio bajo + demanda real</span> son el target para comprar, refaccionar, y capturar el gap antes de que la convergencia lo cierre.</p>
+                <p>${highDemand.length > 0 ? '<span class="highlight">' + highDemand[0].name + '</span> lidera en demanda L7D. ' : ''}Los barrios que combinan <span class="highlight">volumen + precio bajo + demanda real</span> son el target para comprar, refaccionar, y capturar el gap antes de que la convergencia lo cierre.</p>
 
-                <p style="margin-top: 1rem; font-size: 0.75rem; color: #475569;">Análisis generado sobre ${totalActive + totalInactive} propiedades y ${words.length} patrones léxicos. Datos actualizados en tiempo real desde Supabase.</p>
+                <p style="margin-top: 1rem; font-size: 0.75rem; color: #475569;">Analisis sobre ${totalActive + totalInactive} propiedades y ${words.length} patrones lexicos. L7D = ultimos 7 dias. P7D = 7 dias previos.</p>
             `;
         }
 
