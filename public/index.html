@@ -723,10 +723,32 @@
         <div style="max-width:1000px;margin:0 auto;padding:1.5rem 2rem;">
             <div style="text-align:center;margin-bottom:1.5rem;">
                 <h2 style="font-size:1.3rem;font-weight:600;margin-bottom:0.3rem;">Inteligencia Urbana</h2>
-                <p style="color:var(--text-secondary);font-size:0.85rem;">Preguntale a la AI sobre Buenos Aires. Consulta datos de propiedades, barrios, urbanismo, transporte, seguridad, y mas.</p>
+                <p style="color:var(--text-secondary);font-size:0.85rem;">Busca una direccion para ver su potencial urbanistico, o preguntale a la AI sobre Buenos Aires.</p>
             </div>
 
-            <div style="max-width:700px;margin:0 auto 1.5rem;">
+            <!-- Mode toggle -->
+            <div style="display:flex;justify-content:center;gap:0.5rem;margin-bottom:1.5rem;">
+                <button class="intel-mode-btn active" data-mode="address" onclick="switchIntelMode('address')" style="padding:0.4rem 1.2rem;border-radius:20px;border:1px solid var(--border);background:var(--accent);color:#000;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">📍 Explorar Direccion</button>
+                <button class="intel-mode-btn" data-mode="ai" onclick="switchIntelMode('ai')" style="padding:0.4rem 1.2rem;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">🧠 Preguntar AI</button>
+            </div>
+
+            <!-- ADDRESS EXPLORER -->
+            <div id="intel-address" style="max-width:700px;margin:0 auto 1.5rem;">
+                <div style="display:flex;gap:0.5rem;">
+                    <input type="text" id="addressInput" placeholder="Ej: Av Corrientes 1234, Gurruchaga 800, Pje Pila 7300"
+                        style="flex:1;padding:0.8rem 1.2rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:1rem;font-family:inherit;outline:none;">
+                    <button onclick="searchAddress()" id="addressBtn" style="padding:0.8rem 1.5rem;background:linear-gradient(135deg,#10b981,#06b6d4);color:#000;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;font-family:inherit;">Explorar</button>
+                </div>
+                <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.8rem;">
+                    <button class="addr-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">Av Corrientes 3200</button>
+                    <button class="addr-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">Gurruchaga 800</button>
+                    <button class="addr-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">Defensa 1500</button>
+                    <button class="addr-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.8rem;border-radius:16px;font-size:0.7rem;cursor:pointer;font-family:inherit;">Av Santa Fe 4000</button>
+                </div>
+            </div>
+
+            <!-- AI CHAT (hidden by default) -->
+            <div id="intel-ai" style="max-width:700px;margin:0 auto 1.5rem;display:none;">
                 <div style="display:flex;gap:0.5rem;">
                     <input type="text" id="intelInput" placeholder="Ej: que barrios tienen mas verde y menos ruido? o cuales propiedades tienen FOT alto?"
                         style="flex:1;padding:0.8rem 1.2rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:1rem;font-family:inherit;outline:none;">
@@ -742,7 +764,7 @@
             </div>
 
             <div id="intelResults" style="min-height:200px;">
-                <div class="empty-state">Haceme una pregunta sobre Buenos Aires y sus datos</div>
+                <div class="empty-state">Busca una direccion para ver FOT, usos del suelo, distrito y propiedades cercanas</div>
             </div>
 
             <div style="margin-top:2rem;padding:1rem;background:var(--bg-tertiary);border-radius:10px;">
@@ -3012,16 +3034,229 @@
             }
         }
 
+        // Intel mode toggle
+        function switchIntelMode(mode) {
+            document.querySelectorAll('.intel-mode-btn').forEach(btn => {
+                const isActive = btn.dataset.mode === mode;
+                btn.style.background = isActive ? 'var(--accent)' : 'transparent';
+                btn.style.color = isActive ? '#000' : 'var(--text-secondary)';
+            });
+            document.getElementById('intel-address').style.display = mode === 'address' ? 'block' : 'none';
+            document.getElementById('intel-ai').style.display = mode === 'ai' ? 'block' : 'none';
+        }
+
+        // Address explorer
+        async function searchAddress() {
+            const raw = document.getElementById('addressInput').value.trim();
+            if (!raw) return;
+            const container = document.getElementById('intelResults');
+            container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary);"><div class="spinner" style="display:inline-block;margin-bottom:0.5rem;"></div><br>Buscando datos urbanisticos...</div>';
+
+            // Parse street name and number
+            const match = raw.match(/^(.+?)\s+(\d+)\s*$/);
+            if (!match) {
+                container.innerHTML = '<div style="color:var(--red);padding:1rem;">Formato: nombre de calle + numero (ej: Av Corrientes 1234)</div>';
+                return;
+            }
+            let street = match[1].trim().toUpperCase()
+                .replace(/^AV\.?\s*/i, 'AV. ')
+                .replace(/^AVDA\.?\s*/i, 'AV. ')
+                .replace(/^AVENIDA\s*/i, 'AV. ')
+                .replace(/^PJE\.?\s*/i, 'PJE. ')
+                .replace(/^PASAJE\s*/i, 'PJE. ');
+            const number = match[2];
+            const headers = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
+
+            try {
+                const numN = parseInt(number);
+                const streetCore = street.replace(/^(AV\.|PJE\.|CNEL\.|GRAL\.|DR\.)\s*/i, '').trim();
+
+                // Use RPC function for efficient server-side search
+                const usosResp = await fetch(
+                    `${SUPABASE_URL}/rest/v1/rpc/search_address`,
+                    { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ street_query: streetCore, street_number: numN, radius: 50 }) }
+                );
+                const usos = usosResp.ok ? await usosResp.json() : [];
+
+                let bestSmp = null;
+                let exactUsos = [];
+                if (usos.length > 0) {
+                    bestSmp = usos[0].smp;
+                    exactUsos = usos.filter(u => u.smp === bestSmp);
+                }
+
+                if (!bestSmp) {
+                    container.innerHTML = `<div style="padding:1.5rem;background:var(--bg-tertiary);border-radius:12px;border:1px solid var(--border);">
+                        <div style="color:var(--yellow);font-weight:600;margin-bottom:0.5rem;">No encontrada</div>
+                        <div style="color:var(--text-secondary);font-size:0.85rem;">No se encontro "${raw}" en la base de usos del suelo de CABA (417K registros). Verifica la direccion o proba con una variante.</div>
+                    </div>`;
+                    return;
+                }
+
+                // Get codigo urbanistico for this SMP
+                const codResp = await fetch(
+                    `${SUPABASE_URL}/rest/v1/codigo_urbanistico?smp=eq.${encodeURIComponent(bestSmp)}&limit=1`,
+                    { headers }
+                );
+                const codData = codResp.ok ? await codResp.json() : [];
+                const cod = codData[0] || {};
+
+                // Get all usos for this SMP (full picture of the parcel)
+                const allUsosResp = await fetch(
+                    `${SUPABASE_URL}/rest/v1/usos_suelo?smp=eq.${encodeURIComponent(bestSmp)}&limit=50`,
+                    { headers }
+                );
+                const allUsos = allUsosResp.ok ? await allUsosResp.json() : exactUsos;
+
+                // Find properties in the same barrio
+                const barrio = cod.barrio || (exactUsos[0] && exactUsos[0].barrio) || '';
+                let nearbyProps = [];
+                if (barrio && allPropertiesRaw) {
+                    nearbyProps = allPropertiesRaw
+                        .filter(p => p.neighborhood && p.neighborhood.toUpperCase() === barrio.toUpperCase())
+                        .sort((a, b) => (a.price_per_sqm || 9999) - (b.price_per_sqm || 9999))
+                        .slice(0, 8);
+                }
+
+                // Get barrio median price
+                const barrioPrices = allPropertiesRaw
+                    .filter(p => p.neighborhood && p.neighborhood.toUpperCase() === barrio.toUpperCase() && p.price_per_sqm > 100 && p.price_per_sqm < 10000)
+                    .map(p => +p.price_per_sqm).sort((a, b) => a - b);
+                const medianPrice = barrioPrices.length ? barrioPrices[Math.floor(barrioPrices.length / 2)] : null;
+
+                // District descriptions
+                const districtDesc = {
+                    'R1': 'Residencial baja densidad', 'R2': 'Residencial media densidad',
+                    'R2a': 'Residencial media densidad A', 'R2b': 'Residencial media densidad B',
+                    'C1': 'Comercial baja', 'C2': 'Comercial media', 'C3': 'Comercial alta',
+                    'E1': 'Equipamiento baja', 'E2': 'Equipamiento media', 'E3': 'Equipamiento alta',
+                    'I': 'Industrial', 'U': 'Urbanizacion especial',
+                    'APH': 'Area de Proteccion Historica', 'RUA': 'Residencial uso alternativo'
+                };
+                const distBase = cod.distrito ? cod.distrito.replace(/\s+\d+$/, '').replace(/\d+$/, '') : '';
+                const distLabel = districtDesc[cod.distrito] || districtDesc[distBase] || cod.distrito || '?';
+
+                // Uso categories
+                const usoLabels = { '1': 'Residencial', '2': 'Comercial', '3': 'Equipamiento', '4': 'Industrial', '5': 'Sin uso' };
+
+                // Build existing uses summary
+                const usosGrouped = {};
+                allUsos.forEach(u => {
+                    const key = `${u.tipo1}${u.tipo2 ? ' - ' + u.tipo2 : ''}`;
+                    if (!usosGrouped[key]) usosGrouped[key] = { count: 0, pisos: u.pisos || 0, estado: u.estado };
+                    usosGrouped[key].count++;
+                    if (u.pisos > usosGrouped[key].pisos) usosGrouped[key].pisos = u.pisos;
+                });
+                const usosHtml = Object.entries(usosGrouped).map(([tipo, d]) =>
+                    `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:0.8rem;">
+                        <span>${tipo}</span>
+                        <span style="color:var(--dim);">${d.pisos ? d.pisos + ' pisos' : ''} ${d.estado ? '(' + d.estado.toLowerCase() + ')' : ''}</span>
+                    </div>`
+                ).join('');
+
+                // FOT bar visual
+                const fotMax = Math.max(cod.fot_em || 0, cod.fot_pl || 0, cod.fot_sl || 0);
+                const fotBar = (label, val) => {
+                    if (!val) return '';
+                    const pct = Math.min((val / 10) * 100, 100);
+                    return `<div style="margin-bottom:4px;">
+                        <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:2px;">
+                            <span style="color:var(--dim);">${label}</span><span style="color:var(--accent);font-weight:700;">${val}</span>
+                        </div>
+                        <div style="height:6px;background:var(--bg-secondary);border-radius:3px;overflow:hidden;">
+                            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:3px;"></div>
+                        </div>
+                    </div>`;
+                };
+
+                // Nearby props cards
+                const propsHtml = nearbyProps.length ? nearbyProps.map(p =>
+                    `<div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;min-width:180px;" onclick="openPropModal('${p.id}')">
+                        <div style="font-size:0.75rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title || 'Sin titulo'}</div>
+                        <div style="font-size:0.7rem;color:var(--dim);margin-top:2px;">${p.address_text || ''}</div>
+                        <div style="display:flex;gap:8px;margin-top:4px;font-size:0.7rem;">
+                            <span style="color:var(--accent);font-weight:700;">$${(p.price/1000).toFixed(0)}K</span>
+                            <span style="color:var(--text-secondary);">$${Math.round(p.price_per_sqm || 0)}/m2</span>
+                            <span style="color:var(--text-secondary);">${p.total_area || '?'}m2</span>
+                        </div>
+                    </div>`
+                ).join('') : '<div style="color:var(--dim);font-size:0.8rem;">Sin propiedades activas en este barrio</div>';
+
+                container.innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <!-- Left: Urbanistic data -->
+                        <div style="background:var(--bg-tertiary);border-radius:12px;padding:1.5rem;border:1px solid var(--border);">
+                            <div style="font-size:0.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem;">Parcela ${bestSmp}</div>
+                            <div style="font-size:1.1rem;font-weight:700;margin-bottom:0.2rem;">${exactUsos[0]?.calle || street} ${exactUsos[0]?.puerta || number}</div>
+                            <div style="font-size:0.8rem;color:var(--dim);margin-bottom:1rem;">${barrio} - Comuna ${cod.comuna || '?'}</div>
+
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;">
+                                <div style="background:var(--bg-secondary);border-radius:8px;padding:10px;text-align:center;">
+                                    <div style="font-size:0.65rem;color:var(--dim);text-transform:uppercase;">Distrito</div>
+                                    <div style="font-size:1.2rem;font-weight:700;color:var(--accent);">${cod.distrito || '?'}</div>
+                                    <div style="font-size:0.65rem;color:var(--text-secondary);">${distLabel}</div>
+                                </div>
+                                <div style="background:var(--bg-secondary);border-radius:8px;padding:10px;text-align:center;">
+                                    <div style="font-size:0.65rem;color:var(--dim);text-transform:uppercase;">Uso permitido</div>
+                                    <div style="font-size:1.2rem;font-weight:700;color:var(--green);">${usoLabels[cod.uso_1] || cod.uso_1 || '?'}</div>
+                                    <div style="font-size:0.65rem;color:var(--text-secondary);">${cod.tipo_manzana || ''}</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom:1rem;">
+                                <div style="font-size:0.75rem;font-weight:600;margin-bottom:6px;">FOT (Factor de Ocupacion Total)</div>
+                                ${fotBar('Entre medianeras', cod.fot_em)}
+                                ${fotBar('Planta libre', cod.fot_pl)}
+                                ${fotBar('Semi-libre', cod.fot_sl)}
+                            </div>
+
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                ${cod.microcentro ? '<span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(251,191,36,0.15);color:var(--yellow);">Microcentro</span>' : ''}
+                                ${cod.catalogado ? '<span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(239,68,68,0.15);color:var(--red);">Catalogado</span>' : ''}
+                                ${fotMax >= 4 ? '<span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(16,185,129,0.15);color:var(--green);">Alto potencial</span>' : ''}
+                                ${medianPrice ? `<span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">Mediana barrio: $${Math.round(medianPrice)}/m2</span>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Right: Current uses -->
+                        <div style="background:var(--bg-tertiary);border-radius:12px;padding:1.5rem;border:1px solid var(--border);">
+                            <div style="font-size:0.75rem;font-weight:600;margin-bottom:0.8rem;">Usos actuales en esta parcela (${allUsos.length})</div>
+                            ${usosHtml || '<div style="color:var(--dim);font-size:0.8rem;">Sin datos de uso registrados</div>'}
+                        </div>
+                    </div>
+
+                    <!-- Nearby properties -->
+                    <div style="margin-top:1rem;">
+                        <div style="font-size:0.75rem;font-weight:600;margin-bottom:0.5rem;">Propiedades en venta en ${barrio} (${nearbyProps.length})</div>
+                        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;">
+                            ${propsHtml}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                container.innerHTML = `<div style="color:var(--red);padding:1rem;">Error: ${error.message}</div>`;
+            }
+        }
+
         // Intel example clicks
         document.addEventListener('click', e => {
             if (e.target.classList.contains('intel-example')) {
                 document.getElementById('intelInput').value = e.target.textContent;
                 askIntel();
             }
+            if (e.target.classList.contains('addr-example')) {
+                document.getElementById('addressInput').value = e.target.textContent;
+                searchAddress();
+            }
         });
 
         document.getElementById('intelInput')?.addEventListener('keydown', e => {
             if (e.key === 'Enter') askIntel();
+        });
+
+        document.getElementById('addressInput')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') searchAddress();
         });
 
         async function analyzeProperty(propId) {
