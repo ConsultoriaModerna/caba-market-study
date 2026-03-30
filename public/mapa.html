@@ -470,11 +470,15 @@ function renderMarkers() {
         });
 
         const marker = L.marker([p.latitude, p.longitude], { icon, _pricePerSqm: p.price_per_sqm || 0 })
-            .bindPopup(() => createPopup(p), { maxWidth: 300, autoPan: true, autoPanPadding: [40, 40] });
+            .bindPopup(() => createPopup(p), { maxWidth: 300, autoPan: false, closeOnClick: false });
 
         marker.on('click', (e) => {
-            // Delay popup open slightly to avoid conflict with cluster zoom
-            setTimeout(() => { if (map.getZoom() >= 14) selectProp(p.id); }, 100);
+            setTimeout(() => {
+                if (map.getZoom() >= 14) {
+                    selectProp(p.id);
+                    marker.openPopup();
+                }
+            }, 200);
         });
         marker.propId = p.id;
         markerCluster.addLayer(marker);
