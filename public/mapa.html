@@ -291,7 +291,7 @@ const KEYWORDS = [
     { kw: 'escritura', label: 'Escritura' },
 ];
 const SEGMENTS = ['cheap','refac','recic','general'];
-const SOURCES = ['zonaprop','mercadolibre'];
+const SOURCES = ['zonaprop','mercadolibre','argenprop'];
 
 let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer, floodLayer, transportLayer, zonaLey6508Layer, busStopsLayer, busRoutesLayer, greenLayer, distritosLayer;
 let allProps = [];
@@ -372,7 +372,8 @@ function initChips() {
     SOURCES.forEach(s => {
         const chip = document.createElement('span');
         chip.className = 'seg-chip';
-        chip.innerHTML = `${s === 'zonaprop' ? 'ZonaProp' : 'MercadoLibre'} <span style="opacity:0.5;font-size:9px;">${srcCounts[s] || 0}</span>`;
+        const srcLabel = s === 'zonaprop' ? 'ZonaProp' : s === 'mercadolibre' ? 'MercadoLibre' : 'ArgProp';
+        chip.innerHTML = `${srcLabel} <span style="opacity:0.5;font-size:9px;">${srcCounts[s] || 0}</span>`;
         chip.onclick = () => {
             chip.classList.toggle('active');
             if (activeSrcs.has(s)) activeSrcs.delete(s); else activeSrcs.add(s);
@@ -1086,9 +1087,16 @@ async function init() {
         }
     });
 
-    // Enter key applies filters
+    // Auto-apply filters on any input change
     document.querySelectorAll('.filter-input').forEach(input => {
         input.addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
+        if (input.type === 'number') {
+            let debounce;
+            input.addEventListener('input', () => {
+                clearTimeout(debounce);
+                debounce = setTimeout(applyFilters, 400);
+            });
+        }
     });
 }
 
