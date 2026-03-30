@@ -213,7 +213,7 @@
             <div class="filter-section">
                 <div class="filter-label">Livability minimo</div>
                 <div class="filter-row">
-                    <input type="range" class="filter-input" id="f-liv-min" min="0" max="80" value="0" step="5" style="flex:1;" oninput="document.getElementById('liv-val').textContent=this.value">
+                    <input type="range" class="filter-input" id="f-liv-min" min="0" max="80" value="0" step="5" style="flex:1;" oninput="document.getElementById('liv-val').textContent=this.value;applyFilters()">
                     <span id="liv-val" style="color:var(--accent);font-weight:600;min-width:20px;text-align:right;">0</span>
                 </div>
             </div>
@@ -473,12 +473,7 @@ function renderMarkers() {
             .bindPopup(() => createPopup(p), { maxWidth: 300, autoPan: false, closeOnClick: false });
 
         marker.on('click', (e) => {
-            setTimeout(() => {
-                if (map.getZoom() >= 14) {
-                    selectProp(p.id);
-                    marker.openPopup();
-                }
-            }, 200);
+            selectProp(p.id);
         });
         marker.propId = p.id;
         markerCluster.addLayer(marker);
@@ -492,6 +487,7 @@ function createPopup(p) {
     }).join('');
 
     const link = p.permalink ? `<a href="${p.permalink}" target="_blank" class="popup-link">Ver aviso original &rarr;</a>` : '';
+    const trashBtn = `<button onclick="event.stopPropagation();deactivateProp('${p.id}')" title="Aviso dado de baja" style="background:none;border:1px solid #dc2626;color:#dc2626;border-radius:8px;padding:2px 8px;font-size:10px;cursor:pointer;margin-left:6px;opacity:0.7;transition:opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">🗑 Baja</button>`;
     const covRatio = p.covered_area && p.total_area ? `${Math.round(p.covered_area / p.total_area * 100)}%` : '—';
 
     return `<div class="popup-content">
@@ -508,7 +504,7 @@ function createPopup(p) {
             <dt>Fuente</dt><dd>${p.source}</dd>
         </dl>
         ${kwsHtml ? `<div class="popup-kws">${kwsHtml}</div>` : ''}
-        ${link}
+        <div style="display:flex;align-items:center;gap:4px;margin-top:8px;">${link}${trashBtn}</div>
     </div>`;
 }
 
@@ -547,21 +543,50 @@ function renderList() {
             </div>
             ${kwsHtml ? `<div class="prop-keywords">${kwsHtml}</div>` : ''}
             ${p.livability_score ? `<div style="margin-top:4px;font-size:9px;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444'};font-weight:700;">Livability: ${p.livability_score}/100</div>` : ''}
-            ${p.permalink ? `<a href="${p.permalink}" target="_blank" class="prop-link" onclick="event.stopPropagation()">Ver aviso &rarr;</a>` : ''}
+            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                ${p.permalink ? `<a href="${p.permalink}" target="_blank" class="prop-link" onclick="event.stopPropagation()" style="margin:0;">Ver aviso &rarr;</a>` : ''}
+                <button onclick="event.stopPropagation();deactivateProp('${p.id}')" title="Aviso dado de baja" style="background:none;border:1px solid rgba(220,38,38,0.4);color:#ef4444;border-radius:6px;padding:1px 6px;font-size:9px;cursor:pointer;opacity:0.6;transition:opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">🗑</button>
+            </div>
         </div>`;
     }).join('');
 }
 
 // Select property
+async function deactivateProp(id) {
+    if (!confirm('Marcar como dado de baja?')) return;
+    try {
+        const resp = await fetch(`${SB_URL}/rest/v1/properties?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: { ...HEADERS, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ is_active: false })
+        });
+        if (!resp.ok) throw new Error(`${resp.status}`);
+        allProps = allProps.filter(p => p.id !== id);
+        applyFilters();
+        map.closePopup();
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
 function selectProp(id) {
     selectedPropId = id;
     document.querySelectorAll('.prop-card').forEach(c => c.classList.toggle('selected', c.dataset.id === id));
 
-    // Fly to marker
+    // Fly to marker and open popup after animation
     markerCluster.eachLayer(m => {
         if (m.propId === id) {
-            map.flyTo(m.getLatLng(), 16, { duration: 0.6 });
-            setTimeout(() => m.openPopup(), 700);
+            const targetZoom = 16;
+            const currentZoom = map.getZoom();
+            if (currentZoom >= 14 && Math.abs(currentZoom - targetZoom) <= 2) {
+                map.flyTo(m.getLatLng(), targetZoom, { duration: 0.5 });
+                map.once('moveend', () => {
+                    setTimeout(() => m.openPopup(), 100);
+                });
+            } else {
+                map.setView(m.getLatLng(), targetZoom, { animate: false });
+                setTimeout(() => m.openPopup(), 300);
+            }
         }
     });
 
