@@ -3034,25 +3034,26 @@
 - Tablas Supabase: properties, codigo_urbanistico, usos_suelo, precios_historicos, espacios_culturales, demografico_barrios
 - Livability Score (0-100): ruido, inundacion, seguridad, subte, transporte`;
 
-                const resp = await fetch(`${SUPABASE_URL}/functions/v1/analyze-property`, {
+                const resp = await fetch(`${SUPABASE_URL}/functions/v1/intel-query`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        property: { title: 'Intel Query', description: question },
-                        comparables: [],
-                        barrio_median: null,
-                        system_prompt: `Eres un analista de inteligencia urbana de Buenos Aires. Respondes preguntas sobre el mercado inmobiliario, barrios, urbanismo, transporte, y calidad de vida en CABA usando los datos disponibles. Responde en espanol, conciso, con datos concretos. ${context}`,
-                        user_prompt: question
-                    })
+                    body: JSON.stringify({ question, context })
                 });
 
                 if (!resp.ok) throw new Error(`API error: ${resp.status}`);
                 const result = await resp.json();
+                if (result.error) throw new Error(result.error);
+
+                const sqlBlock = result.sql ? `<details style="margin-top:0.8rem;">
+                    <summary style="font-size:0.7rem;color:var(--dim);cursor:pointer;">SQL ejecutado (${result.row_count} filas)</summary>
+                    <pre style="font-size:0.7rem;color:var(--accent);background:var(--bg-primary);padding:0.5rem;border-radius:6px;margin-top:0.3rem;overflow-x:auto;white-space:pre-wrap;">${result.sql}</pre>
+                </details>` : '';
 
                 container.innerHTML = `
                     <div style="background:var(--bg-tertiary);border-radius:12px;padding:1.5rem;border:1px solid var(--border);">
                         <div style="font-size:0.7rem;color:var(--accent);margin-bottom:0.5rem;">Pregunta: ${question}</div>
-                        <div style="font-size:1.15rem;color:var(--text-primary);line-height:1.7;white-space:pre-wrap;">${result.analysis || result.message || JSON.stringify(result)}</div>
+                        <div style="font-size:1.15rem;color:var(--text-primary);line-height:1.7;white-space:pre-wrap;">${result.analysis}</div>
+                        ${sqlBlock}
                     </div>`;
             } catch (error) {
                 container.innerHTML = `<div style="color:var(--red);padding:1rem;">Error: ${error.message}</div>`;
