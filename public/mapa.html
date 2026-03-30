@@ -293,7 +293,11 @@ const KEYWORDS = [
 const SEGMENTS = ['cheap','refac','recic','general'];
 const SOURCES = ['zonaprop','mercadolibre','argenprop'];
 
-let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer, floodLayer, transportLayer, zonaLey6508Layer, busStopsLayer, busRoutesLayer, greenLayer, distritosLayer;
+let map, markerCluster, railwayLayer, bufferLayer, religiousLayer, villasLayer, railBufferLayer, crimeHeatLayer, subteLayer, subteProjectedLayer, isochronePalermoLayer, noiseLayer, floodLayer, transportLayer, zonaLey6508Layer, busStopsLayer, busRoutesLayer, greenLayer, distritosLayer, fotPotentialLayer;
+
+// Construction costs (March 2026, sources: APYMECO, CAC, iProf)
+const COSTO_CONSTRUCCION_M2 = 1400; // USD standard
+const COSTO_DIY_M2 = 980; // USD with 30% efficiency
 let allProps = [];
 let filtered = [];
 let activeKws = new Set();
@@ -491,12 +495,16 @@ function createPopup(p) {
     const trashBtn = `<button onclick="event.stopPropagation();deactivateProp('${p.id}')" title="Aviso dado de baja" style="background:none;border:1px solid #dc2626;color:#dc2626;border-radius:8px;padding:2px 8px;font-size:10px;cursor:pointer;margin-left:6px;opacity:0.7;transition:opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">🗑 Baja</button>`;
     const covRatio = p.covered_area && p.total_area ? `${Math.round(p.covered_area / p.total_area * 100)}%` : '—';
 
+    const m2Ampliables = p.m2_construibles && p.covered_area ? Math.max(0, p.m2_construibles - p.covered_area) : 0;
+    const costoDIY = m2Ampliables > 0 ? m2Ampliables * COSTO_DIY_M2 : 0;
     const fotInfo = p.fot_em ? `<div style="margin-top:6px;padding:6px 8px;background:#f0fdf4;border-radius:6px;border:1px solid #bbf7d0;">
         <div style="font-size:10px;font-weight:700;color:#166534;margin-bottom:2px;">Urbanistico${p.distrito ? ' - ' + p.distrito : ''}</div>
-        <div style="display:flex;gap:10px;font-size:11px;">
+        <div style="display:flex;gap:10px;font-size:11px;flex-wrap:wrap;">
             <span>FOT <b>${p.fot_em}</b></span>
             ${p.m2_construibles ? `<span>Construibles <b style="color:#15803d;">${fmt(p.m2_construibles)} m²</b></span>` : ''}
+            ${m2Ampliables > 0 ? `<span>Ampliables <b style="color:#0891b2;">${fmt(m2Ampliables)} m²</b></span>` : ''}
         </div>
+        ${m2Ampliables > 0 ? `<div style="font-size:10px;color:#555;margin-top:3px;">Costo ampliacion: <b>$${fmt(costoDIY)}</b> DIY ($${COSTO_DIY_M2}/m²) | $${fmt(m2Ampliables * COSTO_CONSTRUCCION_M2)} std ($${COSTO_CONSTRUCCION_M2}/m²)</div>` : ''}
         ${p.catalogado ? '<div style="font-size:9px;color:#dc2626;margin-top:2px;">Catalogado (restricciones)</div>' : ''}
     </div>` : '';
 
@@ -752,6 +760,61 @@ function loadBusRoutes() {
             }).addTo(busRoutesLayer);
         })
         .catch(e => console.warn('Bus routes failed:', e));
+}
+
+// FOT Potential layer (barrio bubbles showing construction potential)
+function loadFotPotential() {
+    fetch(`${SB_URL}/rest/v1/fot_barrio_potential?select=*&order=potencial.desc`, { headers: HEADERS })
+        .then(r => r.json())
+        .then(data => {
+            data.forEach(d => {
+                if (!d.lat || !d.lon) return;
+                const pot = Number(d.potencial) || 0;
+                const fotAvg = Number(d.fot_promedio) || 0;
+                const pisosAvg = Number(d.pisos_promedio) || 0;
+                const saturacion = Number(d.ratio_saturacion) || 0;
+                const parcelas = d.parcelas;
+
+                // Color: green = high potential, yellow = moderate, red = saturated
+                const color = pot > 0.15 ? '#10b981' : pot > 0.05 ? '#fbbf24' : saturacion > 1.2 ? '#ef4444' : '#6b7280';
+                const radius = Math.max(12, Math.min(30, parcelas / 400));
+
+                const potPct = Math.round(pot * 100);
+                const satPct = Math.round(saturacion * 100);
+
+                L.circleMarker([d.lat, d.lon], {
+                    radius, color, fillColor: color,
+                    fillOpacity: 0.25, weight: 2, opacity: 0.7
+                }).bindPopup(`
+                    <div style="min-width:220px;font-family:'Inter',sans-serif;">
+                        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">${d.barrio}</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">
+                            <div><b>FOT promedio:</b> ${fotAvg}</div>
+                            <div><b>Pisos promedio:</b> ${pisosAvg}</div>
+                            <div><b>Parcelas:</b> ${parcelas.toLocaleString()}</div>
+                            <div><b>FOT maximo:</b> ${d.fot_max}</div>
+                        </div>
+                        <div style="margin-top:8px;padding:6px;border-radius:6px;background:${pot > 0.1 ? '#f0fdf4' : saturacion > 1.1 ? '#fef2f2' : '#f9fafb'};border:1px solid ${pot > 0.1 ? '#bbf7d0' : saturacion > 1.1 ? '#fecaca' : '#e5e7eb'};">
+                            <div style="font-size:11px;font-weight:700;color:${color};">
+                                ${pot > 0.1 ? '↑ Potencial: ' + potPct + '% espacio para construir' : saturacion > 1.1 ? '↓ Sobresaturado: ' + satPct + '% del FOT usado' : '≈ Equilibrado: ' + satPct + '% del FOT usado'}
+                            </div>
+                            ${pot > 0.05 ? `<div style="font-size:10px;color:#666;margin-top:2px;">Costo construir extra: ~$${COSTO_DIY_M2}/m2 (DIY) | $${COSTO_CONSTRUCCION_M2}/m2 (standard)</div>` : ''}
+                        </div>
+                    </div>
+                `).addTo(fotPotentialLayer);
+
+                // Label
+                L.marker([d.lat, d.lon], {
+                    icon: L.divIcon({
+                        className: '',
+                        html: `<div style="font-size:9px;font-weight:700;color:${color};text-align:center;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;">${d.barrio}<br><span style="font-size:11px;">${potPct > 0 ? '+' + potPct + '%' : satPct + '%'}</span></div>`,
+                        iconSize: [80, 24],
+                        iconAnchor: [40, 12]
+                    })
+                }).addTo(fotPotentialLayer);
+            });
+        })
+        .catch(e => console.warn('FOT potential failed:', e));
 }
 
 // Distritos economicos (tech, arts, design, sports, audiovisual)
@@ -1061,6 +1124,7 @@ async function init() {
     busRoutesLayer = L.featureGroup();
     greenLayer = L.featureGroup();
     distritosLayer = L.featureGroup();
+    fotPotentialLayer = L.featureGroup();
 
     const overlays = {
         'Propiedades': markerCluster,
@@ -1074,6 +1138,7 @@ async function init() {
         'Delitos (heatmap)': crimeHeatLayer,
         'Lugares de Culto': religiousLayer,
         'Distritos Economicos': distritosLayer,
+        'Potencial FOT': fotPotentialLayer,
         'Zona Ley 6508 / IA': zonaLey6508Layer,
         'Verde urbano': greenLayer,
         'Colectivos (paradas)': busStopsLayer,
@@ -1142,6 +1207,7 @@ async function init() {
         'Palermo 10-60min (auto+pie)': loadPalermoIsochrone,
         'Lugares de Culto': loadReligious,
         'Distritos Economicos': loadDistritos,
+        'Potencial FOT': loadFotPotential,
         'Zona Ley 6508 / IA': loadZonaMicrocentro
     };
     const lazyLoaded = {};
