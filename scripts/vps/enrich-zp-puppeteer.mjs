@@ -11,9 +11,42 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const DELAY = parseInt(process.argv[2] || '3000');
+const BASE_DELAY = parseInt(process.argv[2] || '3000');
 const BATCH_SIZE = parseInt(process.argv[3] || '500');
 const PROFILE_DIR = '/opt/caba-market-study/.chrome-profile';
+
+// Circuit breaker for enrichment
+const CB = {
+  consecutiveCf: 0,
+  totalCf: 0,
+  consecutiveErrors: 0,
+  currentDelay: BASE_DELAY,
+  MAX_CONSECUTIVE_CF: 3,
+  MAX_TOTAL_CF: 5,
+  MAX_CONSECUTIVE_ERRORS: 10,
+
+  onSuccess() {
+    this.consecutiveCf = 0;
+    this.consecutiveErrors = 0;
+    this.currentDelay = BASE_DELAY;
+  },
+  onCf() {
+    this.consecutiveCf++;
+    this.totalCf++;
+    this.currentDelay = Math.min(this.currentDelay * 2, 20000);
+    console.log(`  [CB] CF hit #${this.totalCf} (consecutive: ${this.consecutiveCf}, delay now ${Math.round(this.currentDelay)}ms)`);
+  },
+  onError() {
+    this.consecutiveErrors++;
+    this.currentDelay = Math.min(this.currentDelay * 1.5, 15000);
+  },
+  shouldPause() {
+    return this.consecutiveCf >= this.MAX_CONSECUTIVE_CF;
+  },
+  shouldAbort() {
+    return this.totalCf >= this.MAX_TOTAL_CF || this.consecutiveErrors >= this.MAX_CONSECUTIVE_ERRORS;
+  }
+};
 
 function extractFromBody(body) {
   const data = {};
@@ -91,6 +124,17 @@ async function main() {
     const prop = props[i];
     if (!prop.permalink) { skipped++; continue; }
 
+    // Circuit breaker checks
+    if (CB.shouldAbort()) {
+      console.log(`\n[CB] ABORT -- too many blocks (${CB.totalCf} CF, ${CB.consecutiveErrors} consecutive errors). Stopping to protect IP.`);
+      break;
+    }
+    if (CB.shouldPause()) {
+      console.log(`  [CB] ${CB.consecutiveCf} consecutive CF hits. Pausing 120s...`);
+      await new Promise(r => setTimeout(r, 120000));
+      CB.consecutiveCf = 0; // Reset consecutive after pause
+    }
+
     try {
       await page.goto(prop.permalink, { waitUntil: 'domcontentloaded', timeout: 15000 });
       await page.waitForFunction(() => !document.title.includes('moment'), { timeout: 10000 }).catch(() => {});
@@ -109,8 +153,7 @@ async function main() {
       });
 
       if (pageData.title.includes('moment')) {
-        console.log('  ⚠️ CF challenge at', prop.id, '— waiting 15s');
-        await new Promise(r => setTimeout(r, 15000));
+        CB.onCf();
         errors++;
         continue;
       }
@@ -134,22 +177,24 @@ async function main() {
 
       if (Object.keys(update).length > 2) {
         const { error: upErr } = await supabase.from('properties').update(update).eq('id', prop.id);
-        if (upErr) errors++;
-        else enriched++;
+        if (upErr) { errors++; CB.onError(); }
+        else { enriched++; CB.onSuccess(); }
       } else {
         skipped++;
+        CB.onSuccess();
       }
     } catch (e) {
       errors++;
+      CB.onError();
     }
 
     if ((i + 1) % 25 === 0 || i === props.length - 1) {
       const elapsed = Math.round((Date.now() - t0) / 1000);
       const eta = Math.round(((Date.now() - t0) / (i + 1)) * (props.length - i - 1) / 1000);
-      console.log(`  📊 ${i + 1}/${props.length} — enriched: ${enriched}, skip: ${skipped}, err: ${errors} [${elapsed}s, ~${eta}s ETA]`);
+      console.log(`  ${i + 1}/${props.length} -- enriched: ${enriched}, skip: ${skipped}, err: ${errors}, cf: ${CB.totalCf} [${elapsed}s, ~${eta}s ETA]`);
     }
 
-    await new Promise(r => setTimeout(r, DELAY));
+    await new Promise(r => setTimeout(r, CB.currentDelay));
   }
 
   await browser.close();

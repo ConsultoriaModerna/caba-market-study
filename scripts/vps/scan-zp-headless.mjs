@@ -16,7 +16,45 @@ const supabase = createClient(
 
 const MAX_PAGES = parseInt(process.argv[2] || '20');
 const PROFILE_DIR = '/opt/caba-market-study/.chrome-profile';
-const DELAY_MS = 4000;
+const BASE_DELAY_MS = 4000;
+const COOLDOWN_BETWEEN_ZONES_MS = 30000;
+
+// Circuit breaker: detect blocks early, never escalate
+const CB = {
+  consecutiveFails: 0,    // timeouts + CF challenges + empty pages in a row
+  totalCfHits: 0,         // total CF challenges across all zones
+  zonesAborted: 0,        // zones abandoned due to blocks
+  MAX_CONSECUTIVE: 3,     // abort zone after 3 consecutive fails
+  MAX_CF_TOTAL: 5,        // abort entirely after 5 CF hits
+  MAX_ZONES_ABORTED: 2,   // abort entirely after 2 zones fail
+  BACKOFF_PAUSE_MS: 60000, // 60s pause when hitting limit
+  currentDelay: 4000,     // dynamic delay, increases after warnings
+
+  onSuccess() {
+    this.consecutiveFails = 0;
+    this.currentDelay = BASE_DELAY_MS;
+  },
+  onWarning(reason) {
+    this.consecutiveFails++;
+    this.currentDelay = Math.min(this.currentDelay * 1.5, 15000);
+    console.log(`  [CB] Warning #${this.consecutiveFails}: ${reason} (delay now ${Math.round(this.currentDelay)}ms)`);
+  },
+  onCfHit() {
+    this.totalCfHits++;
+    this.onWarning(`Cloudflare challenge (${this.totalCfHits} total)`);
+  },
+  shouldAbortZone() {
+    return this.consecutiveFails >= this.MAX_CONSECUTIVE;
+  },
+  shouldAbortAll() {
+    return this.totalCfHits >= this.MAX_CF_TOTAL || this.zonesAborted >= this.MAX_ZONES_ABORTED;
+  },
+  abortZone(zoneName) {
+    this.zonesAborted++;
+    this.consecutiveFails = 0;
+    console.log(`  [CB] ABORT zone ${zoneName} (${this.zonesAborted} zones aborted)`);
+  }
+};
 
 // Parse --zone flag
 const zoneArg = process.argv.find(a => a.startsWith('--zone='))?.split('=')[1] || 'all';
@@ -104,6 +142,12 @@ async function scanLocation(page, location) {
   let allScanned = [];
 
   for (let pg = 1; pg <= MAX_PAGES; pg++) {
+    // Circuit breaker: check before each page
+    if (CB.shouldAbortZone()) {
+      CB.abortZone(location.city);
+      break;
+    }
+
     const url = pg === 1 ? `${baseUrl}.html` : `${baseUrl}-pagina-${pg}.html`;
 
     try {
@@ -112,9 +156,16 @@ async function scanLocation(page, location) {
       // Check for Cloudflare
       const title = await page.title();
       if (title.includes('moment') || title.includes('Cloudflare')) {
-        console.log(`  Page ${pg}: Cloudflare challenge, waiting 10s...`);
-        await new Promise(r => setTimeout(r, 10000));
+        CB.onCfHit();
+        if (CB.shouldAbortZone()) break;
+        console.log(`  Page ${pg}: CF challenge, backing off ${CB.BACKOFF_PAUSE_MS / 1000}s...`);
+        await new Promise(r => setTimeout(r, CB.BACKOFF_PAUSE_MS));
         await page.reload({ waitUntil: 'networkidle2', timeout: 30000 });
+        const t2 = await page.title();
+        if (t2.includes('moment') || t2.includes('Cloudflare')) {
+          CB.onCfHit();
+          break; // Still blocked after pause, abort zone
+        }
       }
 
       // Wait for listings to load
@@ -123,9 +174,13 @@ async function scanLocation(page, location) {
       const data = await page.evaluate(EXTRACT_JS);
 
       if (!data || data.count === 0) {
+        CB.onWarning('empty page');
         console.log(`  Page ${pg}: no listings found`);
         break;
       }
+
+      // Success -- reset circuit breaker
+      CB.onSuccess();
 
       for (const item of data.results) {
         allScanned.push(item);
@@ -139,10 +194,12 @@ async function scanLocation(page, location) {
         break;
       }
     } catch (e) {
+      CB.onWarning(e.message.substring(0, 60));
       console.log(`  Page ${pg}: ${e.message.substring(0, 80)}`);
+      if (CB.shouldAbortZone()) break;
     }
 
-    await new Promise(r => setTimeout(r, DELAY_MS));
+    await new Promise(r => setTimeout(r, CB.currentDelay));
   }
 
   // Insert new properties
@@ -227,10 +284,20 @@ async function main() {
   let grandTotal = { scanned: 0, new: 0, updated: 0 };
 
   for (const loc of locations) {
+    if (CB.shouldAbortAll()) {
+      console.log(`\n[CB] ABORT ALL -- too many blocks (${CB.totalCfHits} CF hits, ${CB.zonesAborted} zones aborted). Stopping to avoid escalation.`);
+      break;
+    }
     const result = await scanLocation(page, loc);
     grandTotal.scanned += result.scanned;
     grandTotal.new += result.newCount;
     grandTotal.updated += result.updatedCount;
+
+    // Cooldown between zones
+    if (locations.indexOf(loc) < locations.length - 1) {
+      console.log(`  Cooldown ${COOLDOWN_BETWEEN_ZONES_MS / 1000}s before next zone...`);
+      await new Promise(r => setTimeout(r, COOLDOWN_BETWEEN_ZONES_MS));
+    }
   }
 
   await browser.close();

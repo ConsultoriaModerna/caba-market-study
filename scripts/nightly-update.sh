@@ -55,14 +55,26 @@ echo "$AP_OUT"
 AP_NEW=$(echo "$AP_OUT" | grep -oP '\d+ new' | grep -oP '\d+' || echo "0")
 
 # ── Step 4: ZP Enrichment (loop until backlog < 50, batch 500)
+# If scraper hit a block, the enricher will also likely be blocked -- skip
 echo "--- [4/7] ZP Enrichment (Puppeteer, batch loop) ---"
 ZP_ENRICHED=0
 BATCH=1
 MAX_BATCHES=10
 while [ $BATCH -le $MAX_BATCHES ]; do
   echo "  Batch $BATCH/$MAX_BATCHES..."
-  ENRICH_OUT=$(node scripts/vps/enrich-zp-puppeteer.mjs 3000 500 2>&1) || { ERRORS="${ERRORS}ZP enrich batch $BATCH failed. "; break; }
+  ENRICH_OUT=$(node scripts/vps/enrich-zp-puppeteer.mjs 3000 500 2>&1)
+  ENRICH_EXIT=$?
   echo "$ENRICH_OUT"
+
+  # If circuit breaker aborted, stop enrichment loop immediately
+  if echo "$ENRICH_OUT" | grep -q "\[CB\] ABORT"; then
+    ERRORS="${ERRORS}ZP enrich aborted by circuit breaker (batch $BATCH). "
+    break
+  fi
+  if [ $ENRICH_EXIT -ne 0 ]; then
+    ERRORS="${ERRORS}ZP enrich batch $BATCH failed. "
+    break
+  fi
 
   BATCH_COUNT=$(echo "$ENRICH_OUT" | grep -oP 'Updated \d+' | grep -oP '\d+' || echo "0")
   ZP_ENRICHED=$((ZP_ENRICHED + BATCH_COUNT))
@@ -81,7 +93,7 @@ while [ $BATCH -le $MAX_BATCHES ]; do
   echo "  Remaining: $REMAINING"
   [ "$REMAINING" -lt 50 ] && break
   BATCH=$((BATCH + 1))
-  sleep 5
+  sleep 10
 done
 
 # ── Step 5: ML Enrichment (descriptions, if enabled)

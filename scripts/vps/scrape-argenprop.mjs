@@ -15,8 +15,30 @@ const supabase = createClient(
 
 const MAX_PAGES = parseInt(process.argv[2] || '15');
 const PROFILE_DIR = '/opt/caba-market-study/.chrome-profile-ap';
-const DELAY_MS = 4000;
+const BASE_DELAY_MS = 4000;
+const COOLDOWN_BETWEEN_ZONES_MS = 20000;
 const zoneArg = process.argv.find(a => a.startsWith('--zone='))?.split('=')[1] || 'all';
+
+// Circuit breaker
+const CB = {
+  consecutiveFails: 0,
+  totalFails: 0,
+  zonesAborted: 0,
+  currentDelay: BASE_DELAY_MS,
+  MAX_CONSECUTIVE: 3,
+  MAX_ZONES_ABORTED: 2,
+
+  onSuccess() { this.consecutiveFails = 0; this.currentDelay = BASE_DELAY_MS; },
+  onFail(reason) {
+    this.consecutiveFails++;
+    this.totalFails++;
+    this.currentDelay = Math.min(this.currentDelay * 1.5, 15000);
+    console.log(`  [CB] Fail #${this.consecutiveFails}: ${reason} (delay now ${Math.round(this.currentDelay)}ms)`);
+  },
+  shouldAbortZone() { return this.consecutiveFails >= this.MAX_CONSECUTIVE; },
+  shouldAbortAll() { return this.zonesAborted >= this.MAX_ZONES_ABORTED; },
+  abortZone(name) { this.zonesAborted++; this.consecutiveFails = 0; console.log(`  [CB] ABORT zone ${name}`); }
+};
 
 const AP_ZONES = [
   { id: 'caba', name: 'Capital Federal', state: 'CABA', slug: 'casas/venta/capital-federal' },
@@ -133,20 +155,36 @@ async function scrapeZone(page, zone) {
   let totalNew = 0;
 
   for (let pg = 1; pg <= MAX_PAGES; pg++) {
+    if (CB.shouldAbortZone()) { CB.abortZone(zone.name); break; }
+
     const url = pg === 1
       ? `https://www.argenprop.com/${zone.slug}`
       : `https://www.argenprop.com/${zone.slug}?pagina-${pg}`;
 
     try {
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+
+      // Check for blocks (captcha, 403, etc)
+      const title = await page.title();
+      if (title.includes('403') || title.includes('blocked') || title.includes('captcha')) {
+        CB.onFail(`blocked: ${title.substring(0, 40)}`);
+        if (CB.shouldAbortZone()) break;
+        console.log(`  Page ${pg}: blocked, pausing 60s...`);
+        await new Promise(r => setTimeout(r, 60000));
+        continue;
+      }
+
       await page.waitForSelector('a.card[data-item-card], .card[data-item-card]', { timeout: 10000 }).catch(() => {});
 
       const data = await page.evaluate(EXTRACT_JS);
 
       if (!data || data.count === 0) {
+        CB.onFail('empty page');
         console.log(`  Page ${pg}: no results`);
         break;
       }
+
+      CB.onSuccess();
 
       const rows = data.results.map(item => {
         const id = 'ap_' + item.ap_id;
@@ -200,10 +238,12 @@ async function scrapeZone(page, zone) {
         break;
       }
     } catch (e) {
+      CB.onFail(e.message.substring(0, 60));
       console.log(`  Page ${pg}: ${e.message.substring(0, 80)}`);
+      if (CB.shouldAbortZone()) break;
     }
 
-    await new Promise(r => setTimeout(r, DELAY_MS));
+    await new Promise(r => setTimeout(r, CB.currentDelay));
   }
 
   return { zone: zone.id, scraped: totalScraped, new: totalNew };
@@ -232,9 +272,18 @@ async function main() {
 
   let grandTotal = { scraped: 0, new: 0 };
   for (const zone of zones) {
+    if (CB.shouldAbortAll()) {
+      console.log(`\n[CB] ABORT ALL -- ${CB.zonesAborted} zones failed. Stopping.`);
+      break;
+    }
     const result = await scrapeZone(page, zone);
     grandTotal.scraped += result.scraped;
     grandTotal.new += result.new;
+
+    if (zones.indexOf(zone) < zones.length - 1) {
+      console.log(`  Cooldown ${COOLDOWN_BETWEEN_ZONES_MS / 1000}s before next zone...`);
+      await new Promise(r => setTimeout(r, COOLDOWN_BETWEEN_ZONES_MS));
+    }
   }
 
   await browser.close();
