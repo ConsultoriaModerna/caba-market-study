@@ -849,18 +849,35 @@ function loadSubte() {
         })
         .catch(e => console.warn('Subte lines failed:', e));
 
-    // Stations
+    // Stations (active lines)
     fetch('/data/subte_stations.json')
         .then(r => r.json())
         .then(stations => {
             stations.forEach(s => {
                 L.circleMarker([s.lat, s.lon], {
-                    radius: 4, color: s.color, fillColor: s.color,
-                    fillOpacity: 0.9, weight: 1.5, opacity: 1
+                    radius: 5, color: '#fff', fillColor: s.color,
+                    fillOpacity: 1, weight: 2, opacity: 1
                 }).bindPopup(`<b>${s.name}</b><br>Linea ${s.line}`).addTo(subteLayer);
             });
         })
         .catch(e => console.warn('Subte stations failed:', e));
+
+    // Projected stations (from line endpoints)
+    fetch('/data/subte.geojson')
+        .then(r => r.json())
+        .then(geojson => {
+            geojson.features.filter(f => f.properties.projected).forEach(f => {
+                const props = f.properties;
+                f.geometry.coordinates.forEach(c => {
+                    L.circleMarker([c[1], c[0]], {
+                        radius: 4, color: '#fff', fillColor: props.color,
+                        fillOpacity: 0.5, weight: 1.5, opacity: 0.6,
+                        dashArray: '3,3'
+                    }).bindPopup(`<b>Estacion proyectada</b><br>Linea ${props.line}`).addTo(subteProjectedLayer);
+                });
+            });
+        })
+        .catch(e => console.warn('Projected stations failed:', e));
 }
 
 // Pre-computed isochrones from Palermo (10-60min, car + walk)
