@@ -56,15 +56,14 @@ const CB = {
   }
 };
 
-// Parse --zone flag
+// Parse --zone and --type flags
 const zoneArg = process.argv.find(a => a.startsWith('--zone='))?.split('=')[1] || 'all';
+const typeArg = process.argv.find(a => a.startsWith('--type='))?.split('=')[1] || 'casa';
 
-const ZP_LOCATIONS = [
-  { slug: 'casas-venta-capital-federal', state: 'CABA', city: 'Capital Federal' },
-  { slug: 'casas-venta-vicente-lopez', state: 'Buenos Aires', city: 'Vicente Lopez' },
-  { slug: 'casas-venta-martinez-san-isidro', state: 'Buenos Aires', city: 'Martinez' },
-  { slug: 'casas-venta-san-isidro', state: 'Buenos Aires', city: 'San Isidro' },
-];
+import { getZPLocations, PROPERTY_TYPES } from '../zones-config.mjs';
+
+const ZP_LOCATIONS = getZPLocations(typeArg);
+const PROP_TYPE_LABEL = PROPERTY_TYPES.find(t => t.id === typeArg)?.label || typeArg;
 
 function getLocations() {
   if (zoneArg === 'all') return ZP_LOCATIONS;
@@ -217,7 +216,7 @@ async function scanLocation(page, location) {
       id,
       slug: item.slug,
       permalink: 'https://www.zonaprop.com.ar' + item.slug,
-      title: item.title || `Casa en ${neighborhood || location.city}`,
+      title: item.title || `${PROP_TYPE_LABEL} en ${neighborhood || location.city}`,
       price, currency,
       total_area: features.total_area,
       ambientes: features.ambientes,
@@ -225,7 +224,7 @@ async function scanLocation(page, location) {
       neighborhood,
       source: 'zonaprop',
       operation: 'venta',
-      property_type: 'casa',
+      property_type: location.property_type || typeArg,
       state: location.state,
       city: location.city,
       is_active: true,

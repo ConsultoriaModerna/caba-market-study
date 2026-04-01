@@ -18,6 +18,10 @@ const PROFILE_DIR = '/opt/caba-market-study/.chrome-profile-ap';
 const BASE_DELAY_MS = 4000;
 const COOLDOWN_BETWEEN_ZONES_MS = 20000;
 const zoneArg = process.argv.find(a => a.startsWith('--zone='))?.split('=')[1] || 'all';
+const typeArg = process.argv.find(a => a.startsWith('--type='))?.split('=')[1] || 'casa';
+
+import { getAPZones, PROPERTY_TYPES } from '../zones-config.mjs';
+const PROP_TYPE_LABEL = PROPERTY_TYPES.find(t => t.id === typeArg)?.label || typeArg;
 
 // Circuit breaker
 const CB = {
@@ -40,14 +44,11 @@ const CB = {
   abortZone(name) { this.zonesAborted++; this.consecutiveFails = 0; console.log(`  [CB] ABORT zone ${name}`); }
 };
 
-const AP_ZONES = [
-  { id: 'caba', name: 'Capital Federal', state: 'CABA', slug: 'casas/venta/capital-federal' },
-  { id: 'gba-norte', name: 'GBA Norte', state: 'Buenos Aires', slug: 'casas/venta/zona-norte-gba' },
-];
+const AP_ZONES_CONFIG = getAPZones(typeArg);
 
 function getZones() {
-  if (zoneArg === 'all') return AP_ZONES;
-  return AP_ZONES.filter(z => z.id === zoneArg);
+  if (zoneArg === 'all') return AP_ZONES_CONFIG;
+  return AP_ZONES_CONFIG.filter(z => z.id === zoneArg);
 }
 
 // Extract listing data from Argenprop page via browser JS
@@ -194,11 +195,11 @@ async function scrapeZone(page, zone) {
 
         return {
           id,
-          title: item.title || `Casa en ${neighborhood || zone.name}`,
+          title: item.title || `${PROP_TYPE_LABEL} en ${neighborhood || zone.name}`,
           price: item.price,
           currency: item.currency,
           operation: 'venta',
-          property_type: 'casa',
+          property_type: zone.property_type || typeArg,
           total_area: item.totalArea,
           covered_area: item.coveredArea,
           bedrooms: item.dorms,

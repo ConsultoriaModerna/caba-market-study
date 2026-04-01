@@ -41,18 +41,41 @@ else
   echo "--- [1/7] ML Scan -- SKIPPED (ML_ENABLED=false) ---"
 fi
 
-# ── Step 2: ZP Grid Scan (all zones: CABA + GBA Norte, ~10 min)
-echo "--- [2/7] ZP Grid Scan (headless, all zones) ---"
-ZP_OUT=$(node scripts/vps/scan-zp-headless.mjs 20 --zone=all 2>&1) || ERRORS="${ERRORS}ZP scan failed. "
-echo "$ZP_OUT"
-ZP_NEW=$(echo "$ZP_OUT" | grep -oP '\d+ new,' | grep -oP '\d+' || echo "0")
-ZP_REFRESHED=$(echo "$ZP_OUT" | grep -oP '\d+ refreshed' | grep -oP '\d+' || echo "0")
+# ── Step 2: ZP Grid Scan (all zones, all active types)
+echo "--- [2/7] ZP Grid Scan (headless, all zones, multi-type) ---"
+ZP_NEW=0
+ZP_REFRESHED=0
+for TYPE in casa ph departamento; do
+  echo "  >> ZP scan: $TYPE"
+  ZP_OUT=$(node scripts/vps/scan-zp-headless.mjs 20 --zone=all --type=$TYPE 2>&1) || ERRORS="${ERRORS}ZP scan ($TYPE) failed. "
+  echo "$ZP_OUT"
+  ZP_T_NEW=$(echo "$ZP_OUT" | grep -oP '\d+ new,' | grep -oP '\d+' || echo "0")
+  ZP_T_REF=$(echo "$ZP_OUT" | grep -oP '\d+ refreshed' | grep -oP '\d+' || echo "0")
+  ZP_NEW=$((ZP_NEW + ZP_T_NEW))
+  ZP_REFRESHED=$((ZP_REFRESHED + ZP_T_REF))
+  # Check circuit breaker between types
+  if echo "$ZP_OUT" | grep -q "\[CB\] ABORT"; then
+    ERRORS="${ERRORS}ZP scan ($TYPE) aborted by CB. "
+    break
+  fi
+  sleep 30  # cooldown between property types
+done
 
-# ── Step 3: AP Scan (CABA + GBA Norte, ~8 min)
-echo "--- [3/7] Argenprop Scan (CABA + GBA Norte) ---"
-AP_OUT=$(node scripts/vps/scrape-argenprop.mjs 15 --zone=all 2>&1) || ERRORS="${ERRORS}AP scan failed. "
-echo "$AP_OUT"
-AP_NEW=$(echo "$AP_OUT" | grep -oP '\d+ new' | grep -oP '\d+' || echo "0")
+# ── Step 3: AP Scan (all zones, all active types)
+echo "--- [3/7] Argenprop Scan (multi-type) ---"
+AP_NEW=0
+for TYPE in casa ph departamento; do
+  echo "  >> AP scan: $TYPE"
+  AP_OUT=$(node scripts/vps/scrape-argenprop.mjs 15 --zone=all --type=$TYPE 2>&1) || ERRORS="${ERRORS}AP scan ($TYPE) failed. "
+  echo "$AP_OUT"
+  AP_T_NEW=$(echo "$AP_OUT" | grep -oP '\d+ new' | grep -oP '\d+' || echo "0")
+  AP_NEW=$((AP_NEW + AP_T_NEW))
+  if echo "$AP_OUT" | grep -q "\[CB\] ABORT"; then
+    ERRORS="${ERRORS}AP scan ($TYPE) aborted by CB. "
+    break
+  fi
+  sleep 20
+done
 
 # ── Step 4: ZP Enrichment (loop until backlog < 50, batch 500)
 # If scraper hit a block, the enricher will also likely be blocked -- skip
