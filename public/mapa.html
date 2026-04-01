@@ -227,6 +227,10 @@
                 <div class="chip-group" id="kw-chips"></div>
             </div>
             <div class="filter-section">
+                <div class="filter-label">Tipo de propiedad</div>
+                <div class="chip-group" id="type-chips"></div>
+            </div>
+            <div class="filter-section">
                 <div class="filter-label">Segmento</div>
                 <div class="chip-group" id="seg-chips"></div>
             </div>
@@ -393,6 +397,7 @@ function setPriceMode(mode) {
 let activeKws = new Set();
 let activeSegs = new Set();
 let activeSrcs = new Set();
+let activeTypes = new Set();
 let selectedPropId = null;
 
 // Color by USD/m²
@@ -443,6 +448,24 @@ function initChips() {
             applyFilters();
         };
         kwContainer.appendChild(chip);
+    });
+
+    // Property type chips
+    const typeContainer = document.getElementById('type-chips');
+    const typeCounts = {};
+    allProps.forEach(p => { if (p.property_type) typeCounts[p.property_type] = (typeCounts[p.property_type] || 0) + 1; });
+    const TYPE_LABELS = { casa: 'Casa', departamento: 'Depto', ph: 'PH', local: 'Local', oficina: 'Oficina' };
+    Object.keys(TYPE_LABELS).forEach(t => {
+        if (!typeCounts[t]) return;
+        const chip = document.createElement('span');
+        chip.className = 'seg-chip';
+        chip.innerHTML = `${TYPE_LABELS[t]} <span style="opacity:0.5;font-size:9px;">${typeCounts[t]}</span>`;
+        chip.onclick = () => {
+            chip.classList.toggle('active');
+            if (activeTypes.has(t)) activeTypes.delete(t); else activeTypes.add(t);
+            applyFilters();
+        };
+        typeContainer.appendChild(chip);
     });
 
     const segContainer = document.getElementById('seg-chips');
@@ -563,6 +586,7 @@ function applyFilters() {
         if (p.price_per_sqm > uMax) return false;
         if (p.ambientes && p.ambientes < ambMin) return false;
         if (livMin > 0 && (!p.livability_score || p.livability_score < livMin)) return false;
+        if (activeTypes.size > 0 && !activeTypes.has(p.property_type)) return false;
         if (activeSegs.size > 0 && !activeSegs.has(p.segment)) return false;
         if (activeSrcs.size > 0 && !activeSrcs.has(p.source)) return false;
         if (activeKws.size > 0) {
@@ -621,7 +645,7 @@ function resetFilters() {
     document.getElementById('btn-semantic').style.background = 'transparent';
     document.getElementById('btn-semantic').style.color = 'var(--dim)';
     document.getElementById('text-search-info').style.display = 'none';
-    activeKws.clear(); activeSegs.clear(); activeSrcs.clear();
+    activeKws.clear(); activeSegs.clear(); activeSrcs.clear(); activeTypes.clear();
     document.querySelectorAll('.chip.active, .seg-chip.active').forEach(c => c.classList.remove('active'));
     applyFilters();
 }

@@ -50,7 +50,7 @@ export const PROPERTY_TYPES = [
     zp_slug: 'locales-comerciales-venta',
     ap_slug: 'locales-comerciales/venta',
     ml_type: '242069',               // ML: Commercial
-    active: false,                   // Phase 2
+    active: true,
   },
   {
     id: 'oficina',
