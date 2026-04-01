@@ -468,7 +468,7 @@ function initChips() {
 
 // Fetch properties with GPS from Supabase
 async function fetchProperties() {
-    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,bathrooms,bedrooms,neighborhood,address_text,latitude,longitude,geo_precision,permalink,keywords,segment,source,description,covered_ratio,livability_score,livability_detail,first_seen_at,thumbnail,currency,cocheras,contact_phone,contact_name,smp';
+    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,bathrooms,bedrooms,neighborhood,address_text,latitude,longitude,geo_precision,permalink,keywords,segment,source,description,covered_ratio,livability_score,livability_detail,first_seen_at,thumbnail,currency,cocheras,contact_phone,contact_name,smp,property_type';
     const base = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&latitude=not.is.null&order=price_per_sqm.asc`;
     let all = [];
     for (let offset = 0; offset < 20000; offset += 1000) {

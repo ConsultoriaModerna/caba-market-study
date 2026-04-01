@@ -299,7 +299,7 @@ setInterval(() => { glowPhase = (glowPhase + 0.05) % (Math.PI * 2); }, 50);
 
 // Fetch properties from Supabase (paginated, same as 2D map)
 async function fetchData() {
-    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,neighborhood,address_text,latitude,longitude,permalink,keywords,segment,source,livability_score,livability_detail,first_seen_at';
+    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,neighborhood,address_text,latitude,longitude,permalink,keywords,segment,source,livability_score,livability_detail,first_seen_at,property_type';
     const base = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&latitude=not.is.null&order=price_per_sqm.asc`;
     const headers = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
     let all = [];

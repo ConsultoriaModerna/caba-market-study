@@ -17,11 +17,11 @@ const MAX_PAGES = parseInt(process.argv[2] || '15');
 const SCRIPT_FILE = '/tmp/ap-nav.scpt';
 const JS_FILE = '/tmp/ap-extract.js';
 const zoneArg = process.argv.find(a => a.startsWith('--zone='))?.split('=')[1] || 'all';
+const typeArg = process.argv.find(a => a.startsWith('--type='))?.split('=')[1] || 'casa';
 
-const AP_ZONES = [
-  { id: 'caba', name: 'Capital Federal', state: 'CABA', slug: 'casas/venta/capital-federal' },
-  { id: 'gba-norte', name: 'GBA Norte', state: 'Buenos Aires', slug: 'casas/venta/zona-norte-gba' },
-];
+import { getAPZones, PROPERTY_TYPES } from './zones-config.mjs';
+const AP_ZONES = getAPZones(typeArg);
+const PROP_TYPE_LABEL = PROPERTY_TYPES.find(t => t.id === typeArg)?.label || typeArg;
 
 function getZones() {
   if (zoneArg === 'all') return AP_ZONES;
@@ -175,9 +175,9 @@ async function scanZone(zone) {
         const kw = extractKeywords(item.title);
 
         const row = {
-          id, title: item.title || `Casa en ${neighborhood}`,
+          id, title: item.title || `${PROP_TYPE_LABEL} en ${neighborhood}`,
           price: item.price, currency: item.currency,
-          operation: 'venta', property_type: 'casa',
+          operation: 'venta', property_type: typeArg,
           total_area: item.totalArea, covered_area: item.coveredArea,
           bedrooms: item.dorms, bathrooms: item.bathrooms, ambientes: item.ambientes,
           neighborhood, address_text: item.address,

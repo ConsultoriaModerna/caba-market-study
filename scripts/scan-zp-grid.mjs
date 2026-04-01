@@ -10,7 +10,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { writeFileSync } from 'fs';
 import { execSync } from 'child_process';
-import { ZP_LOCATIONS } from './zones-config.mjs';
+import { getZPLocations, PROPERTY_TYPES } from './zones-config.mjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -20,14 +20,17 @@ const supabase = createClient(
 const MAX_PAGES = parseInt(process.argv[2] || '20');
 const SCRIPT_FILE = '/tmp/zp-grid.scpt';
 
-// Parse --zone flag
+// Parse --zone and --type flags
 const zoneArg = process.argv.find(a => a.startsWith('--zone='))?.split('=')[1] || 'all';
+const typeArg = process.argv.find(a => a.startsWith('--type='))?.split('=')[1] || 'casa';
+
+const ZP_LOCATIONS = getZPLocations(typeArg);
+const PROP_TYPE_LABEL = PROPERTY_TYPES.find(t => t.id === typeArg)?.label || typeArg;
 
 function getLocations() {
   if (zoneArg === 'all') return ZP_LOCATIONS;
   if (zoneArg === 'caba') return ZP_LOCATIONS.filter(l => l.state === 'CABA');
   if (zoneArg === 'gba-norte') return ZP_LOCATIONS.filter(l => l.state === 'Buenos Aires');
-  // Try exact slug match
   const match = ZP_LOCATIONS.filter(l => l.slug.includes(zoneArg));
   return match.length ? match : ZP_LOCATIONS;
 }
@@ -200,7 +203,7 @@ async function scanLocation(location) {
       id,
       slug: item.slug,
       permalink: 'https://www.zonaprop.com.ar' + item.slug,
-      title: item.title || `Casa en ${neighborhood || location.city}`,
+      title: item.title || `${PROP_TYPE_LABEL} en ${neighborhood || location.city}`,
       price, currency,
       total_area: features.total_area,
       ambientes: features.ambientes,
@@ -208,7 +211,7 @@ async function scanLocation(location) {
       neighborhood,
       source: 'zonaprop',
       operation: 'venta',
-      property_type: 'casa',
+      property_type: typeArg,
       state: location.state,
       city: location.city,
       is_active: true,
