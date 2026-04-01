@@ -158,7 +158,12 @@
 <body>
 <div id="map"></div>
 
-<a href="mapa.html" class="back-link">Volver a mapa 2D</a>
+<nav style="position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:200;display:flex;gap:4px;background:rgba(17,24,39,0.8);backdrop-filter:blur(12px);padding:4px 8px;border-radius:20px;border:1px solid var(--border);">
+    <a href="index.html" class="back-link" style="position:static;transform:none;background:none;border:none;padding:2px 10px;">Dashboard</a>
+    <a href="mapa.html" class="back-link" style="position:static;transform:none;background:none;border:none;padding:2px 10px;">Mapa 2D</a>
+    <a href="wave.html" class="back-link" style="position:static;transform:none;background:none;border:none;padding:2px 10px;">Wave</a>
+    <a href="d3-analytics.html" class="back-link" style="position:static;transform:none;background:none;border:none;padding:2px 10px;">D3</a>
+</nav>
 
 <div class="hud hud-top">
     <div class="hud-title">
@@ -293,7 +298,7 @@ setInterval(() => { glowPhase = (glowPhase + 0.05) % (Math.PI * 2); }, 50);
 
 // Fetch properties from Supabase (paginated, same as 2D map)
 async function fetchData() {
-    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,neighborhood,address_text,latitude,longitude,permalink,keywords,segment,source,livability_score,first_seen_at';
+    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,neighborhood,address_text,latitude,longitude,permalink,keywords,segment,source,livability_score,livability_detail,first_seen_at';
     const base = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&latitude=not.is.null&order=price_per_sqm.asc`;
     const headers = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
     let all = [];
@@ -446,7 +451,7 @@ function getTooltip({ object }) {
                    ${p.ambientes ? '<div>Amb. <b>' + p.ambientes + '</b></div>' : ''}
                </div>
                ${segLabel ? '<div style="margin-top:6px;">' + segLabel + '</div>' : ''}
-               ${p.livability_score ? '<div style="margin-top:4px;">Livability <b style="color:' + (p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444') + ';">' + p.livability_score + '</b></div>' : ''}`,
+               ${p.livability_score ? '<div style="margin-top:6px;padding:4px 0;border-top:1px solid rgba(255,255,255,0.08);"><span style="font-size:11px;">Livability <b style="color:' + (p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444') + ';">' + p.livability_score + '/100</b></span>' + (p.livability_detail ? '<div style="display:flex;gap:6px;margin-top:3px;flex-wrap:wrap;">' + ['Ruido','Inund.','Segur.','Subte','Transp.'].map(function(label, i) { var keys = ['noise','flood','crime','subte','transport']; var val = (p.livability_detail || {})[keys[i]] || 0; var c = val >= 70 ? '#4ade80' : val >= 40 ? '#eab308' : '#ef4444'; return '<span style="font-size:9px;"><span style="color:#64748b;">' + label + '</span> <b style="color:' + c + ';">' + val + '</b></span>'; }).join('') + '</div>' : '') + '</div>' : ''}`,
         style: {}
     };
 }

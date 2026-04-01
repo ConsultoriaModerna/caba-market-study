@@ -468,7 +468,7 @@ function initChips() {
 
 // Fetch properties with GPS from Supabase
 async function fetchProperties() {
-    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,bathrooms,bedrooms,neighborhood,address_text,latitude,longitude,geo_precision,permalink,keywords,segment,source,description,covered_ratio,livability_score,first_seen_at,thumbnail,currency,cocheras,contact_phone,contact_name,smp';
+    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,bathrooms,bedrooms,neighborhood,address_text,latitude,longitude,geo_precision,permalink,keywords,segment,source,description,covered_ratio,livability_score,livability_detail,first_seen_at,thumbnail,currency,cocheras,contact_phone,contact_name,smp';
     const base = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&latitude=not.is.null&order=price_per_sqm.asc`;
     let all = [];
     for (let offset = 0; offset < 20000; offset += 1000) {
@@ -605,6 +605,15 @@ function createPopup(p) {
             <dt>Segmento</dt><dd>${p.segment || '—'}</dd>
             <dt>Fuente</dt><dd>${p.source}</dd>
         </dl>
+        ${p.livability_score ? `<div style="margin-top:6px;padding:6px 8px;background:#0f172a;border-radius:6px;border:1px solid #1e293b;">
+            <div style="font-size:10px;font-weight:700;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444'};margin-bottom:4px;">Livability ${p.livability_score}/100</div>
+            ${p.livability_detail ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">${['Ruido','Inund.','Segur.','Subte','Transp.'].map((label, i) => {
+                const keys = ['noise','flood','crime','subte','transport'];
+                const val = p.livability_detail[keys[i]] || 0;
+                const c = val >= 70 ? '#4ade80' : val >= 40 ? '#eab308' : '#ef4444';
+                return '<span style="font-size:9px;"><span style="color:#64748b;">' + label + '</span> <b style="color:' + c + ';">' + val + '</b></span>';
+            }).join('')}</div>` : ''}
+        </div>` : ''}
         ${fotInfo}
         ${kwsHtml ? `<div class="popup-kws">${kwsHtml}</div>` : ''}
         <div style="display:flex;align-items:center;gap:4px;margin-top:8px;">${link}${trashBtn}</div>
@@ -648,7 +657,7 @@ function renderList() {
             </div>
             ${kwsHtml ? `<div class="prop-keywords">${kwsHtml}</div>` : ''}
             <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
-                ${p.livability_score ? `<span style="font-size:9px;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444'};font-weight:700;">Liv ${p.livability_score}</span>` : ''}
+                ${p.livability_score ? `<span style="font-size:9px;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444'};font-weight:700;" title="${p.livability_detail ? Object.entries(p.livability_detail).map(([k,v]) => k + ':' + v).join(' ') : ''}">Liv ${p.livability_score}</span>` : ''}
                 ${p._railDist !== undefined && p._railDist < 200 ? `<span style="font-size:9px;color:${p._railDist < 80 ? '#ef4444' : '#f97316'};font-weight:600;">Tren ${Math.round(p._railDist)}m</span>` : ''}
                 ${p.fot_em ? `<span style="font-size:9px;color:#4ade80;font-weight:600;">FOT ${p.fot_em}</span>` : ''}
                 ${p.m2_construibles ? `<span style="font-size:9px;color:#22d3ee;font-weight:600;">${fmt(p.m2_construibles)}m² constr.</span>` : ''}
