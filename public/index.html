@@ -90,6 +90,12 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes glow-new {
+            0%,100% { box-shadow: 0 0 4px rgba(74,222,128,0.15); }
+            50% { box-shadow: 0 0 12px rgba(74,222,128,0.4), 0 0 24px rgba(74,222,128,0.15); }
+        }
+        .glow-new { animation: glow-new 2s ease-in-out infinite; border-color: rgba(74,222,128,0.3) !important; }
+        tr.glow-new > td { background: rgba(74,222,128,0.04); }
 
         .tabs {
             display: flex;
@@ -1319,7 +1325,8 @@
                 const tags = (p.keywords || []).slice(0, 4).map(kw =>
                     `<span style="padding:1px 4px;border-radius:6px;font-size:0.6rem;background:rgba(255,255,255,0.05);color:var(--text-secondary);">${kw}</span>`
                 ).join(' ');
-                return `<tr style="border-bottom:1px solid rgba(51,65,85,0.3);cursor:pointer;" onclick="openPropModal('${p.id}')">
+                const isNewProp = p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000;
+                return `<tr class="${isNewProp ? 'glow-new' : ''}" style="border-bottom:1px solid rgba(51,65,85,0.3);cursor:pointer;" onclick="openPropModal('${p.id}')">
                     <td style="padding:4px;">${thumb}</td>
                     <td style="padding:6px 8px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${zoneBadge(p.neighborhood)}${p.title || 'Sin titulo'}</td>
                     <td style="padding:6px 8px;color:var(--text-secondary);">${p.neighborhood || '-'}${zoneBadge(p.neighborhood)}</td>
@@ -2412,7 +2419,8 @@
                 const tags = (p.keywords || []).slice(0, 4).map(kw =>
                     `<span style="padding:1px 4px;border-radius:6px;font-size:0.6rem;background:rgba(255,255,255,0.05);color:var(--text-secondary);">${kw}</span>`
                 ).join(' ');
-                return `<tr style="border-bottom:1px solid rgba(51,65,85,0.3);cursor:pointer;" onclick="openPropModal('${p.id}')">
+                const isNewProp = p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000;
+                return `<tr class="${isNewProp ? 'glow-new' : ''}" style="border-bottom:1px solid rgba(51,65,85,0.3);cursor:pointer;" onclick="openPropModal('${p.id}')">
                     <td style="padding:4px;">${thumb}</td>
                     <td style="padding:6px 8px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${favStar(p.id)} ${zoneBadge(p.neighborhood)}${p.title || 'Sin titulo'}</td>
                     <td style="padding:6px 8px;color:var(--text-secondary);">${p.neighborhood || '-'}${zoneBadge(p.neighborhood)}</td>
@@ -2633,7 +2641,7 @@
                 const thumbHtml = prop.thumbnail ? `<img src="${prop.thumbnail}" style="width:80px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : '';
 
                 return `
-                    <div class="property-card" style="cursor:pointer;display:flex;gap:12px;" onclick="openPropModal('${prop.id}')">
+                    <div class="property-card${daysOnMarket(prop) !== null && daysOnMarket(prop) <= 3 ? ' glow-new' : ''}" style="cursor:pointer;display:flex;gap:12px;" onclick="openPropModal('${prop.id}')">
                         ${thumbHtml}
                         <div class="property-info" style="flex: 1;">
                             <div class="property-title">${sourceBadge(prop.source)} ${ageBadge(prop)} ${prop.title || 'Sin titulo'} ${segBadge}</div>

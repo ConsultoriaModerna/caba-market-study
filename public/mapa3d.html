@@ -286,6 +286,10 @@ function priceToColor(v) {
 }
 
 function fmt(n) { return n ? Number(n).toLocaleString('es-AR') : '-'; }
+function isNewProp(p) { return p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000; }
+// Animated glow for new properties via time-varying color
+let glowPhase = 0;
+setInterval(() => { glowPhase = (glowPhase + 0.05) % (Math.PI * 2); }, 50);
 
 // Fetch properties from Supabase (paginated, same as 2D map)
 async function fetchData() {
@@ -322,10 +326,12 @@ function buildLayers() {
     if (!data.length) return [];
 
     if (currentMode === 'scatter') {
-        return [
+        const newProps = data.filter(isNewProp);
+        const oldProps = data.filter(d => !isNewProp(d));
+        const layers = [
             new deck.ScatterplotLayer({
                 id: 'scatter',
-                data,
+                data: oldProps,
                 getPosition: d => d.position,
                 getRadius: d => Math.max(8, Math.sqrt(d.total_area || 50) * 2),
                 getFillColor: d => priceToColor(d.price_per_sqm),
@@ -340,6 +346,24 @@ function buildLayers() {
                 transitions: { getElevation: 600, getRadius: 400 }
             })
         ];
+        if (newProps.length) {
+            layers.push(new deck.ScatterplotLayer({
+                id: 'scatter-new',
+                data: newProps,
+                getPosition: d => d.position,
+                getRadius: 20,
+                getFillColor: [74, 222, 128, 220],
+                getLineColor: [255, 255, 255, 255],
+                lineWidthMinPixels: 2,
+                radiusMinPixels: 8,
+                radiusMaxPixels: 40,
+                getElevation: d => (d.price_per_sqm || 0) * elevationScale * 0.05,
+                extruded: true,
+                pickable: true,
+                opacity: 0.95
+            }));
+        }
+        return layers;
     }
 
     if (currentMode === 'hex') {
@@ -374,7 +398,9 @@ function buildLayers() {
                 data,
                 getPosition: d => d.position,
                 getElevation: d => (d.price_per_sqm || 0) * elevationScale * 0.04,
-                getFillColor: d => priceToColor(d.price_per_sqm),
+                getFillColor: d => isNewProp(d) ? [74, 222, 128, 240] : priceToColor(d.price_per_sqm),
+                getLineColor: d => isNewProp(d) ? [255, 255, 255, 200] : [0, 0, 0, 0],
+                lineWidthMinPixels: 1,
                 diskResolution: 8,
                 radius: 25,
                 extruded: true,
@@ -407,10 +433,11 @@ function getTooltip({ object }) {
     const p = object;
     const title = p.title || p.neighborhood || 'Propiedad';
     const location = p.address_text || p.neighborhood || '';
+    const newBadge = isNewProp(p) ? '<span style="background:rgba(74,222,128,0.25);color:#4ade80;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:700;margin-left:6px;">NEW</span>' : '';
     const segLabel = p.segment === 'refac' ? '<span style="color:#fb923c;">A refaccionar</span>' :
                      p.segment === 'recic' ? '<span style="color:#4ade80;">Reciclada</span>' : '';
     return {
-        html: `<div style="font-weight:700;font-size:13px;margin-bottom:4px;line-height:1.3;">${title}</div>
+        html: `<div style="font-weight:700;font-size:13px;margin-bottom:4px;line-height:1.3;">${title}${newBadge}</div>
                ${location ? '<div style="color:#94a3b8;font-size:11px;margin-bottom:8px;">' + location + '</div>' : ''}
                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:12px;">
                    ${p.price_per_sqm ? '<div>USD/m² <b style="color:#06b6d4;">$' + fmt(p.price_per_sqm) + '</b></div>' : ''}
