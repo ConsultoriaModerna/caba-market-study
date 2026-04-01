@@ -9,6 +9,10 @@
 # Cron:  0 6 * * * cd /opt/caba-market-study && export $(cat .env | xargs) && export DISPLAY=:99 && bash scripts/nightly-update.sh >> /var/log/caba-nightly.log 2>&1
 
 cd "$(dirname "$0")/.."
+
+# Pull latest code before running
+git pull --ff-only origin main 2>&1 || echo "WARN: git pull failed, running with current code"
+
 export $(cat .env | xargs)
 export DISPLAY=:99
 
