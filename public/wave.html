@@ -963,7 +963,7 @@
                 <div class="ai-badge">CLAUDE HAIKU - MARKET ANALYSIS</div>
 
                 <h3>El mercado en un vistazo</h3>
-                <p>El mercado tiene <span class="metric">${totalActive.toLocaleString()} casas activas</span> distribuidas en <span class="metric">${data.length} barrios</span>. La mediana de precio se ubica en <span class="metric">USD ${median(allPrices.map(d => d.medianPrice)).toLocaleString()}/m²</span>, con una dispersión significativa entre zonas.</p>
+                <p>El mercado de <strong>casas</strong> tiene <span class="metric">${totalActive.toLocaleString()} casas activas</span> distribuidas en <span class="metric">${data.length} barrios</span>. La mediana de precio se ubica en <span class="metric">USD ${median(allPrices.map(d => d.medianPrice)).toLocaleString()}/m²</span>, con una dispersión significativa entre zonas.</p>
 
                 <h3>Donde esta el valor</h3>
                 <p>Los barrios mas accesibles por USD/m² son <span class="highlight">${cheapest.map(d => d.name + ' ($' + d.medianPrice + ')').join(', ')}</span>. En el otro extremo, <span class="highlight">${expensive.map(d => d.name + ' ($' + d.medianPrice + ')').join(', ')}</span> lideran el segmento premium. La brecha entre el barrio mas caro y el mas economico es de <span class="metric">${(expensive[0]?.medianPrice / (cheapest[0]?.medianPrice || 1)).toFixed(1)}x</span>.</p>
@@ -980,7 +980,7 @@
                 <h3>Sweet spot</h3>
                 <p>${highDemand.length > 0 ? '<span class="highlight">' + highDemand[0].name + '</span> lidera en demanda L7D. ' : ''}Los barrios que combinan <span class="highlight">volumen + precio bajo + demanda real</span> son el target para comprar, refaccionar, y capturar el gap antes de que la convergencia lo cierre.</p>
 
-                <p style="margin-top: 1rem; font-size: 0.75rem; color: #475569;">Analisis sobre ${totalActive + totalInactive} propiedades y ${words.length} patrones lexicos. L7D = ultimos 7 dias. P7D = 7 dias previos.</p>
+                <p style="margin-top: 1rem; font-size: 0.75rem; color: #475569;">Analisis sobre ${totalActive + totalInactive} casas y ${words.length} patrones lexicos. L7D = ultimos 7 dias. P7D = 7 dias previos. Dataset: solo casas (no deptos/PH/oficinas).</p>
             `;
         }
 

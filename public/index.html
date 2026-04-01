@@ -789,7 +789,7 @@
 
     <header>
         <div class="header-content">
-            <div class="header-title" style="cursor:pointer;" onclick="switchTab('overview')">InmoFindr <span id="headerPropCount" style="font-size:0.7rem;font-weight:400;opacity:0.5;"></span></div>
+            <div class="header-title" style="cursor:pointer;" onclick="switchTab('overview')">InmoFindr <span style="font-size:0.55rem;font-weight:500;color:var(--accent);opacity:0.7;vertical-align:middle;margin-left:4px;">CASAS</span> <span id="headerPropCount" style="font-size:0.7rem;font-weight:400;opacity:0.5;"></span></div>
             <div class="loading-indicator" id="loadingIndicator">
                 <div class="spinner"></div>
                 <span>Cargando datos...</span>
@@ -820,7 +820,7 @@
     <div class="tab-content active" id="tab-overview">
         <div class="kpi-grid">
             <div class="kpi-card">
-                <div class="kpi-label">Total de Propiedades</div>
+                <div class="kpi-label">Total Casas</div>
                 <div class="kpi-value" id="kpi-total-properties">-</div>
                 <div style="font-size:0.6rem;margin-top:2px;" id="kpi-source-split"></div>
             </div>
@@ -1763,7 +1763,7 @@
                 }
             }
 
-            document.getElementById('insight-market').innerHTML = `${totalProps.toLocaleString()} propiedades de ${sources.size} fuentes en ${regionLabel}. <strong>${sweetSpotProps.length}</strong> (${sweetPct}%) en sweet spot $100-180K.`;
+            document.getElementById('insight-market').innerHTML = `${totalProps.toLocaleString()} casas de ${sources.size} fuentes en ${regionLabel}. <strong>${sweetSpotProps.length}</strong> (${sweetPct}%) en sweet spot $100-180K. <span style="font-size:0.65rem;color:var(--text-secondary);">(Solo casas, no incluye deptos/PH/oficinas)</span>`;
             document.getElementById('insight-cheapest').innerHTML = `<strong>${cheapest}</strong>`;
             document.getElementById('insight-expensive').innerHTML = `<strong>${expensive}</strong>`;
             document.getElementById('insight-refac').innerHTML = `${refacCount} a refaccionar. Con reno DIY a ~$200/m² y gap de $${segRecic && segRefac ? segRecic - segRefac : '?'}/m², cada propiedad es potencial de ganancia.`;
@@ -3026,13 +3026,15 @@
                 // Sweet spot
                 const sweetSpot = allPropertiesRaw.filter(p => p.currency === 'USD' && p.price >= 100000 && p.price <= 180000);
 
-                const context = `Datos de InmoFindr Buenos Aires (CABA + GBA Norte):
-- ${totalProps} propiedades activas (ZP: ${zpN}, ML: ${mlN}, AP: ${apN})
+                const context = `Datos de InmoFindr Buenos Aires (CABA + GBA Norte).
+IMPORTANTE: El dataset actual contiene exclusivamente CASAS (no departamentos, PH, oficinas ni locales). Todas las metricas, promedios y conclusiones refieren al mercado de casas.
+- ${totalProps} casas activas (ZP: ${zpN}, ML: ${mlN}, AP: ${apN})
 - ${sweetSpot.length} en sweet spot $100-180K
-- Barrios top: ${topBarrios.slice(0,10).map(b => `${b.name}(${b.count} props, $${b.median_usd_m2}/m2, liv:${b.avg_livability||'?'})`).join(', ')}
+- Barrios top: ${topBarrios.slice(0,10).map(b => `${b.name}(${b.count} casas, $${b.median_usd_m2}/m2, liv:${b.avg_livability||'?'})`).join(', ')}
 - DB tiene: 318K parcelas con FOT, 417K usos del suelo, 3K precios historicos, 3K espacios culturales, demograficos
 - Tablas Supabase: properties, codigo_urbanistico, usos_suelo, precios_historicos, espacios_culturales, demografico_barrios
-- Livability Score (0-100): ruido, inundacion, seguridad, subte, transporte`;
+- Livability Score (0-100): ruido, inundacion, seguridad, subte, transporte
+- Siempre aclara en tu respuesta que los datos son sobre casas, no el mercado inmobiliario general`;
 
                 const resp = await fetch(`${SUPABASE_URL}/functions/v1/intel-query`, {
                     method: 'POST',
