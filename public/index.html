@@ -1860,13 +1860,12 @@
 
                 return `<div class="opportunity-card${isNew ? ' glow-new' : ''}" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;cursor:pointer;" onclick="openPropModal('${p.id}')">
                     <div style="flex:1;min-width:200px;">
-                        <div style="font-weight:600;font-size:0.9rem;">${sourceBadge(p.source)} ${ageBadge(p)} ${p.title || 'Sin titulo'} ${dataQualityBadge(p)}</div>
+                        <div style="font-weight:600;font-size:0.9rem;">${sourceBadge(p.source)} ${ageBadge(p)} ${p.title || 'Sin titulo'} ${dataQualityBadge(p)}${seenStr ? ` <span style="font-size:0.6rem;font-weight:400;color:var(--text-secondary);margin-left:4px;">${seenStr}</span>` : ''}</div>
                         <div style="color:var(--text-secondary);font-size:0.75rem;margin-top:2px;">📍 ${p.neighborhood} ${features.length ? '· ' + features.join(' · ') : ''}</div>
                     </div>
-                    <div style="text-align:right;min-width:150px;">
+                    <div style="text-align:right;min-width:130px;">
                         <div style="font-size:1rem;font-weight:700;">USD ${price?.toLocaleString()}</div>
                         <div style="color:var(--accent);font-size:0.8rem;">${usdM2}</div>
-                        ${seenStr ? `<div style="font-size:0.65rem;color:var(--text-secondary);margin-top:2px;">${seenStr}</div>` : ''}
                         ${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.75rem;" onclick="event.stopPropagation()">Ver anuncio →</a>` : ''}
                     </div>
                 </div>`;
