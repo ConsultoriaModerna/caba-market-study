@@ -200,13 +200,20 @@ function priceToColor(v) {
 
 function fmt(n) { return n ? Number(n).toLocaleString('es-AR') : '-'; }
 
-// Fetch properties from Supabase
+// Fetch properties from Supabase (paginated, same as 2D map)
 async function fetchData() {
     const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,neighborhood,address_text,latitude,longitude,permalink,keywords,segment,source,livability_score,first_seen_at';
-    const url = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&latitude=not.is.null&price=gte.50000&order=price_per_sqm.asc`;
-    const resp = await fetch(url, { headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` } });
-    const data = await resp.json();
-    return data.map(p => ({
+    const base = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&latitude=not.is.null&order=price_per_sqm.asc`;
+    const headers = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
+    let all = [];
+    for (let offset = 0; offset < 20000; offset += 1000) {
+        const resp = await fetch(base + `&limit=1000&offset=${offset}`, { headers });
+        const batch = await resp.json();
+        if (!batch.length) break;
+        all = all.concat(batch);
+        document.getElementById('stats').innerHTML = `<span>Cargando... ${all.length} propiedades</span>`;
+    }
+    return all.map(p => ({
         ...p,
         price: Number(p.price) || 0,
         price_per_sqm: Number(p.price_per_sqm) || 0,
@@ -459,38 +466,17 @@ async function init() {
     // Navigation controls
     mapInstance.addControl(new maplibregl.NavigationControl(), 'bottom-right');
 
-    deckgl = new deck.Deck({
-        canvas: 'deck-canvas',
-        parent: document.getElementById('map'),
-        initialViewState: {
-            longitude: -58.43,
-            latitude: -34.60,
-            zoom: 12,
-            pitch: 50,
-            bearing: -15
-        },
-        controller: false, // MapLibre handles interaction
+    // Use MapboxOverlay for proper deck.gl + MapLibre integration
+    deckgl = new deck.MapboxOverlay({
+        interleaved: false,
         getTooltip,
         onClick,
         layers: []
     });
 
-    // Sync deck.gl with MapLibre camera
-    mapInstance.on('move', () => {
-        const { lng, lat } = mapInstance.getCenter();
-        deckgl.setProps({
-            viewState: {
-                longitude: lng,
-                latitude: lat,
-                zoom: mapInstance.getZoom(),
-                pitch: mapInstance.getPitch(),
-                bearing: mapInstance.getBearing()
-            }
-        });
-    });
-
     // Initial render after map loads
     mapInstance.on('load', () => {
+        mapInstance.addControl(deckgl);
         render();
         // Entrance animation
         setTimeout(() => {
