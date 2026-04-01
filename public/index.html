@@ -842,9 +842,10 @@
                 <div style="font-size:0.6rem;color:var(--text-secondary);margin-top:2px;" id="kpi-median-sqm-range"></div>
                 <div style="height:24px;margin-top:4px;" id="kpi-sqm-sparkline"></div>
             </div>
-            <div class="kpi-card">
+            <div class="kpi-card" style="position:relative;">
                 <div class="kpi-label">Barrios Cubiertos</div>
                 <div class="kpi-value" id="kpi-neighborhoods">-</div>
+                <div id="kpi-barrios-list" style="margin-top:4px;max-height:60px;overflow-y:auto;font-size:0.6rem;line-height:1.5;mask-image:linear-gradient(to bottom,black 60%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,black 60%,transparent 100%);"></div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label" title="USD/m2 mediano: Usado (a refaccionar) / Estandar / Renovado (reciclado)">USD/m² por estado</div>
@@ -1716,6 +1717,12 @@
                 sparkEl.innerHTML = '';
             }
             document.getElementById('kpi-neighborhoods').textContent = neighborhoods;
+            const barrioCountMap = {};
+            allProperties.forEach(p => { if (p.neighborhood) barrioCountMap[p.neighborhood] = (barrioCountMap[p.neighborhood]||0) + 1; });
+            const topBarrios5 = Object.entries(barrioCountMap).sort((a,b) => b[1]-a[1]).slice(0,5);
+            document.getElementById('kpi-barrios-list').innerHTML = topBarrios5.map(([name, count]) =>
+                `<div style="display:flex;justify-content:space-between;color:var(--text-secondary);"><span>${name}</span><span style="color:var(--accent);font-weight:600;">${count}</span></div>`
+            ).join('');
             const oppPct = totalProps > 0 ? Math.round(allOpportunities.length / totalProps * 100) : 0;
             document.getElementById('kpi-opportunities').textContent = `${allOpportunities.length} (${oppPct}%)`;
 
