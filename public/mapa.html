@@ -535,7 +535,8 @@ function updateStats() {
     const bar = document.getElementById('stats-bar');
     const avgM2 = filtered.length > 0 ? Math.round(filtered.reduce((s,p) => s + getDisplayPrice(p), 0) / filtered.length) : 0;
     const medianPrice = filtered.length > 0 ? filtered.map(p=>p.price).sort((a,b)=>a-b)[Math.floor(filtered.length/2)] : 0;
-    const newCount = filtered.filter(p => p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000).length;
+    const _isNew = window.inmofindrIsNewProp || (p => p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000);
+    const newCount = filtered.filter(_isNew).length;
     const newBadge = newCount > 0 ? `<span style="color:#4ade80;"><strong>${newCount}</strong> nuevas</span>` : '';
     const modeLabel = priceMode === 'adjusted' ? ' <span style="color:#f59e0b;font-size:9px;">(ajustado)</span>' : '';
     bar.innerHTML = `<span><strong>${filtered.length}</strong> propiedades</span><span>Med. <strong>$${fmt(avgM2)}</strong>/m²${modeLabel}</span><span>Precio med. <strong>$${fmt(medianPrice)}</strong></span>${newBadge}`;
@@ -548,7 +549,7 @@ function renderMarkers() {
     filtered.forEach(p => {
         const dp = getDisplayPrice(p);
         const color = priceColor(dp);
-        const isNewMarker = p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000;
+        const isNewMarker = window.inmofindrIsNewProp ? window.inmofindrIsNewProp(p) : (p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000);
         const icon = L.divIcon({
             className: '',
             html: `<div class="${isNewMarker ? 'marker-new' : ''}" style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid ${isNewMarker ? '#4ade80' : 'rgba(255,255,255,0.85)'};box-shadow:0 0 6px 2px ${isNewMarker ? 'rgba(74,222,128,0.6)' : color + '88'}, 0 1px 4px rgba(0,0,0,0.5);"></div>`,
@@ -645,7 +646,7 @@ function renderList() {
             p.source === 'argenprop' ? '<span style="background:rgba(236,72,153,0.15);color:#ec4899;padding:1px 4px;border-radius:6px;font-size:8px;font-weight:600;">AP</span> ' :
             '<span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:1px 4px;border-radius:6px;font-size:8px;font-weight:600;">ML</span> ';
 
-        const isNewProp = p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000;
+        const isNewProp = window.inmofindrIsNewProp ? window.inmofindrIsNewProp(p) : (p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000);
         return `<div class="prop-card${isNewProp ? ' glow-new' : ''}" data-id="${p.id}" onclick="selectProp('${p.id}')">
             <div class="prop-title">${srcBadge}${ageBadge}${p.title || 'Sin título'}${segBadge}</div>
             <div class="prop-addr">${p.address_text || p.neighborhood}</div>

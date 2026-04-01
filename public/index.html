@@ -853,8 +853,8 @@
                 <div class="kpi-value" id="kpi-covered-data">-</div>
                 <div style="font-size:0.6rem;color:var(--text-secondary);margin-top:2px;" id="kpi-covered-pct"></div>
             </div>
-            <div class="kpi-card">
-                <div class="kpi-label" title="Propiedades detectadas por primera vez en los ultimos 3 dias">Nuevas (3d)</div>
+            <div class="kpi-card" style="cursor:pointer;" onclick="if(window.inmofindrMarkAllSeen){inmofindrMarkAllSeen();location.reload();}">
+                <div class="kpi-label" title="Nuevas desde tu ultima visita. Click para marcar vistas.">Nuevas <span style="font-size:0.55rem;opacity:0.6;">(click = visto)</span></div>
                 <div class="kpi-value" id="kpi-new" style="color:var(--green);">-</div>
             </div>
             <div class="kpi-card">
@@ -1325,7 +1325,7 @@
                 const tags = (p.keywords || []).slice(0, 4).map(kw =>
                     `<span style="padding:1px 4px;border-radius:6px;font-size:0.6rem;background:rgba(255,255,255,0.05);color:var(--text-secondary);">${kw}</span>`
                 ).join(' ');
-                const isNewProp = p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000;
+                const isNewProp = window.inmofindrIsNewProp ? window.inmofindrIsNewProp(p) : false;
                 return `<tr class="${isNewProp ? 'glow-new' : ''}" style="border-bottom:1px solid rgba(51,65,85,0.3);cursor:pointer;" onclick="openPropModal('${p.id}')">
                     <td style="padding:4px;">${thumb}</td>
                     <td style="padding:6px 8px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${zoneBadge(p.neighborhood)}${p.title || 'Sin titulo'}</td>
@@ -1591,7 +1591,8 @@
         function ageBadge(p) {
             const days = daysOnMarket(p);
             if (days === null) return '';
-            if (days <= 2) return '<span style="background:rgba(74,222,128,0.2);color:#4ade80;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:700;animation:pulse 2s infinite;">NEW</span>';
+            const isNew = window.inmofindrIsNewProp ? window.inmofindrIsNewProp(p) : days <= 2;
+            if (isNew) return '<span style="background:rgba(74,222,128,0.2);color:#4ade80;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:700;animation:pulse 2s infinite;">NEW</span>';
             if (days <= 7) return `<span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">${days}d</span>`;
             return `<span style="color:#64748b;font-size:0.65rem;">${days}d</span>`;
         }
@@ -1823,7 +1824,7 @@
             // Age stats
             const now = Date.now();
             const withAge = allProperties.filter(p => p.first_seen_at);
-            const newProps = withAge.filter(p => (now - new Date(p.first_seen_at).getTime()) < 3 * 86400000);
+            const newProps = window.inmofindrIsNewProp ? withAge.filter(p => window.inmofindrIsNewProp(p)) : withAge.filter(p => (now - new Date(p.first_seen_at).getTime()) < 3 * 86400000);
             const ages = withAge.map(p => Math.round((now - new Date(p.first_seen_at).getTime()) / 86400000));
             const avgAge = ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : 0;
             const newPct = totalProps > 0 ? Math.round(newProps.length / totalProps * 100) : 0;
@@ -2419,7 +2420,7 @@
                 const tags = (p.keywords || []).slice(0, 4).map(kw =>
                     `<span style="padding:1px 4px;border-radius:6px;font-size:0.6rem;background:rgba(255,255,255,0.05);color:var(--text-secondary);">${kw}</span>`
                 ).join(' ');
-                const isNewProp = p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000;
+                const isNewProp = window.inmofindrIsNewProp ? window.inmofindrIsNewProp(p) : false;
                 return `<tr class="${isNewProp ? 'glow-new' : ''}" style="border-bottom:1px solid rgba(51,65,85,0.3);cursor:pointer;" onclick="openPropModal('${p.id}')">
                     <td style="padding:4px;">${thumb}</td>
                     <td style="padding:6px 8px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${favStar(p.id)} ${zoneBadge(p.neighborhood)}${p.title || 'Sin titulo'}</td>
@@ -2641,7 +2642,7 @@
                 const thumbHtml = prop.thumbnail ? `<img src="${prop.thumbnail}" style="width:80px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : '';
 
                 return `
-                    <div class="property-card${daysOnMarket(prop) !== null && daysOnMarket(prop) <= 3 ? ' glow-new' : ''}" style="cursor:pointer;display:flex;gap:12px;" onclick="openPropModal('${prop.id}')">
+                    <div class="property-card${window.inmofindrIsNewProp && window.inmofindrIsNewProp(prop) ? ' glow-new' : ''}" style="cursor:pointer;display:flex;gap:12px;" onclick="openPropModal('${prop.id}')">
                         ${thumbHtml}
                         <div class="property-info" style="flex: 1;">
                             <div class="property-title">${sourceBadge(prop.source)} ${ageBadge(prop)} ${prop.title || 'Sin titulo'} ${segBadge}</div>

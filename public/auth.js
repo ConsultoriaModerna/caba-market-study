@@ -66,5 +66,29 @@
 
   if (!isAuthenticated()) {
     showGate();
+  } else {
+    // Track visit timestamps for "new property" detection
+    // last_visit = when the user started their PREVIOUS session
+    // current_visit = when this session started
+    const prev = localStorage.getItem('inmofindr_current_visit');
+    if (prev) {
+      localStorage.setItem('inmofindr_last_visit', prev);
+    }
+    localStorage.setItem('inmofindr_current_visit', new Date().toISOString());
   }
+
+  // Export helper for all pages
+  window.inmofindrLastVisit = function() {
+    const lv = localStorage.getItem('inmofindr_last_visit');
+    return lv ? new Date(lv) : null;
+  };
+  window.inmofindrIsNewProp = function(p) {
+    const lv = window.inmofindrLastVisit();
+    if (!lv || !p.first_seen_at) return false;
+    return new Date(p.first_seen_at) > lv;
+  };
+  window.inmofindrMarkAllSeen = function() {
+    localStorage.setItem('inmofindr_last_visit', new Date().toISOString());
+    localStorage.setItem('inmofindr_current_visit', new Date().toISOString());
+  };
 })();
