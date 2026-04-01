@@ -3,7 +3,7 @@
 // Browses ML search pages anonymously, extracts listing data from HTML
 // Normalizes output to match API format for consistency with existing pipeline
 //
-// Usage: node scripts/vps/scrape-ml-headless.mjs [maxPages] [--zone=caba|gba-norte|all]
+// Usage: node scripts/vps/scrape-ml-headless.mjs [maxPages] [--zone=caba|gba-norte|all] [--type=casa|local|departamento|ph]
 // Runs on VPS with Chrome + Xvfb
 
 import { createClient } from '@supabase/supabase-js';
@@ -19,6 +19,18 @@ const PROFILE_DIR = '/opt/caba-market-study/.chrome-profile-ml';
 const DELAY_MS = 4000;
 
 const zoneArg = process.argv.find(a => a.startsWith('--zone='))?.split('=')[1] || 'all';
+const typeArg = process.argv.find(a => a.startsWith('--type='))?.split('=')[1] || 'casa';
+
+// ML URL slugs per property type
+const ML_TYPE_SLUGS = {
+  casa: 'casas',
+  departamento: 'departamentos',
+  ph: 'casas',  // ML mixes PH with casas, filter by title
+  local: 'locales-comerciales',
+  oficina: 'oficinas',
+};
+
+const ML_TYPE_SLUG = ML_TYPE_SLUGS[typeArg] || 'casas';
 
 // ML search URLs by zone (public, no auth needed)
 const ML_ZONES = [
@@ -26,13 +38,13 @@ const ML_ZONES = [
     id: 'caba',
     name: 'Capital Federal',
     state: 'CABA',
-    url: 'https://inmuebles.mercadolibre.com.ar/casas/venta/capital-federal/',
+    url: `https://inmuebles.mercadolibre.com.ar/${ML_TYPE_SLUG}/venta/capital-federal/`,
   },
   {
     id: 'gba-norte',
     name: 'GBA Norte',
     state: 'Buenos Aires',
-    url: 'https://inmuebles.mercadolibre.com.ar/casas/venta/bs-as-gba-norte/',
+    url: `https://inmuebles.mercadolibre.com.ar/${ML_TYPE_SLUG}/venta/bs-as-gba-norte/`,
   },
 ];
 
@@ -171,7 +183,7 @@ async function scrapeZone(page, zone) {
           price: item.price,
           currency: item.currency,
           operation: 'venta',
-          property_type: 'casa',
+          property_type: typeArg,
           total_area: area,
           bedrooms: item.bedrooms,
           bathrooms: item.bathrooms,
@@ -217,7 +229,7 @@ async function scrapeZone(page, zone) {
 async function main() {
   const t0 = Date.now();
   const zones = getZones();
-  console.log(`ML Headless Scraper -- ${zones.length} zone(s), ${MAX_PAGES} pages each`);
+  console.log(`ML Headless Scraper -- ${typeArg} (${ML_TYPE_SLUG}) -- ${zones.length} zone(s), ${MAX_PAGES} pages each`);
 
   console.log('Launching Chrome...');
   const browser = await puppeteer.launch({
