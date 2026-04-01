@@ -808,6 +808,7 @@
         <button class="price-range-btn active" data-range="all" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">Todo</button>
         <button class="price-range-btn" data-range="50-200" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">$50K-$200K</button>
         <button class="price-range-btn" data-range="50-150" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">$50K-$150K</button>
+        <button class="price-range-btn" data-range="100-180" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">Sweet $100-180K</button>
         <button class="price-range-btn" data-range="100-250" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">$100K-$250K</button>
         <span id="global-filter-count" style="color:var(--accent);font-weight:600;font-size:0.75rem;"></span>
     </div>
@@ -1392,6 +1393,7 @@
                 'all': [0, Infinity],
                 '50-200': [50000, 200000],
                 '50-150': [50000, 150000],
+                '100-180': [100000, 180000],
                 '100-250': [100000, 250000]
             };
             const [min, max] = ranges[globalPriceRange] || [0, Infinity];
@@ -1663,7 +1665,7 @@
                 </div>
                 <span style="color:#60a5fa;">ZP ${zpN}</span> · <span style="color:#fbbf24;">ML ${mlN}</span>${apN > 0 ? ` · <span style="color:#ec4899;">AP ${apN}</span>` : ''}`;
             document.getElementById('kpi-median-sqm').textContent = medianSqm > 0 ? `$${medianSqm.toLocaleString()}` : '-';
-            const rangeLabels = { 'all': 'todas', '50-200': '$50-200K', '50-150': '$50-150K', '100-250': '$100-250K' };
+            const rangeLabels = { 'all': 'todas', '50-200': '$50-200K', '50-150': '$50-150K', '100-180': 'Sweet $100-180K', '100-250': '$100-250K' };
             document.getElementById('kpi-median-sqm-range').textContent = `rango: ${rangeLabels[globalPriceRange] || 'todas'}`;
 
             // Sparkline distribution of USD/m²
@@ -1771,8 +1773,23 @@
                 }
             }
 
-            document.getElementById('insight-market').innerHTML = `${totalProps.toLocaleString()} casas de ${sources.size} fuentes en ${regionLabel}. <strong>${sweetSpotProps.length}</strong> (${sweetPct}%) en sweet spot $100-180K. <span style="font-size:0.65rem;color:var(--text-secondary);">(Solo casas, no incluye deptos/PH/oficinas)</span>`;
-            document.getElementById('insight-cheapest').innerHTML = `<strong>${cheapest}</strong>`;
+            // Sweet spot deep stats
+            const sweetM2 = sweetSpotProps.filter(p => p.price_per_sqm > 100).map(p => +p.price_per_sqm);
+            const sweetMedianM2 = sweetM2.length ? Math.round(getMedian(sweetM2)) : 0;
+            const sweetAvgArea = sweetSpotProps.filter(p => p.total_area > 0).length ? Math.round(sweetSpotProps.filter(p => p.total_area > 0).reduce((s,p) => s + p.total_area, 0) / sweetSpotProps.filter(p => p.total_area > 0).length) : 0;
+            const sweetBarrios = {};
+            sweetSpotProps.forEach(p => { if (p.neighborhood) sweetBarrios[p.neighborhood] = (sweetBarrios[p.neighborhood]||0) + 1; });
+            const sweetTopBarrios = Object.entries(sweetBarrios).sort((a,b) => b[1]-a[1]).slice(0,5);
+
+            document.getElementById('insight-market').innerHTML = `${totalProps.toLocaleString()} casas de ${sources.size} fuentes en ${regionLabel}. <strong>${sweetSpotProps.length}</strong> (${sweetPct}%) en sweet spot $100-180K: mediana <strong>$${sweetMedianM2.toLocaleString()}/m²</strong>, area prom. <strong>${sweetAvgArea} m²</strong>. <span style="font-size:0.65rem;color:var(--text-secondary);">(Solo casas)</span>`;
+
+            // Cheapest/expensive within sweet spot context
+            const sweetNeighStats = sweetTopBarrios.map(([name, count]) => {
+                const props = sweetSpotProps.filter(p => p.neighborhood === name);
+                const med = Math.round(getMedian(props.map(p => +p.price_per_sqm).filter(v => v > 100)));
+                return { name, count, med };
+            });
+            document.getElementById('insight-cheapest').innerHTML = `<strong>${cheapest}</strong><br><span style="font-size:0.75rem;color:var(--accent);">En sweet spot: ${sweetNeighStats.filter(b => b.med > 0).slice(0,3).map(b => b.name + ' $' + b.med + '/m² (' + b.count + ')').join(', ') || 'sin datos'}</span>`;
             document.getElementById('insight-expensive').innerHTML = `<strong>${expensive}</strong>`;
             document.getElementById('insight-refac').innerHTML = `${refacCount} a refaccionar. Con reno DIY a ~$200/m² y gap de $${segRecic && segRefac ? segRecic - segRefac : '?'}/m², cada propiedad es potencial de ganancia.`;
             document.getElementById('insight-concentration').innerHTML = `<strong>${topZone ? topZone[0] : '?'}</strong> concentra ${topZone ? Math.round(topZone[1]/totalProps*100) : 0}% de la oferta (${topZone ? topZone[1] : 0} props). ${topBarrio ? topBarrio.name + ' lidera con ' + topBarrio.count : ''}.`;
@@ -1787,7 +1804,7 @@
                 document.getElementById('insight-livability').innerHTML =
                     `${withLiv.length} propiedades analizadas. Livability promedio: <strong>${avgLiv}/100</strong>. ` +
                     `Mejores zonas: <strong>${topLivBarrios.join(', ')}</strong>. ` +
-                    `<strong>${inSweetWithLiv.length}</strong> propiedades combinan sweet spot ($100-180K) + Livability 50+.`;
+                    `<a href="#" onclick="event.preventDefault();switchTab('opportunities');document.getElementById('filterPriceMin').value='100000';document.getElementById('filterPriceMax').value='180000';setTimeout(populateOpportunities,100);" style="color:var(--accent);font-weight:700;text-decoration:underline;cursor:pointer;">${inSweetWithLiv.length} casas</a> combinan sweet spot ($100-180K) + Livability 50+.`;
             } else {
                 document.getElementById('insight-livability').innerHTML = 'Livability Score disponible para propiedades geocodeadas. Geocodear mas propiedades para ampliar el analisis.';
             }
