@@ -1,7 +1,7 @@
-// scrape-meli.mjs — MercadoLibre scraper for casas en venta (multi-zone)
-// Usage: node scripts/scrape-meli.mjs [maxPages] [--zone=caba|gba-norte|all]
+// scrape-meli.mjs — MercadoLibre scraper for properties (multi-zone, multi-type)
+// Usage: node scripts/scrape-meli.mjs [maxPages] [--zone=caba|gba-norte|all] [--type=casa|local|departamento]
 import { createClient } from '@supabase/supabase-js';
-import { getActiveZones } from './zones-config.mjs';
+import { getActiveZones, PROPERTY_TYPES } from './zones-config.mjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -11,7 +11,12 @@ const supabase = createClient(
 const MAX_PAGES = parseInt(process.argv[2] || '20');
 const RESULTS_PER_PAGE = 50;
 const CATEGORY = 'MLA1493';
-const PROPERTY_TYPE = '242062';
+
+// Parse --type flag: use ml_type from zones-config
+const typeArg = process.argv.find(a => a.startsWith('--type='))?.split('=')[1] || 'casa';
+const propTypeConfig = PROPERTY_TYPES.find(t => t.id === typeArg);
+const PROPERTY_TYPE = propTypeConfig?.ml_type || '242062';
+const PROP_TYPE_LABEL = propTypeConfig?.label || typeArg;
 
 // Parse --zone flag
 const zoneArg = process.argv.find(a => a.startsWith('--zone='))?.split('=')[1] || 'all';
@@ -135,7 +140,7 @@ async function scrapeZone(zone, token) {
           price: item.price,
           currency: item.currency_id,
           operation: 'venta',
-          property_type: 'casa',
+          property_type: typeArg,
           total_area: totalArea,
           covered_area: covArea,
           bedrooms: beds !== null ? Math.round(beds) : null,
@@ -213,7 +218,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`[SCRAPE] ML scrape — ${zones.length} zone(s), max ${MAX_PAGES} pages each`);
+  console.log(`[SCRAPE] ML scrape — ${PROP_TYPE_LABEL} (${PROPERTY_TYPE}) — ${zones.length} zone(s), max ${MAX_PAGES} pages each`);
 
   let grandTotal = { fetched: 0, upserted: 0, errors: [] };
 
