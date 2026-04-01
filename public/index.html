@@ -990,6 +990,7 @@
 
             <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
                 <button class="search-mode-btn active" data-mode="keyword" onclick="switchSearchMode('keyword')" style="padding:0.4rem 1rem;border-radius:20px;border:1px solid var(--accent);background:rgba(0,212,255,0.12);color:var(--text-primary);cursor:pointer;font-size:0.8rem;font-family:inherit;">🔍 Keywords</button>
+                <button class="search-mode-btn" data-mode="text" onclick="switchSearchMode('text')" style="padding:0.4rem 1rem;border-radius:20px;border:1px solid var(--border);background:var(--bg-tertiary);color:var(--text-secondary);cursor:pointer;font-size:0.8rem;font-family:inherit;">📝 Texto</button>
                 <button class="search-mode-btn" data-mode="semantic" onclick="switchSearchMode('semantic')" style="padding:0.4rem 1rem;border-radius:20px;border:1px solid var(--border);background:var(--bg-tertiary);color:var(--text-secondary);cursor:pointer;font-size:0.8rem;font-family:inherit;">🧠 Semantica</button>
             </div>
 
@@ -1116,6 +1117,48 @@
             <div class="empty-state">Ingresa palabras clave o usa los filtros avanzados</div>
         </div>
         </div><!-- end keywordSearchUI -->
+
+        <div id="textSearchUI" style="display:none;">
+            <div style="max-width:700px;margin:0 auto 1.5rem;">
+                <div style="display:flex;gap:0.5rem;">
+                    <input type="text" id="textSearchInput" placeholder='Buscar en titulo y descripcion: "teatro", "estudio de grabacion", "vista al rio"...'
+                        style="flex:1;padding:0.8rem 1.2rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-size:1rem;font-family:inherit;outline:none;">
+                    <button id="textSearchBtn" onclick="performTextSearch()" style="padding:0.8rem 1.5rem;background:var(--accent);color:#000;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;font-family:inherit;">Buscar</button>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.8rem;align-items:center;">
+                    <select id="textFilterType" style="padding:0.4rem 0.8rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:0.8rem;font-family:inherit;">
+                        <option value="">Todo tipo</option>
+                        <option value="casa">Casa</option>
+                        <option value="departamento">Departamento</option>
+                        <option value="ph">PH</option>
+                    </select>
+                    <select id="textFilterSource" style="padding:0.4rem 0.8rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:0.8rem;font-family:inherit;">
+                        <option value="">Todos los portales</option>
+                        <option value="zonaprop">ZonaProp</option>
+                        <option value="mercadolibre">MercadoLibre</option>
+                        <option value="argenprop">ArgProp</option>
+                    </select>
+                    <select id="textFilterLimit" style="padding:0.4rem 0.8rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:0.8rem;font-family:inherit;">
+                        <option value="50">50 resultados</option>
+                        <option value="100" selected>100 resultados</option>
+                        <option value="200">200 resultados</option>
+                    </select>
+                    <span id="textSearchStats" style="font-size:0.75rem;color:var(--text-secondary);margin-left:auto;"></span>
+                </div>
+                <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.6rem;">
+                    <span style="font-size:0.65rem;color:var(--text-secondary);align-self:center;">Probar:</span>
+                    <button class="text-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.25rem 0.6rem;border-radius:12px;font-size:0.7rem;cursor:pointer;font-family:inherit;" onclick="textExampleSearch(this)">teatro</button>
+                    <button class="text-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.25rem 0.6rem;border-radius:12px;font-size:0.7rem;cursor:pointer;font-family:inherit;" onclick="textExampleSearch(this)">estudio de grabacion</button>
+                    <button class="text-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.25rem 0.6rem;border-radius:12px;font-size:0.7rem;cursor:pointer;font-family:inherit;" onclick="textExampleSearch(this)">vista al rio</button>
+                    <button class="text-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.25rem 0.6rem;border-radius:12px;font-size:0.7rem;cursor:pointer;font-family:inherit;" onclick="textExampleSearch(this)">doble altura</button>
+                    <button class="text-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.25rem 0.6rem;border-radius:12px;font-size:0.7rem;cursor:pointer;font-family:inherit;" onclick="textExampleSearch(this)">lote propio</button>
+                    <button class="text-example" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.25rem 0.6rem;border-radius:12px;font-size:0.7rem;cursor:pointer;font-family:inherit;" onclick="textExampleSearch(this)">dueno directo</button>
+                </div>
+            </div>
+            <div id="textSearchResults" class="results-container">
+                <div class="empty-state">Busca texto libre en titulo y descripcion de 11,500+ propiedades de todos los portales</div>
+            </div>
+        </div>
 
         <div id="semanticSearchUI" style="display:none;">
             <div style="max-width:700px;margin:0 auto 1.5rem;">
@@ -1398,6 +1441,7 @@
             document.querySelector(`.search-mode-btn[data-mode="${mode}"]`).style.borderColor = 'var(--accent)';
             document.querySelector(`.search-mode-btn[data-mode="${mode}"]`).style.color = 'var(--text-primary)';
             document.getElementById('keywordSearchUI').style.display = mode === 'keyword' ? 'block' : 'none';
+            document.getElementById('textSearchUI').style.display = mode === 'text' ? 'block' : 'none';
             document.getElementById('semanticSearchUI').style.display = mode === 'semantic' ? 'block' : 'none';
         }
 
@@ -2618,6 +2662,128 @@
             }
         }
 
+        function textExampleSearch(btn) {
+            document.getElementById('textSearchInput').value = btn.textContent;
+            performTextSearch();
+        }
+
+        async function performTextSearch() {
+            const query = document.getElementById('textSearchInput').value.trim();
+            if (!query) return;
+            const container = document.getElementById('textSearchResults');
+            container.innerHTML = '<div class="search-loading">Buscando en 11,500+ propiedades...</div>';
+
+            try {
+                const propType = document.getElementById('textFilterType').value || null;
+                const source = document.getElementById('textFilterSource').value || null;
+                const limit = parseInt(document.getElementById('textFilterLimit').value) || 100;
+
+                const rpcUrl = `${SUPABASE_URL}/rest/v1/rpc/text_search_properties`;
+                const response = await fetch(rpcUrl, {
+                    method: 'POST',
+                    headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query_text: query,
+                        target_property_type: propType,
+                        target_source: source,
+                        min_price: 0,
+                        max_price: 999999,
+                        min_area: 0,
+                        min_bedrooms: 0,
+                        target_neighborhood: null,
+                        target_segment: null,
+                        result_limit: limit
+                    })
+                });
+
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
+                const results = await response.json();
+                renderTextSearchResults(results, query);
+            } catch (error) {
+                console.error('Text search error:', error);
+                container.innerHTML = '<div class="no-results">Error en la busqueda. Intenta de nuevo.</div>';
+            }
+        }
+
+        function renderTextSearchResults(results, query) {
+            const container = document.getElementById('textSearchResults');
+            const stats = document.getElementById('textSearchStats');
+
+            if (results.length === 0) {
+                container.innerHTML = '<div class="no-results">No se encontraron propiedades con "' + query + '"</div>';
+                stats.textContent = '0 resultados';
+                return;
+            }
+
+            const srcCounts = {};
+            const typeCounts = {};
+            results.forEach(r => {
+                srcCounts[r.source] = (srcCounts[r.source] || 0) + 1;
+                typeCounts[r.property_type] = (typeCounts[r.property_type] || 0) + 1;
+            });
+            const srcSummary = Object.entries(srcCounts).map(([k,v]) => `${k}: ${v}`).join(', ');
+            stats.textContent = `${results.length} resultados (${srcSummary})`;
+
+            const queryLower = query.toLowerCase();
+
+            container.innerHTML = `<div style="margin-bottom:0.8rem;font-size:0.85rem;color:var(--text-secondary);">${results.length} propiedades con "<strong style="color:var(--accent);">${query}</strong>" - ${srcSummary}</div>` +
+            results.map(prop => {
+                const totalAreaStr = prop.total_area ? `${prop.total_area}` : 'N/A';
+                const coveredAreaStr = prop.covered_area ? `${prop.covered_area}` : '';
+                const areaDisplay = coveredAreaStr ? `${coveredAreaStr} cub. / ${totalAreaStr} tot.` : `${totalAreaStr} tot.`;
+
+                const features = [];
+                if (prop.bedrooms) features.push(`${prop.bedrooms} dorm.`);
+                if (prop.bathrooms) features.push(`${prop.bathrooms} bano${prop.bathrooms > 1 ? 's' : ''}`);
+                if (prop.cocheras) features.push(`${prop.cocheras} coch.`);
+
+                const typeBadge = prop.property_type ? `<span style="background:rgba(168,85,247,0.15);color:#a855f7;padding:2px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;text-transform:uppercase;">${prop.property_type}</span> ` : '';
+                const segBadge = prop.segment === 'refac' ? '<span style="background:rgba(249,115,22,0.15);color:#fb923c;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;">REFAC</span>' :
+                    prop.segment === 'recic' ? '<span style="background:rgba(74,222,128,0.15);color:#4ade80;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;">RECIC</span>' : '';
+
+                // Highlight query in description
+                let descHtml = '<span style="opacity:0.4;">Sin descripcion</span>';
+                if (prop.description) {
+                    const descLower = prop.description.toLowerCase();
+                    const idx = descLower.indexOf(queryLower);
+                    if (idx >= 0) {
+                        const start = Math.max(0, idx - 60);
+                        const end = Math.min(prop.description.length, idx + query.length + 150);
+                        const snippet = prop.description.slice(start, end);
+                        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        descHtml = (start > 0 ? '...' : '') + snippet.replace(new RegExp(escaped, 'gi'), m => `<mark style="background:rgba(0,212,255,0.3);font-weight:600;">${m}</mark>`) + (end < prop.description.length ? '...' : '');
+                    } else {
+                        descHtml = prop.description.substring(0, 200) + (prop.description.length > 200 ? '...' : '');
+                    }
+                }
+
+                // Also highlight in title
+                const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const titleHtml = (prop.title || 'Sin titulo').replace(new RegExp(escaped, 'gi'), m => `<mark style="background:rgba(0,212,255,0.3);font-weight:600;">${m}</mark>`);
+
+                const thumbHtml = prop.thumbnail ? `<img src="${prop.thumbnail}" style="width:80px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display='none'">` : '';
+                const usdM2 = prop.price_per_sqm ? `$${Math.round(prop.price_per_sqm).toLocaleString()}/m2` : '';
+
+                return `<div class="property-card" style="cursor:pointer;display:flex;gap:12px;" onclick="openPropModal('${prop.id}')">
+                    ${thumbHtml}
+                    <div class="property-info" style="flex:1;">
+                        <div class="property-title">${sourceBadge(prop.source)} ${typeBadge}${ageBadge(prop)} ${titleHtml} ${segBadge}</div>
+                        <div class="property-meta">
+                            <div class="property-meta-item">📍 ${prop.neighborhood || '—'}</div>
+                            <div class="property-meta-item">📐 ${areaDisplay} m2</div>
+                            ${features.length > 0 ? `<div class="property-meta-item">🏠 ${features.join(' · ')}</div>` : ''}
+                        </div>
+                        <div style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.4;">${descHtml}</div>
+                    </div>
+                    <div class="property-price" style="min-width:140px;text-align:right;">
+                        <div class="property-price-main">${prop.currency} ${prop.price?.toLocaleString()}</div>
+                        ${usdM2 ? `<div style="font-size:0.8rem;color:var(--accent);margin-top:2px;">${usdM2}</div>` : ''}
+                        ${prop.permalink ? `<a href="${prop.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.85rem;display:block;margin-top:0.5rem;" onclick="event.stopPropagation()">Ver anuncio →</a>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
         async function loadEnrichmentStats() {
             try {
                 const statsEl = document.getElementById('enrichmentStats');
@@ -3521,6 +3687,10 @@ Responde con profundidad, datos concretos del dataset, y vision estrategica de i
         document.getElementById('semanticBtn')?.addEventListener('click', () => {
             const q = document.getElementById('semanticInput').value.trim();
             if (q.length >= 3) performSemanticSearch(q);
+        });
+
+        document.getElementById('textSearchInput')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') performTextSearch();
         });
 
         document.getElementById('semanticInput')?.addEventListener('keydown', e => {
