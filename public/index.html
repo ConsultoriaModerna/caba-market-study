@@ -795,7 +795,7 @@
 
     <header>
         <div class="header-content">
-            <div class="header-title" style="cursor:pointer;" onclick="switchTab('overview')">InmoFindr <span style="font-size:0.55rem;font-weight:500;color:var(--accent);opacity:0.7;vertical-align:middle;margin-left:4px;">CASAS</span> <span id="headerPropCount" style="font-size:0.7rem;font-weight:400;opacity:0.5;"></span></div>
+            <div class="header-title" style="cursor:pointer;" onclick="switchTab('overview')">InmoFindr <span id="headerTypeLabel" style="font-size:0.55rem;font-weight:500;color:var(--accent);opacity:0.7;vertical-align:middle;margin-left:4px;">CASAS</span> <span id="headerPropCount" style="font-size:0.7rem;font-weight:400;opacity:0.5;"></span></div>
             <div class="loading-indicator" id="loadingIndicator">
                 <div class="spinner"></div>
                 <span>Cargando datos...</span>
@@ -810,6 +810,11 @@
         <button class="price-range-btn" data-range="50-150" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">$50K-$150K</button>
         <button class="price-range-btn" data-range="100-180" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">Sweet $100-180K</button>
         <button class="price-range-btn" data-range="100-250" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">$100K-$250K</button>
+        <span style="color:var(--text-secondary);margin-left:8px;">Tipo:</span>
+        <button class="type-filter-btn active" data-type="all" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">Todo</button>
+        <button class="type-filter-btn" data-type="casa" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">Casas</button>
+        <button class="type-filter-btn" data-type="ph" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">PH</button>
+        <button class="type-filter-btn" data-type="departamento" style="padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">Deptos</button>
         <span id="global-filter-count" style="color:var(--accent);font-weight:600;font-size:0.75rem;"></span>
     </div>
 
@@ -827,7 +832,7 @@
     <div class="tab-content active" id="tab-overview">
         <div class="kpi-grid">
             <div class="kpi-card">
-                <div class="kpi-label">Total Casas</div>
+                <div class="kpi-label" id="kpi-type-label">Total Casas</div>
                 <div class="kpi-value" id="kpi-total-properties">-</div>
                 <div style="font-size:0.6rem;margin-top:2px;" id="kpi-source-split"></div>
             </div>
@@ -1233,6 +1238,7 @@
         let sourceShareChart = null;
         let sourceByRegionChart = null;
         let globalPriceRange = 'all';
+        let globalTypeFilter = 'all';
 
         // Data quality helpers
         function bestPricePerSqm(p) {
@@ -1397,16 +1403,21 @@
                 '100-250': [100000, 250000]
             };
             const [min, max] = ranges[globalPriceRange] || [0, Infinity];
-            if (globalPriceRange === 'all') {
-                allProperties = [...allPropertiesRaw];
-            } else {
-                allProperties = allPropertiesRaw.filter(p => {
+            // Start from raw, apply type filter first
+            let filtered = [...allPropertiesRaw];
+            if (globalTypeFilter !== 'all') {
+                filtered = filtered.filter(p => (p.property_type || 'casa') === globalTypeFilter);
+            }
+            // Then apply price filter
+            if (globalPriceRange !== 'all') {
+                filtered = filtered.filter(p => {
                     const usd = p.currency === 'USD' ? p.price : (p.currency === 'ARS' ? Math.round(p.price / 1000) : p.price);
                     return usd >= min && usd <= max;
                 });
             }
+            allProperties = filtered;
             const countEl = document.getElementById('global-filter-count');
-            if (globalPriceRange === 'all') {
+            if (globalPriceRange === 'all' && globalTypeFilter === 'all') {
                 countEl.textContent = '';
             } else {
                 countEl.textContent = `${allProperties.length.toLocaleString()} / ${allPropertiesRaw.length.toLocaleString()}`;
@@ -1434,6 +1445,21 @@
                     e.target.style.background = 'rgba(0,212,255,0.15)';
                     e.target.style.color = 'var(--accent)';
                     globalPriceRange = e.target.dataset.range;
+                    applyGlobalPriceFilter();
+                });
+            });
+            // Type filter toggle
+            document.querySelectorAll('.type-filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.type-filter-btn').forEach(b => {
+                        b.classList.remove('active');
+                        b.style.background = 'transparent';
+                        b.style.color = 'var(--text-secondary)';
+                    });
+                    e.target.classList.add('active');
+                    e.target.style.background = 'rgba(0,212,255,0.15)';
+                    e.target.style.color = 'var(--accent)';
+                    globalTypeFilter = e.target.dataset.type;
                     applyGlobalPriceFilter();
                 });
             });
@@ -1548,7 +1574,7 @@
 
         async function fetchProperties() {
             try {
-                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,price_per_covered_sqm,segment,source,slug,keywords,covered_ratio,permalink,address_text,contact_phone,contact_name,thumbnail,description,latitude,longitude,cocheras,first_seen_at,published_at,enriched_at,geo_precision,livability_score,livability_detail,smp,fot,m2_construibles,distrito_urbanistico';
+                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,price_per_covered_sqm,segment,source,slug,keywords,covered_ratio,permalink,address_text,contact_phone,contact_name,thumbnail,description,latitude,longitude,cocheras,first_seen_at,published_at,enriched_at,geo_precision,livability_score,livability_detail,smp,fot,m2_construibles,distrito_urbanistico,property_type';
                 const base = `${SUPABASE_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast`;
                 const headers = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
 
@@ -1648,7 +1674,11 @@
             const segRecic = segmentMedian('recic');
 
             document.getElementById('kpi-total-properties').textContent = totalProps.toLocaleString();
+            const kpiTypeLabels = { all: 'Total Propiedades', casa: 'Total Casas', ph: 'Total PH', departamento: 'Total Deptos' };
+            document.getElementById('kpi-type-label').textContent = kpiTypeLabels[globalTypeFilter] || 'Total Propiedades';
             document.getElementById('headerPropCount').textContent = `(${totalProps.toLocaleString()})`;
+            const typeLabels = { all: 'TODAS', casa: 'CASAS', ph: 'PH', departamento: 'DEPTOS' };
+            document.getElementById('headerTypeLabel').textContent = typeLabels[globalTypeFilter] || 'CASAS';
 
             // Source split bar
             const zpN = allProperties.filter(p => p.source === 'zonaprop').length;
