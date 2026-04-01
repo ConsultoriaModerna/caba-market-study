@@ -686,7 +686,8 @@ function createPopup(p) {
         ${p.catalogado ? '<div style="font-size:9px;color:#dc2626;margin-top:2px;">Catalogado (restricciones)</div>' : ''}
     </div>` : '';
 
-    return `<div class="popup-content">
+    const bubbleColor = priceColor(getDisplayPrice(p));
+    return `<div class="popup-content" style="border-top:3px solid ${bubbleColor};margin-top:-1px;">
         <div class="popup-title">${p.title || 'Sin título'}</div>
         <div class="popup-addr">${p.address_text || p.neighborhood}</div>
         <dl class="popup-grid">
@@ -794,13 +795,59 @@ function renderList() {
 }
 
 // Select property
-async function deactivateProp(id) {
-    if (!confirm('Marcar como dado de baja?')) return;
+const DEACTIVATION_REASONS = [
+    { key: 'bad_city', label: 'Ciudad/zona incorrecta' },
+    { key: 'bad_geography', label: 'Ubicacion mala (tren, villa, inundable)' },
+    { key: 'price_high', label: 'Precio demasiado alto' },
+    { key: 'too_small', label: 'Muy chico / pocas prestaciones' },
+    { key: 'bad_condition', label: 'Mal estado irreparable' },
+    { key: 'duplicate', label: 'Duplicado' },
+    { key: 'sold', label: 'Vendido / no disponible' },
+    { key: 'not_interested', label: 'No me interesa (otro)' },
+];
+
+function showDeactivateModal(id) {
+    const existing = document.getElementById('deact-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'deact-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;';
+    modal.innerHTML = `<div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px 24px;max-width:340px;width:90%;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text);">Motivo de baja</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+            ${DEACTIVATION_REASONS.map((r, i) => `<button class="deact-reason-btn" data-reason="${r.key}" style="text-align:left;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">${i+1}. ${r.label}</button>`).join('')}
+        </div>
+        <button onclick="document.getElementById('deact-modal').remove()" style="margin-top:10px;width:100%;padding:6px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--dim);font-size:11px;cursor:pointer;font-family:inherit;">Cancelar (Esc)</button>
+    </div>`;
+
+    modal.querySelectorAll('.deact-reason-btn').forEach(btn => {
+        btn.onclick = () => confirmDeactivate(id, btn.dataset.reason);
+    });
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+    document.body.appendChild(modal);
+
+    // Keyboard shortcuts: 1-8 for reasons, Esc to cancel
+    function onKey(e) {
+        if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', onKey); return; }
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= DEACTIVATION_REASONS.length) {
+            confirmDeactivate(id, DEACTIVATION_REASONS[num - 1].key);
+            document.removeEventListener('keydown', onKey);
+        }
+    }
+    document.addEventListener('keydown', onKey);
+}
+
+async function confirmDeactivate(id, reason) {
+    const modal = document.getElementById('deact-modal');
+    if (modal) modal.remove();
     try {
         const resp = await fetch(`${SB_URL}/rest/v1/properties?id=eq.${id}`, {
             method: 'PATCH',
             headers: { ...HEADERS, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-            body: JSON.stringify({ is_active: false })
+            body: JSON.stringify({ is_active: false, deactivation_reason: reason })
         });
         if (!resp.ok) throw new Error(`${resp.status}`);
         allProps = allProps.filter(p => p.id !== id);
@@ -809,6 +856,11 @@ async function deactivateProp(id) {
     } catch (e) {
         alert('Error: ' + e.message);
     }
+}
+
+// Legacy name kept for popup buttons
+function deactivateProp(id) {
+    showDeactivateModal(id);
 }
 
 function selectProp(id) {
@@ -1539,6 +1591,76 @@ async function init() {
             });
         }
     });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', e => {
+        // Skip if typing in an input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+        // Skip if deactivation modal is open
+        if (document.getElementById('deact-modal')) return;
+
+        const sorted = document.querySelectorAll('.prop-card');
+        if (!sorted.length) return;
+
+        if (e.key === 'j' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            const idx = [...sorted].findIndex(c => c.classList.contains('selected'));
+            const next = idx < sorted.length - 1 ? idx + 1 : 0;
+            selectProp(sorted[next].dataset.id);
+        } else if (e.key === 'k' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const idx = [...sorted].findIndex(c => c.classList.contains('selected'));
+            const prev = idx > 0 ? idx - 1 : sorted.length - 1;
+            selectProp(sorted[prev].dataset.id);
+        } else if (e.key === 'o' || e.key === 'Enter') {
+            // Open permalink in new tab
+            if (selectedPropId) {
+                const p = allProps.find(x => x.id === selectedPropId);
+                if (p?.permalink) window.open(p.permalink, '_blank');
+            }
+        } else if (e.key === 'd' || e.key === 'Delete') {
+            // Deactivate selected
+            if (selectedPropId) showDeactivateModal(selectedPropId);
+        } else if (e.key === '/' || e.key === 'f') {
+            e.preventDefault();
+            document.getElementById('f-text-search').focus();
+        } else if (e.key === '?') {
+            toggleKeyboardHelp();
+        } else if (e.key === 'Escape') {
+            map.closePopup();
+        }
+    });
+
+    // Keyboard help tooltip
+    const helpBtn = document.createElement('div');
+    helpBtn.id = 'kb-help-btn';
+    helpBtn.title = 'Atajos de teclado (?)';
+    helpBtn.innerHTML = '?';
+    helpBtn.style.cssText = 'position:fixed;bottom:20px;left:20px;width:28px;height:28px;background:var(--card);border:1px solid var(--border);border-radius:50%;color:var(--dim);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:950;transition:all 0.15s;';
+    helpBtn.onmouseover = () => { helpBtn.style.borderColor = 'var(--accent)'; helpBtn.style.color = 'var(--accent)'; };
+    helpBtn.onmouseout = () => { helpBtn.style.borderColor = 'var(--border)'; helpBtn.style.color = 'var(--dim)'; };
+    helpBtn.onclick = toggleKeyboardHelp;
+    document.body.appendChild(helpBtn);
+}
+
+function toggleKeyboardHelp() {
+    let el = document.getElementById('kb-help-panel');
+    if (el) { el.remove(); return; }
+    el = document.createElement('div');
+    el.id = 'kb-help-panel';
+    el.style.cssText = 'position:fixed;bottom:56px;left:20px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;z-index:960;box-shadow:0 4px 16px rgba(0,0,0,0.4);font-size:11px;line-height:1.8;min-width:220px;';
+    el.innerHTML = `
+        <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:var(--accent);">Atajos de teclado</div>
+        <div><kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:10px;">j</kbd> / <kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:10px;">↓</kbd> Siguiente propiedad</div>
+        <div><kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:10px;">k</kbd> / <kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:10px;">↑</kbd> Anterior propiedad</div>
+        <div><kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:10px;">o</kbd> / <kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:10px;">Enter</kbd> Abrir anuncio</div>
+        <div><kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:10px;">d</kbd> Dar de baja (con motivo)</div>
+        <div><kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:10px;">/</kbd> Buscar en anuncios</div>
+        <div><kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:10px;">Esc</kbd> Cerrar popup</div>
+        <div><kbd style="background:var(--card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:10px;">?</kbd> Esta ayuda</div>
+    `;
+    el.onclick = () => el.remove();
+    document.body.appendChild(el);
 }
 
 document.addEventListener('DOMContentLoaded', init);
