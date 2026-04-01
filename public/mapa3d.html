@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InmoFindr — 3D Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/deck.gl@9.1.4/dist.min.js"></script>
+    <style>
+        :root {
+            --bg: #0a0e1a; --panel: #111827; --border: #1e293b;
+            --text: #e2e8f0; --dim: #64748b; --accent: #06b6d4;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+        #map { position: absolute; inset: 0; }
+
+        /* HUD overlay */
+        .hud { position: fixed; z-index: 100; pointer-events: none; }
+        .hud > * { pointer-events: auto; }
+
+        .hud-top {
+            top: 16px; left: 16px; right: 16px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .hud-title {
+            background: rgba(17,24,39,0.85); backdrop-filter: blur(12px);
+            border: 1px solid var(--border); border-radius: 12px;
+            padding: 12px 20px; display: flex; align-items: center; gap: 12px;
+        }
+        .hud-title h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+        .hud-title .badge { background: var(--accent); color: #000; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+
+        .hud-stats {
+            background: rgba(17,24,39,0.85); backdrop-filter: blur(12px);
+            border: 1px solid var(--border); border-radius: 12px;
+            padding: 10px 16px; display: flex; gap: 20px; font-size: 12px;
+        }
+        .hud-stat-val { font-weight: 700; color: var(--accent); }
+
+        /* Controls panel */
+        .hud-controls {
+            top: 80px; right: 16px; width: 240px;
+        }
+        .ctrl-panel {
+            background: rgba(17,24,39,0.9); backdrop-filter: blur(12px);
+            border: 1px solid var(--border); border-radius: 12px; padding: 14px;
+        }
+        .ctrl-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin-bottom: 10px; }
+        .ctrl-row { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; font-size: 12px; }
+        .ctrl-row label { color: var(--dim); }
+        .ctrl-btn {
+            background: transparent; border: 1px solid var(--border); color: var(--text);
+            padding: 6px 12px; border-radius: 8px; font-size: 11px; cursor: pointer;
+            font-family: inherit; transition: all 0.15s;
+        }
+        .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .ctrl-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+        .ctrl-toggle { display: flex; gap: 4px; }
+        input[type="range"] {
+            -webkit-appearance: none; width: 100%; height: 4px;
+            background: var(--border); border-radius: 2px; outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 14px; height: 14px;
+            border-radius: 50%; background: var(--accent); cursor: pointer;
+        }
+
+        /* Flyover button */
+        .fly-btn {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            z-index: 100; background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+            color: #fff; border: none; padding: 12px 28px; border-radius: 30px;
+            font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+            box-shadow: 0 4px 24px rgba(6,182,212,0.4); transition: all 0.2s;
+            letter-spacing: 0.3px;
+        }
+        .fly-btn:hover { transform: translateX(-50%) scale(1.05); box-shadow: 0 6px 32px rgba(6,182,212,0.6); }
+        .fly-btn.flying { background: linear-gradient(135deg, #ef4444, #f97316); }
+
+        /* Legend */
+        .hud-legend {
+            bottom: 24px; left: 16px;
+        }
+        .legend-bar {
+            background: rgba(17,24,39,0.85); backdrop-filter: blur(12px);
+            border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px;
+        }
+        .legend-gradient {
+            width: 180px; height: 10px; border-radius: 4px;
+            background: linear-gradient(to right, #10b981, #fbbf24, #ef4444);
+            margin-bottom: 4px;
+        }
+        .legend-labels { display: flex; justify-content: space-between; font-size: 9px; color: var(--dim); width: 180px; }
+
+        /* Tooltip */
+        .deck-tooltip {
+            background: rgba(17,24,39,0.95) !important; backdrop-filter: blur(12px);
+            border: 1px solid var(--border) !important; border-radius: 10px !important;
+            padding: 12px 16px !important; font-family: 'Inter', sans-serif !important;
+            font-size: 12px !important; color: var(--text) !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important; max-width: 280px !important;
+        }
+
+        /* Back to 2D link */
+        .back-link {
+            position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+            z-index: 200; color: var(--dim); font-size: 11px; text-decoration: none;
+            background: rgba(17,24,39,0.7); padding: 4px 12px; border-radius: 20px;
+            border: 1px solid var(--border); transition: all 0.15s;
+        }
+        .back-link:hover { color: var(--accent); border-color: var(--accent); }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+
+<a href="mapa.html" class="back-link">Volver a mapa 2D</a>
+
+<div class="hud hud-top">
+    <div class="hud-title">
+        <h1>InmoFindr 3D</h1>
+        <span class="badge">BETA</span>
+    </div>
+    <div class="hud-stats" id="stats">
+        <span>Cargando...</span>
+    </div>
+</div>
+
+<div class="hud hud-controls">
+    <div class="ctrl-panel">
+        <div class="ctrl-title">Visualizacion</div>
+        <div class="ctrl-row">
+            <label>Modo</label>
+            <div class="ctrl-toggle">
+                <button class="ctrl-btn active" id="mode-scatter" onclick="setMode('scatter')">Puntos</button>
+                <button class="ctrl-btn" id="mode-hex" onclick="setMode('hex')">Hexbin</button>
+                <button class="ctrl-btn" id="mode-column" onclick="setMode('column')">Columnas</button>
+            </div>
+        </div>
+        <div class="ctrl-row">
+            <label>Altura = precio</label>
+            <input type="range" id="elevation-scale" min="0" max="200" value="50" oninput="updateElevation(this.value)">
+        </div>
+        <div class="ctrl-row">
+            <label>Radio hexbin</label>
+            <input type="range" id="hex-radius" min="50" max="500" value="150" oninput="updateHexRadius(this.value)">
+        </div>
+        <div class="ctrl-row" style="margin-top:12px;">
+            <label>Segmento</label>
+            <div class="ctrl-toggle">
+                <button class="ctrl-btn active" id="seg-all" onclick="setSeg('all')">Todos</button>
+                <button class="ctrl-btn" id="seg-refac" onclick="setSeg('refac')">Refac</button>
+                <button class="ctrl-btn" id="seg-recic" onclick="setSeg('recic')">Recic</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<button class="fly-btn" id="flyBtn" onclick="toggleFlyover()">Sobrevolar Buenos Aires</button>
+
+<div class="hud hud-legend">
+    <div class="legend-bar">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">USD/m²</div>
+        <div class="legend-gradient"></div>
+        <div class="legend-labels"><span>$600</span><span>$1,200</span><span>$1,800+</span></div>
+    </div>
+</div>
+
+<script>
+const SB_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
+
+// State
+let allData = [];
+let filteredData = [];
+let currentMode = 'scatter';
+let currentSeg = 'all';
+let elevationScale = 50;
+let hexRadius = 150;
+let flyAnimation = null;
+let deckgl, mapInstance;
+
+// Color scale: green -> yellow -> red
+function priceToColor(v) {
+    const lo = 600, mid = 1200, hi = 1800;
+    if (!v || v <= lo) return [16, 185, 129, 200];
+    if (v <= mid) {
+        const t = (v - lo) / (mid - lo);
+        return [Math.round(16 + t * 235), Math.round(185 + t * 6), Math.round(129 - t * 93), 200];
+    }
+    if (v <= hi) {
+        const t = (v - mid) / (hi - mid);
+        return [Math.round(251 - t * 12), Math.round(191 - t * 123), Math.round(36 + t * 32), 200];
+    }
+    return [239, 68, 68, 200];
+}
+
+function fmt(n) { return n ? Number(n).toLocaleString('es-AR') : '-'; }
+
+// Fetch properties from Supabase
+async function fetchData() {
+    const fields = 'id,title,price,price_per_sqm,total_area,covered_area,ambientes,neighborhood,address_text,latitude,longitude,permalink,keywords,segment,source,livability_score,first_seen_at';
+    const url = `${SB_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&latitude=not.is.null&price=gte.50000&order=price_per_sqm.asc`;
+    const resp = await fetch(url, { headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` } });
+    const data = await resp.json();
+    return data.map(p => ({
+        ...p,
+        price: Number(p.price) || 0,
+        price_per_sqm: Number(p.price_per_sqm) || 0,
+        total_area: Number(p.total_area) || 0,
+        latitude: Number(p.latitude),
+        longitude: Number(p.longitude),
+        position: [Number(p.longitude), Number(p.latitude)]
+    }));
+}
+
+// Build layers based on current mode
+function buildLayers() {
+    const data = filteredData;
+
+    if (currentMode === 'scatter') {
+        return [
+            new deck.ScatterplotLayer({
+                id: 'scatter',
+                data,
+                getPosition: d => d.position,
+                getRadius: d => Math.max(8, Math.sqrt(d.total_area || 50) * 2),
+                getFillColor: d => priceToColor(d.price_per_sqm),
+                getLineColor: [255, 255, 255, 120],
+                lineWidthMinPixels: 1,
+                radiusMinPixels: 4,
+                radiusMaxPixels: 30,
+                getElevation: d => (d.price_per_sqm || 0) * elevationScale / 10,
+                extruded: true,
+                pickable: true,
+                opacity: 0.85,
+                transitions: { getElevation: 600, getRadius: 400 }
+            })
+        ];
+    }
+
+    if (currentMode === 'hex') {
+        return [
+            new deck.HexagonLayer({
+                id: 'hex',
+                data,
+                getPosition: d => d.position,
+                getElevationWeight: d => d.price_per_sqm || 0,
+                getColorWeight: d => d.price_per_sqm || 0,
+                elevationAggregation: 'MEAN',
+                colorAggregation: 'MEAN',
+                radius: hexRadius,
+                elevationScale: elevationScale * 2,
+                extruded: true,
+                pickable: true,
+                opacity: 0.8,
+                coverage: 0.88,
+                colorRange: [
+                    [16, 185, 129], [74, 222, 128], [251, 191, 36],
+                    [249, 115, 22], [239, 68, 68], [185, 28, 28]
+                ],
+                transitions: { elevationScale: 600 }
+            })
+        ];
+    }
+
+    if (currentMode === 'column') {
+        return [
+            new deck.ColumnLayer({
+                id: 'column',
+                data,
+                getPosition: d => d.position,
+                getElevation: d => (d.price_per_sqm || 0) * elevationScale / 8,
+                getFillColor: d => priceToColor(d.price_per_sqm),
+                diskResolution: 8,
+                radius: 25,
+                extruded: true,
+                pickable: true,
+                opacity: 0.8,
+                transitions: { getElevation: 600 }
+            })
+        ];
+    }
+}
+
+function getTooltip({ object }) {
+    if (!object) return null;
+
+    // Hexbin aggregate
+    if (object.points) {
+        const pts = object.points;
+        const avg = Math.round(pts.reduce((s, p) => s + (p.source.price_per_sqm || 0), 0) / pts.length);
+        const avgPrice = Math.round(pts.reduce((s, p) => s + (p.source.price || 0), 0) / pts.length);
+        return {
+            html: `<div style="font-weight:700;font-size:14px;margin-bottom:6px;">${pts.length} propiedades</div>
+                   <div>USD/m² promedio: <b style="color:#06b6d4;">$${fmt(avg)}</b></div>
+                   <div>Precio promedio: <b>$${fmt(avgPrice)}</b></div>`,
+            style: {}
+        };
+    }
+
+    // Individual property
+    const p = object;
+    const segLabel = p.segment === 'refac' ? '<span style="color:#fb923c;">A refaccionar</span>' :
+                     p.segment === 'recic' ? '<span style="color:#4ade80;">Reciclada</span>' : '';
+    return {
+        html: `<div style="font-weight:700;font-size:13px;margin-bottom:4px;line-height:1.3;">${p.title || 'Sin titulo'}</div>
+               <div style="color:#94a3b8;font-size:11px;margin-bottom:8px;">${p.address_text || p.neighborhood}</div>
+               <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:12px;">
+                   <div>USD/m² <b style="color:#06b6d4;">$${fmt(p.price_per_sqm)}</b></div>
+                   <div>Precio <b>$${fmt(p.price)}</b></div>
+                   <div>Area <b>${fmt(p.total_area)} m²</b></div>
+                   <div>Amb. <b>${p.ambientes || '-'}</b></div>
+               </div>
+               ${segLabel ? '<div style="margin-top:6px;">' + segLabel + '</div>' : ''}
+               ${p.livability_score ? '<div style="margin-top:4px;">Livability <b style="color:' + (p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444') + ';">' + p.livability_score + '</b></div>' : ''}`,
+        style: {}
+    };
+}
+
+function updateStats() {
+    const d = filteredData;
+    const avg = d.length ? Math.round(d.reduce((s, p) => s + p.price_per_sqm, 0) / d.length) : 0;
+    const median = d.length ? d.map(p => p.price).sort((a, b) => a - b)[Math.floor(d.length / 2)] : 0;
+    document.getElementById('stats').innerHTML = `
+        <span><span class="hud-stat-val">${d.length.toLocaleString()}</span> propiedades</span>
+        <span>Med. <span class="hud-stat-val">$${fmt(avg)}</span>/m²</span>
+        <span>Precio med. <span class="hud-stat-val">$${fmt(median)}</span></span>
+    `;
+}
+
+function render() {
+    deckgl.setProps({ layers: buildLayers() });
+    updateStats();
+}
+
+// Controls
+function setMode(mode) {
+    currentMode = mode;
+    ['scatter', 'hex', 'column'].forEach(m => {
+        document.getElementById('mode-' + m).classList.toggle('active', m === mode);
+    });
+    render();
+}
+
+function setSeg(seg) {
+    currentSeg = seg;
+    ['all', 'refac', 'recic'].forEach(s => {
+        document.getElementById('seg-' + s).classList.toggle('active', s === seg);
+    });
+    filteredData = seg === 'all' ? allData : allData.filter(p => p.segment === seg);
+    render();
+}
+
+function updateElevation(val) {
+    elevationScale = Number(val);
+    render();
+}
+
+function updateHexRadius(val) {
+    hexRadius = Number(val);
+    render();
+}
+
+// Cinematic flyover
+const FLYOVER_WAYPOINTS = [
+    { center: [-58.46, -34.55], zoom: 13.5, pitch: 60, bearing: -30, duration: 0 },     // Start: Belgrano
+    { center: [-58.44, -34.57], zoom: 14, pitch: 65, bearing: -10, duration: 8000 },     // Palermo
+    { center: [-58.42, -34.59], zoom: 14.5, pitch: 60, bearing: 15, duration: 8000 },    // Recoleta
+    { center: [-58.38, -34.60], zoom: 15, pitch: 70, bearing: 40, duration: 6000 },      // Microcentro
+    { center: [-58.37, -34.62], zoom: 14.5, pitch: 65, bearing: 60, duration: 6000 },    // San Telmo
+    { center: [-58.39, -34.63], zoom: 14, pitch: 55, bearing: 90, duration: 6000 },      // La Boca
+    { center: [-58.44, -34.61], zoom: 13, pitch: 50, bearing: 120, duration: 8000 },     // Caballito
+    { center: [-58.47, -34.57], zoom: 12.5, pitch: 55, bearing: -60, duration: 10000 },  // Wide view
+    { center: [-58.43, -34.59], zoom: 13, pitch: 60, bearing: -20, duration: 8000 },     // Final: center
+];
+
+let flyoverIndex = 0;
+let isFlying = false;
+
+function toggleFlyover() {
+    const btn = document.getElementById('flyBtn');
+    if (isFlying) {
+        isFlying = false;
+        btn.textContent = 'Sobrevolar Buenos Aires';
+        btn.classList.remove('flying');
+        return;
+    }
+    isFlying = true;
+    flyoverIndex = 0;
+    btn.textContent = 'Detener sobrevuelo';
+    btn.classList.add('flying');
+    flyNext();
+}
+
+function flyNext() {
+    if (!isFlying || flyoverIndex >= FLYOVER_WAYPOINTS.length) {
+        isFlying = false;
+        document.getElementById('flyBtn').textContent = 'Sobrevolar Buenos Aires';
+        document.getElementById('flyBtn').classList.remove('flying');
+        return;
+    }
+    const wp = FLYOVER_WAYPOINTS[flyoverIndex];
+    flyoverIndex++;
+    mapInstance.flyTo({
+        center: wp.center,
+        zoom: wp.zoom,
+        pitch: wp.pitch,
+        bearing: wp.bearing,
+        duration: wp.duration,
+        essential: true
+    });
+    setTimeout(flyNext, wp.duration + 500);
+}
+
+// On click: open permalink
+function onClick(info) {
+    if (info.object && info.object.permalink) {
+        window.open(info.object.permalink, '_blank');
+    }
+}
+
+// Initialize
+async function init() {
+    const data = await fetchData();
+    allData = data;
+    filteredData = data;
+
+    mapInstance = new maplibregl.Map({
+        container: 'map',
+        style: {
+            version: 8,
+            sources: {
+                'carto-dark': {
+                    type: 'raster',
+                    tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
+                    tileSize: 256,
+                    attribution: '&copy; CARTO, &copy; OpenStreetMap'
+                }
+            },
+            layers: [{
+                id: 'carto-dark-layer',
+                type: 'raster',
+                source: 'carto-dark',
+                minzoom: 0,
+                maxzoom: 20
+            }]
+        },
+        center: [-58.43, -34.60],
+        zoom: 12,
+        pitch: 50,
+        bearing: -15,
+        antialias: true
+    });
+
+    // Navigation controls
+    mapInstance.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+
+    deckgl = new deck.Deck({
+        canvas: 'deck-canvas',
+        parent: document.getElementById('map'),
+        initialViewState: {
+            longitude: -58.43,
+            latitude: -34.60,
+            zoom: 12,
+            pitch: 50,
+            bearing: -15
+        },
+        controller: false, // MapLibre handles interaction
+        getTooltip,
+        onClick,
+        layers: []
+    });
+
+    // Sync deck.gl with MapLibre camera
+    mapInstance.on('move', () => {
+        const { lng, lat } = mapInstance.getCenter();
+        deckgl.setProps({
+            viewState: {
+                longitude: lng,
+                latitude: lat,
+                zoom: mapInstance.getZoom(),
+                pitch: mapInstance.getPitch(),
+                bearing: mapInstance.getBearing()
+            }
+        });
+    });
+
+    // Initial render after map loads
+    mapInstance.on('load', () => {
+        render();
+        // Entrance animation
+        setTimeout(() => {
+            mapInstance.flyTo({
+                center: [-58.43, -34.59],
+                zoom: 13,
+                pitch: 55,
+                bearing: -20,
+                duration: 3000
+            });
+        }, 500);
+    });
+}
+
+init();
+</script>
+</body>
+</html>

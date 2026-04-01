@@ -135,6 +135,10 @@
         .legend-title { font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--dim); margin-bottom: 8px; }
         .gradient-bar { width: 120px; height: 10px; border-radius: 2px; background: linear-gradient(to right, #10b981, #fbbf24, #ef4444); margin-bottom: 4px; }
         .gradient-labels { display: flex; justify-content: space-between; width: 120px; color: var(--dim); font-size: 9px; }
+        .legend-religious { position: fixed; bottom: 70px; right: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-size: 11px; z-index: 950; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: none; }
+        .legend-religious.visible { display: block; }
+        .legend-religious-item { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+        .legend-religious-item span:first-child { font-size: 14px; width: 18px; text-align: center; }
 
         /* Loading */
         .loading-overlay {
@@ -160,6 +164,7 @@
     <div id="sidebar">
         <div class="sidebar-header">
             <h1>InmoFindr Explorer</h1>
+            <a href="mapa3d.html" style="font-size:10px;color:var(--accent);text-decoration:none;border:1px solid var(--accent);padding:2px 8px;border-radius:12px;font-weight:600;opacity:0.8;transition:opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">3D</a>
             <div class="sub">Propiedades geocodeadas — Live Supabase</div>
         </div>
 
@@ -218,6 +223,16 @@
                 </div>
             </div>
             <div class="filter-section">
+                <div class="filter-label">Modo de precio</div>
+                <div style="display:flex;gap:4px;">
+                    <button id="price-mode-raw" class="seg-chip active" onclick="setPriceMode('raw')" style="flex:1;padding:4px;font-size:10px;cursor:pointer;">USD/m² bruto</button>
+                    <button id="price-mode-adj" class="seg-chip" onclick="setPriceMode('adjusted')" style="flex:1;padding:4px;font-size:10px;cursor:pointer;">USD/m² ajustado</button>
+                </div>
+                <div id="price-mode-info" style="font-size:9px;color:var(--dim);margin-top:4px;display:none;">
+                    Ajusta por condicion: refac +30%, tren &lt;200m +5-15%, reciclada -10%
+                </div>
+            </div>
+            <div class="filter-section">
                 <div class="filter-label">Isocrona (click en mapa para origen)</div>
                 <div class="filter-row" style="gap:6px;">
                     <select class="filter-input" id="f-iso-time" style="flex:1;">
@@ -256,6 +271,19 @@
     <div class="legend-title">USD/m²</div>
     <div class="gradient-bar"></div>
     <div class="gradient-labels"><span>≤$600</span><span>$1,200</span><span>≥$1,800</span></div>
+</div>
+
+<div class="legend-religious" id="legendReligious">
+    <div class="legend-title">Lugares de Culto</div>
+    <div class="legend-religious-item"><span style="color:#5D4037">✝</span> Catolica</div>
+    <div class="legend-religious-item"><span style="color:#E91E63">✞</span> Evangelica</div>
+    <div class="legend-religious-item"><span style="color:#6A1B9A">☦</span> Ortodoxa</div>
+    <div class="legend-religious-item"><span style="color:#00838F">⛪</span> Mormon</div>
+    <div class="legend-religious-item"><span style="color:#1565C0">✡</span> Judaismo</div>
+    <div class="legend-religious-item"><span style="color:#2E7D32">☪</span> Islam</div>
+    <div class="legend-religious-item"><span style="color:#FF8F00">☸</span> Budismo</div>
+    <div class="legend-religious-item"><span style="color:#E65100">🕉</span> Hinduismo</div>
+    <div class="legend-religious-item"><span style="color:#757575">♱</span> Otro</div>
 </div>
 
 <div class="loading-overlay" id="loading">
@@ -300,6 +328,46 @@ const COSTO_CONSTRUCCION_M2 = 1400; // USD standard
 const COSTO_DIY_M2 = 980; // USD with 30% efficiency
 let allProps = [];
 let filtered = [];
+let priceMode = 'raw'; // 'raw' or 'adjusted'
+
+// Adjusted USD/m2 accounts for condition, proximity to rail, and features
+function adjustedPricePerSqm(p) {
+    let base = p.price_per_sqm || 0;
+    if (!base) return 0;
+    let factor = 1.0;
+
+    // Condition penalty: "a refaccionar" means you'll spend ~30% more to make it livable
+    if (p.segment === 'refac') factor += 0.30;
+    // Condition bonus: reciclada/renovada is move-in ready, worth ~10% more
+    if (p.segment === 'recic') factor -= 0.10;
+
+    // Rail proximity penalty (noise, vibration, visual)
+    if (p._railDist !== undefined && p._railDist < 200) {
+        if (p._railDist < 80) factor += 0.15;       // very close: heavy penalty
+        else if (p._railDist < 150) factor += 0.10;  // medium
+        else factor += 0.05;                          // outer buffer
+    }
+
+    // Keywords that signal hidden costs
+    const kws = (p.keywords || []).map(k => k.toLowerCase());
+    if (kws.includes('sin escritura') || kws.includes('posesion')) factor += 0.20;
+
+    return Math.round(base * factor);
+}
+
+function getDisplayPrice(p) {
+    return priceMode === 'adjusted' ? adjustedPricePerSqm(p) : (p.price_per_sqm || 0);
+}
+
+function setPriceMode(mode) {
+    priceMode = mode;
+    document.getElementById('price-mode-raw').classList.toggle('active', mode === 'raw');
+    document.getElementById('price-mode-adj').classList.toggle('active', mode === 'adjusted');
+    document.getElementById('price-mode-info').style.display = mode === 'adjusted' ? 'block' : 'none';
+    renderMarkers();
+    renderList();
+    updateStats();
+}
 let activeKws = new Set();
 let activeSegs = new Set();
 let activeSrcs = new Set();
@@ -454,11 +522,12 @@ function resetFilters() {
 
 function updateStats() {
     const bar = document.getElementById('stats-bar');
-    const avgM2 = filtered.length > 0 ? Math.round(filtered.reduce((s,p) => s + (Number(p.price_per_sqm)||0), 0) / filtered.length) : 0;
+    const avgM2 = filtered.length > 0 ? Math.round(filtered.reduce((s,p) => s + getDisplayPrice(p), 0) / filtered.length) : 0;
     const medianPrice = filtered.length > 0 ? filtered.map(p=>p.price).sort((a,b)=>a-b)[Math.floor(filtered.length/2)] : 0;
     const newCount = filtered.filter(p => p.first_seen_at && (Date.now() - new Date(p.first_seen_at).getTime()) < 3 * 86400000).length;
     const newBadge = newCount > 0 ? `<span style="color:#4ade80;"><strong>${newCount}</strong> nuevas</span>` : '';
-    bar.innerHTML = `<span><strong>${filtered.length}</strong> propiedades</span><span>Med. <strong>$${fmt(avgM2)}</strong>/m²</span><span>Precio med. <strong>$${fmt(medianPrice)}</strong></span>${newBadge}`;
+    const modeLabel = priceMode === 'adjusted' ? ' <span style="color:#f59e0b;font-size:9px;">(ajustado)</span>' : '';
+    bar.innerHTML = `<span><strong>${filtered.length}</strong> propiedades</span><span>Med. <strong>$${fmt(avgM2)}</strong>/m²${modeLabel}</span><span>Precio med. <strong>$${fmt(medianPrice)}</strong></span>${newBadge}`;
 }
 
 // Render markers on map
@@ -466,7 +535,8 @@ function renderMarkers() {
     markerCluster.clearLayers();
 
     filtered.forEach(p => {
-        const color = priceColor(p.price_per_sqm);
+        const dp = getDisplayPrice(p);
+        const color = priceColor(dp);
         const icon = L.divIcon({
             className: '',
             html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.85);box-shadow:0 0 6px 2px ${color}88, 0 1px 4px rgba(0,0,0,0.5);"></div>`,
@@ -474,7 +544,7 @@ function renderMarkers() {
             iconAnchor: [7, 7]
         });
 
-        const marker = L.marker([p.latitude, p.longitude], { icon, _pricePerSqm: p.price_per_sqm || 0 })
+        const marker = L.marker([p.latitude, p.longitude], { icon, _pricePerSqm: dp })
             .bindPopup(() => createPopup(p), { maxWidth: 300, autoPan: false, closeOnClick: false });
 
         marker.on('click', (e) => {
@@ -514,6 +584,8 @@ function createPopup(p) {
         <dl class="popup-grid">
             <dt>Precio</dt><dd>USD $${fmt(p.price)}</dd>
             <dt>USD/m²</dt><dd style="color:${priceColor(p.price_per_sqm)}">$${fmt(p.price_per_sqm)}</dd>
+            ${priceMode === 'adjusted' && adjustedPricePerSqm(p) !== p.price_per_sqm ? `<dt>USD/m² adj.</dt><dd style="color:${priceColor(adjustedPricePerSqm(p))}">$${fmt(adjustedPricePerSqm(p))} <span style="font-size:9px;color:var(--dim);">(costo real)</span></dd>` : ''}
+            ${p._railDist !== undefined && p._railDist < 200 ? `<dt>Dist. tren</dt><dd style="color:${p._railDist < 80 ? '#ef4444' : p._railDist < 150 ? '#f97316' : '#fbbf24'}">${Math.round(p._railDist)}m</dd>` : ''}
             <dt>Superficie</dt><dd>${fmt(p.total_area)} m²</dd>
             <dt>% Cubierto</dt><dd>${covRatio}</dd>
             <dt>Ambientes</dt><dd>${p.ambientes || '—'}</dd>
@@ -530,10 +602,11 @@ function createPopup(p) {
 // Render sidebar list
 function renderList() {
     const list = document.getElementById('prop-list');
-    const sorted = [...filtered].sort((a, b) => (a.price_per_sqm || 9999) - (b.price_per_sqm || 9999));
+    const sorted = [...filtered].sort((a, b) => (getDisplayPrice(a) || 9999) - (getDisplayPrice(b) || 9999));
 
     list.innerHTML = sorted.slice(0, 200).map(p => {
-        const color = priceColor(p.price_per_sqm);
+        const dp = getDisplayPrice(p);
+        const color = priceColor(dp);
         const kwsHtml = (p.keywords || []).slice(0, 5).map(k => {
             const isMatch = activeKws.has(k.toLowerCase()) || activeKws.has(k.toLowerCase().replace('i','í'));
             return `<span class="prop-kw${isMatch ? ' match' : ''}">${k}</span>`;
@@ -556,13 +629,14 @@ function renderList() {
             <div class="prop-addr">${p.address_text || p.neighborhood}</div>
             <div class="prop-metrics">
                 <div class="prop-metric"><span class="val">$${fmt(p.price)}</span><span class="lbl">Precio</span></div>
-                <div class="prop-metric"><span class="val" style="color:${color}">$${fmt(p.price_per_sqm)}</span><span class="lbl">USD/m²</span></div>
+                <div class="prop-metric"><span class="val" style="color:${color}">$${fmt(dp)}</span><span class="lbl">USD/m²${priceMode === 'adjusted' && dp !== p.price_per_sqm ? ' adj.' : ''}</span></div>
                 <div class="prop-metric"><span class="val">${fmt(p.total_area)}${covInfo}</span><span class="lbl">m²</span></div>
                 <div class="prop-metric"><span class="val">${dbStr || p.ambientes || '—'}</span><span class="lbl">${dbStr ? 'Dorm/Baño' : 'Amb'}</span></div>
             </div>
             ${kwsHtml ? `<div class="prop-keywords">${kwsHtml}</div>` : ''}
             <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
                 ${p.livability_score ? `<span style="font-size:9px;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444'};font-weight:700;">Liv ${p.livability_score}</span>` : ''}
+                ${p._railDist !== undefined && p._railDist < 200 ? `<span style="font-size:9px;color:${p._railDist < 80 ? '#ef4444' : '#f97316'};font-weight:600;">Tren ${Math.round(p._railDist)}m</span>` : ''}
                 ${p.fot_em ? `<span style="font-size:9px;color:#4ade80;font-weight:600;">FOT ${p.fot_em}</span>` : ''}
                 ${p.m2_construibles ? `<span style="font-size:9px;color:#22d3ee;font-weight:600;">${fmt(p.m2_construibles)}m² constr.</span>` : ''}
                 ${p.distrito ? `<span style="font-size:9px;color:#a78bfa;">${p.distrito}</span>` : ''}
@@ -630,40 +704,109 @@ function loadRailways() {
             railwayLayer.addTo(map);
             // Build 200m buffer zones
             buildRailBuffer(geojson);
+            // Compute rail proximity for all loaded properties
+            computeRailDistances();
         })
         .catch(e => console.warn('Railways failed:', e));
 }
 
-// 200m buffer around train tracks (real meters, scales with zoom)
+function computeRailDistances() {
+    if (!railBufferPoints.length || !allProps.length) return;
+    allProps.forEach(p => {
+        if (p.latitude && p.longitude) {
+            p._railDist = distToRail(p.latitude, p.longitude);
+        }
+    });
+    // Re-render if adjusted mode is active
+    if (priceMode === 'adjusted') {
+        renderMarkers();
+        renderList();
+        updateStats();
+    }
+}
+
+// 200m buffer around train tracks with graduated opacity
+let railBufferPoints = []; // store for proximity checks
 function buildRailBuffer(geojson) {
     geojson.features.forEach(feat => {
         const coords = feat.geometry.coordinates;
         if (coords.length < 2) return;
-        // Sample every 5th point to keep performance reasonable
         for (let i = 0; i < coords.length; i += 5) {
-            L.circle([coords[i][1], coords[i][0]], {
-                radius: 200,
+            const pt = [coords[i][1], coords[i][0]];
+            railBufferPoints.push(pt);
+            // Inner zone 0-80m: high risk (strong red)
+            L.circle(pt, {
+                radius: 80,
                 color: '#ef4444', fillColor: '#ef4444',
-                fillOpacity: 0.08, weight: 0, opacity: 0
+                fillOpacity: 0.22, weight: 0.5, opacity: 0.3
+            }).addTo(railBufferLayer);
+            // Mid zone 80-150m: medium risk
+            L.circle(pt, {
+                radius: 150,
+                color: '#f97316', fillColor: '#f97316',
+                fillOpacity: 0.12, weight: 0, opacity: 0
+            }).addTo(railBufferLayer);
+            // Outer zone 150-200m: low risk (visible but subtle)
+            L.circle(pt, {
+                radius: 200,
+                color: '#fbbf24', fillColor: '#fbbf24',
+                fillOpacity: 0.07, weight: 0.5, opacity: 0.2
             }).addTo(railBufferLayer);
         }
     });
 }
 
+// Distance from property to nearest rail point (meters)
+function distToRail(lat, lon) {
+    if (!railBufferPoints.length) return Infinity;
+    let minDist = Infinity;
+    const propLatLng = L.latLng(lat, lon);
+    // Sample every 3rd point for speed
+    for (let i = 0; i < railBufferPoints.length; i += 3) {
+        const d = propLatLng.distanceTo(L.latLng(railBufferPoints[i][0], railBufferPoints[i][1]));
+        if (d < minDist) minDist = d;
+        if (d < 50) return d; // early exit
+    }
+    return minDist;
+}
+
 // Religious institutions
+function getReligiousIcon(religion, denomination) {
+    const r = (religion || '').toLowerCase();
+    const d = (denomination || '').toLowerCase();
+    // Evangelical / pentecostal / protestant denominations
+    const isEvangelical = ['evangelical', 'pentecostal', 'baptist', 'methodist',
+        'presbyterian', 'lutheran', 'assemblies_of_god', 'seventh_day_adventist',
+        'new_apostolic', 'disciples_of_christ', 'protestant', 'anglican'].includes(d);
+    const isOrthodox = d.includes('orthodox');
+    const isMormon = d === 'mormon' || d === 'latter_day_saints' || d.includes('santos_de_los');
+
+    if (r === 'jewish')   return { symbol: '✡', color: '#1565C0', label: 'Judaismo' };
+    if (r === 'muslim')   return { symbol: '☪', color: '#2E7D32', label: 'Islam' };
+    if (r === 'buddhist') return { symbol: '☸', color: '#FF8F00', label: 'Budismo' };
+    if (r === 'hindu')    return { symbol: '🕉', color: '#E65100', label: 'Hinduismo' };
+    if (isMormon)         return { symbol: '⛪', color: '#00838F', label: 'Mormon' };
+    if (isOrthodox)       return { symbol: '☦', color: '#6A1B9A', label: 'Ortodoxa' };
+    if (isEvangelical)    return { symbol: '✞', color: '#E91E63', label: 'Evangelica' };
+    if (r === 'christian') return { symbol: '✝', color: '#5D4037', label: 'Catolica' };
+    return { symbol: '♱', color: '#757575', label: 'Otro culto' };
+}
+
 function loadReligious() {
     fetch('/data/religious.json')
         .then(r => r.json())
         .then(places => {
             places.forEach(p => {
                 if (!p.lat || !p.lon) return;
+                const ri = getReligiousIcon(p.religion, p.denomination);
                 const icon = L.divIcon({
                     className: '',
-                    html: '<div style="font-size:12px;text-align:center;opacity:0.7;">&#9069;</div>',
-                    iconSize: [14, 14], iconAnchor: [7, 7]
+                    html: `<div style="font-size:14px;text-align:center;color:${ri.color};text-shadow:0 0 2px #fff;">${ri.symbol}</div>`,
+                    iconSize: [16, 16], iconAnchor: [8, 8]
                 });
+                const denomLabel = p.denomination ? p.denomination.replace(/_/g, ' ') : '';
                 L.marker([p.lat, p.lon], { icon })
-                    .bindPopup(`<b>${p.name || 'Lugar de culto'}</b><br>${p.religion || ''} ${p.denomination || ''}`)
+                    .bindPopup(`<b>${p.name || 'Lugar de culto'}</b><br><span style="color:${ri.color};font-weight:600;">${ri.symbol} ${ri.label}</span>${denomLabel ? '<br>' + denomLabel : ''}`)
                     .addTo(religiousLayer);
             });
         })
@@ -1235,6 +1378,10 @@ async function init() {
             lazyLoaded[e.name] = true;
             lazyLayers[e.name]();
         }
+        if (e.name === 'Lugares de Culto') document.getElementById('legendReligious').classList.add('visible');
+    });
+    map.on('overlayremove', function(e) {
+        if (e.name === 'Lugares de Culto') document.getElementById('legendReligious').classList.remove('visible');
     });
 
     // Auto-apply filters on any input change
