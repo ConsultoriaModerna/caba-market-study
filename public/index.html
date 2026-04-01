@@ -1913,8 +1913,8 @@
 
             // Covered ratio stats
             const withCovered = allProperties.filter(p => p.covered_ratio && p.covered_ratio > 0);
-            document.getElementById('kpi-covered-data').textContent = `${withCovered.length} (${covPct}%)`;
             const covPct = totalProps > 0 ? Math.round(withCovered.length / totalProps * 100) : 0;
+            document.getElementById('kpi-covered-data').textContent = `${withCovered.length} (${covPct}%)`;
             document.getElementById('kpi-covered-pct').textContent = `${covPct}% del total`;
             if (withCovered.length > 0) {
                 const withExterior = withCovered.filter(p => p.covered_ratio < 0.8);
