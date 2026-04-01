@@ -153,8 +153,14 @@ if (error) console.error('Error:', error.message);
 echo "  $STALE_OUT"
 STALE_COUNT=$(echo "$STALE_OUT" | grep -oP '\d+' | head -1 || echo "0")
 
-# ── Step 7: Dedup + Price Drops
-echo "--- [7/7] Dedup + Price Drops ---"
+# ── Step 7: Dead listing check (verify oldest 200 permalinks are still live)
+echo "--- [7/8] Dead Listing Check ---"
+DEAD_OUT=$(node scripts/vps/check-dead-listings.mjs 200 2>&1) || ERRORS="${ERRORS}Dead check failed. "
+echo "$DEAD_OUT"
+DEAD_COUNT=$(echo "$DEAD_OUT" | grep -oP '\d+ dead' | grep -oP '\d+' || echo "0")
+
+# ── Step 8: Dedup + Price Drops
+echo "--- [8/8] Dedup + Price Drops ---"
 DEDUP_OUT=$(node -e "
 import { createClient } from '@supabase/supabase-js';
 const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -204,6 +210,7 @@ SLACK_MSG="${SLACK_MSG}  ML: ${ML_NEW} new\n\n"
 SLACK_MSG="${SLACK_MSG}*Processing*\n"
 SLACK_MSG="${SLACK_MSG}  ZP enriched: ${ZP_ENRICHED}\n"
 SLACK_MSG="${SLACK_MSG}  Stale removed: ${STALE_COUNT}\n"
+SLACK_MSG="${SLACK_MSG}  Dead verified: ${DEAD_COUNT}\n"
 SLACK_MSG="${SLACK_MSG}  Dedup merged: ${DEDUP_COUNT}\n\n"
 SLACK_MSG="${SLACK_MSG}*Totals*\n"
 SLACK_MSG="${SLACK_MSG}  Active: ${TOTAL_ACTIVE}  |  Price drops: ${TOTAL_DROPS}  |  Events: ${TOTAL_EVENTS}\n"
