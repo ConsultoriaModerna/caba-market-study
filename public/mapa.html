@@ -612,7 +612,7 @@ function createPopup(p) {
                 const keys = ['noise','flood','crime','subte','transport'];
                 const val = p.livability_detail[keys[i]] || 0;
                 const c = val >= 70 ? '#4ade80' : val >= 40 ? '#eab308' : '#ef4444';
-                return '<span style="font-size:9px;"><span style="color:#64748b;">' + label + '</span> <b style="color:' + c + ';">' + val + '</b></span>';
+                return '<span style="font-size:9px;"><span style="color:#64748b;">' + label + '</span> <b style="color:' + c + ';">' + val + '/100</b></span>';
             }).join('')}</div>` : ''}
         </div>` : ''}
         ${fotInfo}
@@ -658,7 +658,7 @@ function renderList() {
             </div>
             ${kwsHtml ? `<div class="prop-keywords">${kwsHtml}</div>` : ''}
             <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
-                ${p.livability_score ? `<span style="font-size:9px;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444'};font-weight:700;" title="${p.livability_detail ? Object.entries(p.livability_detail).map(([k,v]) => k + ':' + v).join(' ') : ''}">Liv ${p.livability_score}</span>` : ''}
+                ${p.livability_score ? `<span style="font-size:9px;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : '#ef4444'};font-weight:700;" title="${p.livability_detail ? Object.entries(p.livability_detail).map(([k,v]) => k + ':' + v).join(' ') : ''}">Liv ${p.livability_score}/100</span>` : ''}
                 ${p._railDist !== undefined && p._railDist < 200 ? `<span style="font-size:9px;color:${p._railDist < 80 ? '#ef4444' : '#f97316'};font-weight:600;">Tren ${Math.round(p._railDist)}m</span>` : ''}
                 ${p.fot_em ? `<span style="font-size:9px;color:#4ade80;font-weight:600;">FOT ${p.fot_em}</span>` : ''}
                 ${p.m2_construibles ? `<span style="font-size:9px;color:#22d3ee;font-weight:600;">${fmt(p.m2_construibles)}m² constr.</span>` : ''}

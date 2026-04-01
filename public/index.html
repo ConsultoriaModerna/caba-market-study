@@ -1348,7 +1348,7 @@
                     <td style="text-align:right;padding:6px 8px;color:var(--accent);font-weight:600;">${p.price_per_sqm ? '$' + Math.round(p.price_per_sqm).toLocaleString() : '-'}</td>
                     <td style="text-align:right;padding:6px 8px;">${p.total_area || '-'}</td>
                     <td style="text-align:center;padding:6px 8px;color:${segColor};font-weight:600;font-size:0.7rem;">${segLabel}</td>
-                    <td style="text-align:center;padding:6px 8px;font-size:0.75rem;font-weight:600;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : p.livability_score > 0 ? '#ef4444' : '#334155'};">${p.livability_score || '-'}</td>
+                    <td style="text-align:center;padding:6px 8px;font-size:0.75rem;font-weight:600;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : p.livability_score > 0 ? '#ef4444' : '#334155'};">${p.livability_score ? p.livability_score + '/100' : '-'}</td>
                     <td style="padding:6px 4px;max-width:160px;">${tags}</td>
                     <td style="text-align:center;padding:6px 8px;">${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.75rem;" onclick="event.stopPropagation()">→</a>` : ''}</td>
                     <td style="text-align:center;padding:6px 8px;">
@@ -2494,7 +2494,7 @@
                     <td style="text-align:center;padding:6px 8px;color:${segColor};font-weight:600;font-size:0.7rem;">${segLabel}</td>
                     <td style="padding:6px 4px;max-width:180px;">${tags}</td>
                     <td style="text-align:center;padding:6px 8px;">${sourceBadge(p.source)}</td>
-                    <td style="text-align:center;padding:6px 8px;font-size:0.75rem;font-weight:600;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : p.livability_score > 0 ? '#ef4444' : '#334155'};">${p.livability_score || '-'}</td>
+                    <td style="text-align:center;padding:6px 8px;font-size:0.75rem;font-weight:600;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : p.livability_score > 0 ? '#ef4444' : '#334155'};">${p.livability_score ? p.livability_score + '/100' : '-'}</td>
                     <td style="text-align:center;padding:6px 8px;font-size:0.75rem;">${age}d</td>
                     <td style="text-align:center;padding:6px 8px;">${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.75rem;" onclick="event.stopPropagation()">→</a>` : ''}</td>
                 </tr>`;
