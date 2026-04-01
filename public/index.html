@@ -843,11 +843,15 @@
                 <div style="height:24px;margin-top:4px;" id="kpi-sqm-sparkline"></div>
             </div>
             <div class="kpi-card" style="position:relative;">
-                <div class="kpi-label">Barrios Cubiertos</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div class="kpi-label">Barrios Cubiertos</div>
+                    <button onclick="runBarrioExpertAnalysis()" id="barrio-ai-btn" title="Analisis experto con Claude Opus (on-demand)" style="background:linear-gradient(135deg,#8b5cf6,#06b6d4);color:#fff;border:none;padding:2px 7px;border-radius:8px;font-size:0.55rem;font-weight:700;cursor:pointer;font-family:inherit;opacity:0.8;transition:opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">AI</button>
+                </div>
                 <div style="display:flex;gap:12px;align-items:flex-start;">
                     <div class="kpi-value" id="kpi-neighborhoods" style="margin:0;">-</div>
                     <div id="kpi-barrios-list" style="flex:1;max-height:56px;overflow-y:auto;font-size:0.55rem;line-height:1.6;mask-image:linear-gradient(to bottom,black 65%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,black 65%,transparent 100%);"></div>
                 </div>
+                <div id="barrio-ai-result" style="display:none;margin-top:6px;padding:8px;background:var(--bg-primary);border-radius:8px;border:1px solid rgba(139,92,246,0.3);font-size:0.7rem;line-height:1.5;max-height:200px;overflow-y:auto;"></div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-label" title="USD/m2 mediano: Usado (a refaccionar) / Estandar / Renovado (reciclado)">USD/m² por estado</div>
@@ -3128,6 +3132,64 @@ IMPORTANTE: El dataset actual contiene exclusivamente CASAS (no departamentos, P
             } catch (error) {
                 container.innerHTML = `<div style="color:var(--red);padding:1rem;">Error: ${error.message}</div>`;
             }
+        }
+
+        // Expert AI analysis for barrios card (Opus, on-demand)
+        async function runBarrioExpertAnalysis() {
+            const btn = document.getElementById('barrio-ai-btn');
+            const result = document.getElementById('barrio-ai-result');
+            btn.textContent = '...';
+            btn.disabled = true;
+            result.style.display = 'block';
+            result.innerHTML = '<span style="color:var(--dim);">Consultando Claude Opus...</span>';
+
+            // Build context from current data
+            const barrioCountMap = {};
+            const barrioPriceMap = {};
+            allProperties.forEach(p => {
+                if (!p.neighborhood) return;
+                barrioCountMap[p.neighborhood] = (barrioCountMap[p.neighborhood]||0) + 1;
+                if (p.price_per_sqm > 100 && p.price_per_sqm < 10000) {
+                    if (!barrioPriceMap[p.neighborhood]) barrioPriceMap[p.neighborhood] = [];
+                    barrioPriceMap[p.neighborhood].push(p.price_per_sqm);
+                }
+            });
+            const topBarriosData = Object.entries(barrioCountMap).sort((a,b) => b[1]-a[1]).slice(0,15)
+                .map(([name, count]) => {
+                    const prices = barrioPriceMap[name] || [];
+                    const med = prices.length ? Math.round(prices.sort((a,b)=>a-b)[Math.floor(prices.length/2)]) : 0;
+                    return `${name}: ${count} props, $${med}/m2`;
+                }).join('\n');
+
+            const question = `Analisis experto de distribucion de oferta inmobiliaria en Buenos Aires.
+
+Top 15 barrios por cantidad de casas en venta:
+${topBarriosData}
+
+Total: ${allProperties.length} casas activas en ${Object.keys(barrioCountMap).length} barrios.
+
+Analiza como experto en real estate LatAm:
+1. Por que Liniers, Mataderos, V.Devoto lideran en oferta? Que dice esto del mercado?
+2. Buenos Aires va camino a una "CDMXizacion": expats, remote workers, gentrificacion. Compara con lo que paso en CDMX 2018-2025: Roma/Condesa (luxe), Coyoacan (familiar), Polanco (premium), Iztapalapa (periferico). Que barrios de BA siguen cada patron?
+3. El jardin con tierra y parrilla es el ultimo lifestyle flex de BA - un commodity que se vuelve escaso. Donde queda stock de esto y como impacta precios a 5-10 anos?
+4. Que barrios estan subvaluados HOY considerando estas tendencias?
+Responde con profundidad, datos concretos del dataset, y vision estrategica de inversion.`;
+
+            try {
+                const resp = await fetch(`${SUPABASE_URL}/functions/v1/intel-query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question, model: 'opus' })
+                });
+                if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+                result.innerHTML = `<div style="font-size:0.55rem;color:var(--accent);margin-bottom:4px;">Claude Opus${data.tokens ? ' | ' + data.tokens : ''}</div><div style="white-space:pre-wrap;">${data.analysis}</div>${data.sql ? '<details style="margin-top:6px;"><summary style="font-size:0.6rem;color:var(--dim);cursor:pointer;">SQL (' + data.row_count + ' filas)</summary><pre style="font-size:0.6rem;color:var(--accent);margin-top:3px;white-space:pre-wrap;">' + data.sql + '</pre></details>' : ''}`;
+            } catch (e) {
+                result.innerHTML = `<span style="color:var(--red);">Error: ${e.message}</span>`;
+            }
+            btn.textContent = 'AI';
+            btn.disabled = false;
         }
 
         // Intel mode toggle
