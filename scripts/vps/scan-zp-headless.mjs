@@ -237,13 +237,27 @@ async function scanLocation(page, location) {
     if (!error) newCount++;
   }
 
-  // Update last_seen_at for existing ones
+  // Update existing: refresh last_seen_at + detect price changes
   let updatedCount = 0;
   for (const item of allScanned) {
     if (!item.slug || !existingSlugs.has(item.slug)) continue;
     if (!item.zp_id) continue;
+    const { price, currency } = parsePrice(item.price_text);
+    const features = parseFeatures(item.features_text);
+    const update = {
+      last_seen_at: new Date().toISOString(),
+      is_active: true,
+    };
+    // Update price + area if available from grid (detect-price-drops will compare snapshots)
+    if (price) { update.price = price; update.currency = currency; }
+    if (features.total_area) update.total_area = features.total_area;
+    if (features.ambientes) update.ambientes = features.ambientes;
+    if (features.bedrooms) update.bedrooms = features.bedrooms;
+    // Recalc price_per_sqm
+    if (price && features.total_area) update.price_per_sqm = Math.round(price / features.total_area);
+
     await supabase.from('properties')
-      .update({ last_seen_at: new Date().toISOString(), is_active: true })
+      .update(update)
       .eq('id', 'zp_' + item.zp_id);
     updatedCount++;
   }
