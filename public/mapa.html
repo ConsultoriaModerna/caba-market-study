@@ -1269,14 +1269,14 @@ async function init() {
     }).addTo(map);
 
     markerCluster = L.markerClusterGroup({
-        maxClusterRadius: 40,
+        maxClusterRadius: 35,
         spiderfyOnMaxZoom: true,
         showCoverageOnHover: false,
         zoomToBoundsOnClick: true,
         removeOutsideVisibleBounds: true,
-        animateAddingMarkers: true,
-        disableClusteringAtZoom: 17,
-        spiderfyDistanceMultiplier: 1.5,
+        animateAddingMarkers: false,
+        disableClusteringAtZoom: 15,
+        spiderfyDistanceMultiplier: 2,
         iconCreateFunction: function(cluster) {
             const children = cluster.getAllChildMarkers();
             const prices = children.map(m => m.options._pricePerSqm).filter(v => v > 0);
