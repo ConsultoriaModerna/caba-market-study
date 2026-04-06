@@ -692,8 +692,9 @@
         const barrioMed = subset.map(d => barrioMedians[d.neighborhood] || d.price_per_sqm);
         const gaps = subset.map((d, i) => Math.round((d.price_per_sqm - barrioMed[i]) / barrioMed[i] * 100));
         const sizes = subset.map(d => {
-          const cov = d.covered_area || d.total_area;
-          return Math.max(3, Math.min(20, Math.sqrt(cov) * 0.8));
+          const cov = d.covered_area || d.total_area || 30;
+          // Scale: 20m2 -> 4, 50m2 -> 6, 100m2 -> 8, 200m2 -> 12, 400m2 -> 16
+          return Math.max(3, Math.min(22, Math.sqrt(cov) * 1.1));
         });
 
         return {
@@ -703,14 +704,15 @@
           x: subset.map(d => d.total_area),
           y: subset.map(d => d.price_per_sqm),
           z: gaps,
-          text: subset.map((d, i) =>
-            `<b>${d.title || 'Sin titulo'}</b><br>` +
+          text: subset.map((d, i) => {
+            const medianVal = barrioMedians[d.neighborhood];
+            return `<b>${d.title || 'Sin titulo'}</b><br>` +
             `Barrio: ${d.neighborhood}<br>` +
             `Precio: USD ${d.price.toLocaleString()}<br>` +
-            `Area: ${d.total_area} m2 (${d.covered_area || '?'} cub.)<br>` +
-            `USD/m2: $${d.price_per_sqm.toLocaleString()}<br>` +
-            `Gap vs barrio: ${gaps[i]}%`
-          ),
+            `Cubiertos: ${d.covered_area || '?'} m2 | Total: ${d.total_area} m2<br>` +
+            `USD/m2: $${d.price_per_sqm.toLocaleString()} (mediana barrio: $${medianVal ? medianVal.toLocaleString() : '?'})<br>` +
+            `<b>Gap vs barrio: ${gaps[i] > 0 ? '+' : ''}${gaps[i]}%</b> ${gaps[i] < -10 ? '-- OPORTUNIDAD' : gaps[i] > 15 ? '-- Sobreprecio' : ''}`;
+          }),
           hoverinfo: 'text',
           marker: {
             size: sizes,
@@ -767,8 +769,12 @@
 
       Plotly.newPlot('scatter-3d', traces, layout, plotConfig);
 
-      // Click to open property link or add to favorites
+      // Disable Plotly built-in legend click (conflicts with custom toggle buttons)
       const scatterEl = document.getElementById('scatter-3d');
+      scatterEl.on('plotly_legendclick', function() { return false; });
+      scatterEl.on('plotly_legenddoubleclick', function() { return false; });
+
+      // Click to open property link or add to favorites
       scatterEl.on('plotly_click', function(eventData) {
         const pt = eventData.points[0];
         if (!pt) return;
