@@ -215,6 +215,14 @@
         <select id="adv-filter-barrio" onchange="applyAdvancedFilters()" style="padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8rem;font-family:inherit;max-width:180px;">
           <option value="">Todos los barrios</option>
         </select>
+        <select id="adv-filter-type" onchange="applyAdvancedFilters()" style="padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8rem;font-family:inherit;">
+          <option value="">Todos los tipos</option>
+          <option value="casa">Casas</option>
+          <option value="departamento">Deptos</option>
+          <option value="ph">PH</option>
+        </select>
+        <input type="text" id="adv-filter-text" placeholder="Buscar texto..." oninput="applyAdvancedFilters()" style="padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8rem;font-family:inherit;width:140px;">
+        <button onclick="resetAdvancedFilters()" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-size:0.75rem;font-family:inherit;" title="Reset filtros">&#x21bb; Reset</button>
         <span id="adv-filter-count" style="font-size:0.75rem;color:var(--accent);font-weight:600;"></span>
       </div>
 
@@ -427,7 +435,7 @@
 
     // -- Fetch data --
     async function fetchData() {
-      const fields = 'id,title,neighborhood,price,price_per_sqm,total_area,covered_area,bedrooms,bathrooms,segment,currency,source,state,city,latitude,longitude,keywords,permalink,thumbnail';
+      const fields = 'id,title,neighborhood,price,price_per_sqm,total_area,covered_area,bedrooms,bathrooms,segment,currency,source,state,city,latitude,longitude,keywords,permalink,thumbnail,property_type';
       const filter = '&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast';
       const headers = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
       // Paginate in chunks of 1000 (Supabase default limit)
@@ -451,6 +459,8 @@
       const priceMin = parseInt(document.getElementById('adv-filter-price-min').value) || 0;
       const priceMax = parseInt(document.getElementById('adv-filter-price-max').value) || 9999999;
       const barrio = document.getElementById('adv-filter-barrio').value;
+      const propType = document.getElementById('adv-filter-type').value;
+      const textQuery = (document.getElementById('adv-filter-text').value || '').toLowerCase().trim();
 
       const filtered = _rawData.filter(d => {
         if (d.currency !== 'USD') return false;
@@ -459,6 +469,12 @@
         if (zone && getZone(d.neighborhood) !== zone) return false;
         if (segment && d.segment !== segment) return false;
         if (barrio && d.neighborhood !== barrio) return false;
+        if (propType && d.property_type !== propType) return false;
+        if (textQuery && !(
+          (d.title || '').toLowerCase().includes(textQuery) ||
+          (d.neighborhood || '').toLowerCase().includes(textQuery) ||
+          (d.keywords || '').toLowerCase().includes(textQuery)
+        )) return false;
         return true;
       });
 
@@ -473,13 +489,24 @@
       document.getElementById('network-legend').innerHTML = '';
       document.getElementById('pc-filter-info').innerHTML = '';
 
-      // Rebuild all
+      // Rebuild all (bivariate now receives filtered data)
       buildParallelCoordinates(filtered);
       build3DScatter(filtered);
       buildForceNetwork(filtered);
       buildTreemap(filtered);
       buildDensityMap(filtered);
-      drawBivariateChoropleth();
+      drawBivariateChoropleth(filtered);
+    }
+
+    function resetAdvancedFilters() {
+      document.getElementById('adv-filter-zone').value = '';
+      document.getElementById('adv-filter-segment').value = '';
+      document.getElementById('adv-filter-price-min').value = '30000';
+      document.getElementById('adv-filter-price-max').value = '200000';
+      document.getElementById('adv-filter-barrio').value = '';
+      document.getElementById('adv-filter-type').value = '';
+      document.getElementById('adv-filter-text').value = '';
+      applyAdvancedFilters();
     }
 
     // -- Main --
@@ -1329,9 +1356,10 @@
     }
 
     // ── 6. BIVARIATE CHOROPLETH: USD/m² vs Crime ──
-    async function drawBivariateChoropleth() {
+    async function drawBivariateChoropleth(data) {
       const container = document.getElementById('bivariate-chart');
       if (!container) return;
+      const propData = data || _rawData;
 
       // Load barrio polygons + crime data
       const [geoRes, crimeRes] = await Promise.all([
@@ -1344,9 +1372,9 @@
         return s.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       }
 
-      // Compute median USD/m2 per barrio from property data
+      // Compute median USD/m2 per barrio from filtered property data
       const barrioPrice = {};
-      _rawData.forEach(p => {
+      propData.forEach(p => {
         if (!p.neighborhood || !p.price_per_sqm || p.price_per_sqm < 100 || p.price_per_sqm > 10000) return;
         const n = normBarrio(p.neighborhood);
         if (!barrioPrice[n]) barrioPrice[n] = [];
