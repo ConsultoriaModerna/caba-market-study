@@ -6,7 +6,15 @@
     "dev": "npx serve public",
     "build": "echo 'Static site — no build needed'"
   },
-  "keywords": ["real-estate", "buenos-aires", "caba", "market-study"],
+  "keywords": [
+    "real-estate",
+    "buenos-aires",
+    "caba",
+    "market-study"
+  ],
   "author": "Nico <produnico@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.82.0"
+  }
 }
