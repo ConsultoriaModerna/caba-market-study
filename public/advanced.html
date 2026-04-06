@@ -259,10 +259,10 @@
         <div class="chart-container" id="treemap"></div>
       </div>
 
-      <!-- 5. Opportunity Density 3D -->
+      <!-- 5. Price-Space Density -->
       <div class="section">
-        <h2>Opportunity Density 3D</h2>
-        <p class="subtitle">X = precio USD, Y = USD/m2, Z = gap vs barrio (%). Tamano de burbuja = m2 totales. Verde = oportunidad. Gira para explorar.</p>
+        <h2>Price-Space Density</h2>
+        <p class="subtitle">Contorno de densidad: X = precio total USD, Y = USD/m2. La intensidad del color muestra donde se concentran las propiedades. Los puntos verdes son oportunidades (>15% debajo de la mediana del barrio).</p>
         <div class="chart-container" id="density-map" style="height:650px;"></div>
       </div>
 
@@ -1124,6 +1124,46 @@
         .attr('fill', '#94a3b8')
         .attr('font-size', '9px')
         .text(d => d.data.value + ' props');
+
+      // Sweet spot % annotation (gold pill)
+      leaf.filter(d => (d.x1 - d.x0) > 60 && (d.y1 - d.y0) > 48 && d.data.sweetPct > 0)
+        .append('rect')
+        .attr('x', 3)
+        .attr('y', 33)
+        .attr('width', d => Math.min(d.data.sweetPct.toString().length * 6 + 22, (d.x1 - d.x0) - 6))
+        .attr('height', 14)
+        .attr('rx', 3)
+        .attr('fill', 'rgba(234,179,8,0.25)')
+        .attr('pointer-events', 'none');
+
+      leaf.filter(d => (d.x1 - d.x0) > 60 && (d.y1 - d.y0) > 48 && d.data.sweetPct > 0)
+        .append('text')
+        .attr('x', 5)
+        .attr('y', 44)
+        .attr('fill', '#eab308')
+        .attr('font-size', '9px')
+        .attr('font-weight', '600')
+        .text(d => '\u2605 ' + d.data.sweetPct + '% sweet');
+
+      // Opportunity % annotation (green pill)
+      leaf.filter(d => (d.x1 - d.x0) > 60 && (d.y1 - d.y0) > 62 && d.data.oppPct > 0)
+        .append('rect')
+        .attr('x', 3)
+        .attr('y', 48)
+        .attr('width', d => Math.min(d.data.oppPct.toString().length * 6 + 20, (d.x1 - d.x0) - 6))
+        .attr('height', 14)
+        .attr('rx', 3)
+        .attr('fill', 'rgba(74,222,128,0.2)')
+        .attr('pointer-events', 'none');
+
+      leaf.filter(d => (d.x1 - d.x0) > 60 && (d.y1 - d.y0) > 62 && d.data.oppPct > 0)
+        .append('text')
+        .attr('x', 5)
+        .attr('y', 59)
+        .attr('fill', '#4ade80')
+        .attr('font-size', '9px')
+        .attr('font-weight', '600')
+        .text(d => '\u25BC ' + d.data.oppPct + '% opp');
     }
 
     // =============================================
