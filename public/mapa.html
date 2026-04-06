@@ -33,7 +33,20 @@
             border-right: 1px solid var(--border);
             display: flex; flex-direction: column;
             overflow: hidden;
+            transition: width 0.25s ease, min-width 0.25s ease, opacity 0.25s ease;
         }
+        #sidebar.collapsed { width: 0; min-width: 0; opacity: 0; pointer-events: none; }
+        #sidebar-toggle {
+            position: fixed; top: 44px; left: 0; z-index: 1100;
+            width: 28px; height: 56px;
+            background: var(--panel); border: 1px solid var(--border);
+            border-left: none; border-radius: 0 6px 6px 0;
+            color: var(--accent); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; transition: left 0.25s ease;
+        }
+        #sidebar-toggle.open { left: 380px; }
+        #sidebar-toggle:hover { background: var(--card); }
         .sidebar-header {
             padding: 16px 20px 12px;
             border-bottom: 1px solid var(--border);
@@ -47,7 +60,19 @@
             border-bottom: 1px solid var(--border);
             overflow-y: auto;
             max-height: 45vh;
+            transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s ease;
         }
+        #filters.collapsed { max-height: 0; padding: 0 20px; opacity: 0; overflow: hidden; }
+        #filters-toggle {
+            padding: 6px 20px; cursor: pointer; user-select: none;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 10px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--dim);
+        }
+        #filters-toggle:hover { color: var(--accent); }
+        #filters-toggle .arrow { transition: transform 0.25s; }
+        #filters-toggle.collapsed .arrow { transform: rotate(-90deg); }
         .filter-section { margin-bottom: 14px; }
         .filter-label {
             font-size: 10px; font-weight: 600; text-transform: uppercase;
@@ -161,6 +186,31 @@
         .spinner { border: 3px solid var(--border); border-top: 3px solid var(--accent); border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* Collapsible layer control */
+        .leaflet-control-layers {
+            background: var(--panel) !important; border: 1px solid var(--border) !important;
+            border-radius: 8px !important; color: var(--text) !important;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.4) !important;
+            max-height: calc(100vh - 120px); overflow-y: auto;
+            transition: max-height 0.25s ease, padding 0.25s ease;
+        }
+        .leaflet-control-layers-list { padding: 4px 0; }
+        .leaflet-control-layers label { display: flex; align-items: center; gap: 6px; padding: 3px 12px; font-size: 12px; cursor: pointer; }
+        .leaflet-control-layers label:hover { background: rgba(255,255,255,0.05); }
+        .leaflet-control-layers input[type="checkbox"] { accent-color: var(--accent); }
+        .layers-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 12px; cursor: pointer; user-select: none;
+            border-bottom: 1px solid var(--border); font-size: 11px;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--dim);
+        }
+        .layers-header:hover { color: var(--accent); }
+        .layers-header .arrow { transition: transform 0.25s; font-size: 10px; }
+        .leaflet-control-layers.minimized .leaflet-control-layers-list { display: none; }
+        .leaflet-control-layers.minimized { max-height: 36px; overflow: hidden; }
+        .leaflet-control-layers.minimized .layers-header .arrow { transform: rotate(-90deg); }
+
         .marker-cluster-small { background-color: rgba(6,182,212,0.4); box-shadow: 0 0 8px rgba(6,182,212,0.5); }
         .marker-cluster-small div { background-color: rgba(6,182,212,0.8); color: #fff; font-weight: 700; }
         .marker-cluster-medium { background-color: rgba(251,191,36,0.4); box-shadow: 0 0 8px rgba(251,191,36,0.5); }
@@ -171,6 +221,7 @@
 </head>
 <body>
 <div id="app">
+    <button id="sidebar-toggle" class="open" onclick="toggleSidebar()" title="Toggle sidebar">&#9664;</button>
     <div id="sidebar">
         <div class="sidebar-header">
             <h1>InmoFindr Explorer</h1>
@@ -179,6 +230,7 @@
             <div class="sub">Casas geocodeadas — Live Supabase</div>
         </div>
 
+        <div id="filters-toggle" onclick="toggleFilters()"><span>Filtros</span><span class="arrow">&#9660;</span></div>
         <div id="filters">
             <div class="filter-section">
                 <div class="filter-label">Buscar en anuncios <span style="font-weight:400;text-transform:none;opacity:0.6;">(titulo + descripcion)</span></div>
@@ -630,6 +682,22 @@ function setPreset(min, max) {
     document.getElementById('f-price-min').value = min;
     document.getElementById('f-price-max').value = max;
     applyFilters();
+}
+
+function toggleSidebar() {
+    const sb = document.getElementById('sidebar');
+    const btn = document.getElementById('sidebar-toggle');
+    sb.classList.toggle('collapsed');
+    btn.classList.toggle('open');
+    btn.innerHTML = sb.classList.contains('collapsed') ? '&#9654;' : '&#9664;';
+    setTimeout(() => map.invalidateSize(), 300);
+}
+
+function toggleFilters() {
+    const f = document.getElementById('filters');
+    const t = document.getElementById('filters-toggle');
+    f.classList.toggle('collapsed');
+    t.classList.toggle('collapsed');
 }
 
 function resetFilters() {
@@ -1529,6 +1597,21 @@ async function init() {
         'Villas / Asentamientos': villasLayer
     };
     const layerControl = L.control.layers({}, overlays, { position: 'topright', collapsed: false }).addTo(map);
+
+    // Make layer control collapsible
+    setTimeout(() => {
+        const lc = document.querySelector('.leaflet-control-layers');
+        if (lc) {
+            const list = lc.querySelector('.leaflet-control-layers-list');
+            if (list) {
+                const header = document.createElement('div');
+                header.className = 'layers-header';
+                header.innerHTML = '<span>Capas</span><span class="arrow">&#9660;</span>';
+                header.onclick = () => lc.classList.toggle('minimized');
+                lc.insertBefore(header, list);
+            }
+        }
+    }, 100);
 
     initChips();
 
