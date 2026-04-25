@@ -4,10 +4,11 @@
 // Normalizes output to match API format for consistency with existing pipeline
 //
 // Usage: node scripts/vps/scrape-ml-headless.mjs [maxPages] [--zone=caba|gba-norte|all] [--type=casa|local|departamento|ph]
-// Runs on VPS with Chrome + Xvfb
+// Cross-platform: detects Mac vs Linux at runtime to pick Chrome path + profile dir.
 
+import os from 'os';
 import { createClient } from '@supabase/supabase-js';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, applyFetchProxy, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
 
 // Slack webhook fetch also routes through proxy for consistency.
@@ -19,7 +20,13 @@ const supabase = createClient(
 );
 
 const MAX_PAGES = parseInt(process.argv[2] || '10');
-const PROFILE_DIR = '/opt/caba-market-study/.chrome-profile-ml';
+const IS_MAC = os.platform() === 'darwin';
+const CHROME_PATH = IS_MAC
+  ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+  : '/usr/bin/google-chrome';
+const PROFILE_DIR = IS_MAC
+  ? `${process.env.HOME}/.cache/caba-ml-chrome-profile`
+  : '/opt/caba-market-study/.chrome-profile-ml';
 const DELAY_MS = 4000;
 
 const zoneArg = process.argv.find(a => a.startsWith('--zone='))?.split('=')[1] || 'all';
@@ -236,17 +243,15 @@ async function main() {
   const zones = getZones();
   console.log(`ML Headless Scraper -- ${typeArg} (${ML_TYPE_SLUG}) -- ${zones.length} zone(s), ${MAX_PAGES} pages each`);
 
-  console.log('Launching Chrome...');
+  console.log(`Launching Chrome on ${IS_MAC ? 'macOS' : 'Linux'} (${CHROME_PATH})...`);
   const browser = await puppeteer.launch({
     headless: false,
-    executablePath: '/usr/bin/google-chrome',
+    executablePath: CHROME_PATH,
     userDataDir: PROFILE_DIR,
     args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
+      ...(IS_MAC ? [] : ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']),
       '--window-size=1280,800',
+      ...(IS_MAC ? ['--start-minimized'] : []),
       ...getPuppeteerProxyArgs(),
     ]
   });
