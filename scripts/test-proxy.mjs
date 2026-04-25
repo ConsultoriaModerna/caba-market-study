@@ -11,6 +11,7 @@
 // Usage: node scripts/test-proxy.mjs
 
 import { applyFetchProxy, getProxyConfig } from './lib/proxy.mjs';
+import { createClient } from '@supabase/supabase-js';
 
 const cfg = getProxyConfig();
 if (!cfg) {
@@ -46,18 +47,39 @@ await check('1. Outbound IP via ipinfo.io', async () => {
   else ok('ASN looks residential/ISP', j.org);
 });
 
-await check('2. ML API search (the 403 test)', async () => {
-  const r = await fetch('https://api.mercadolibre.com/sites/MLA/search?category=MLA1459&limit=1', {
+await check('2. ML API /items/{id}/description (the production endpoint)', async () => {
+  // This is what enrich-ml-details.mjs actually calls.
+  // Note: /sites/MLA/search and /items/{id} return 403 with our current token scope
+  // ("Buscador" role) — that's a known token-scope limitation, NOT an IP/proxy issue.
+  const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const { data: tok } = await sb.from('ml_tokens').select('access_token, saved_at, expires_in').eq('id', 'default').single();
+  if (!tok) return ko('Got ML token from Supabase', 'no row in ml_tokens');
+  const age = (Date.now() - Number(tok.saved_at)) / 1000;
+  if (age > Number(tok.expires_in) - 300) {
+    ko('ML token fresh', `expired (age ${Math.round(age)}s, ttl ${tok.expires_in}s) — run scripts/refresh-ml-token.mjs first`);
+    return;
+  }
+  ok('ML token fresh', `${Math.round(tok.expires_in - age)}s remaining`);
+
+  const r = await fetch('https://api.mercadolibre.com/items/MLA2532994302/description', {
+    headers: {
+      'Authorization': `Bearer ${tok.access_token}`,
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/130.0 Safari/537.36',
+      'Accept': 'application/json',
+    },
     signal: AbortSignal.timeout(20000),
   });
   console.log(`     status=${r.status}`);
   if (r.status === 200) {
     const j = await r.json();
-    ok('ML API returns 200', `${j.results?.length || 0} results, total ${j.paging?.total}`);
+    ok('ML /items/{id}/description returns 200', `${j.plain_text?.length || 0} chars of description`);
   } else if (r.status === 403) {
-    ko('ML API returns 200', 'still 403 PolicyAgent → IP not residential enough');
+    const body = await r.text();
+    ko('ML returns 200', `403 — body: ${body.substring(0, 100)}`);
+  } else if (r.status === 404) {
+    ok('ML returns 200 or 404', 'test item gone but proxy works (no 403)');
   } else {
-    ko('ML API returns 200', `unexpected ${r.status}`);
+    ko('ML returns 200', `unexpected ${r.status}`);
   }
 });
 

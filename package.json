@@ -16,6 +16,7 @@
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",
+    "@supabase/supabase-js": "^2.104.1",
     "undici": "^8.1.0"
   }
 }

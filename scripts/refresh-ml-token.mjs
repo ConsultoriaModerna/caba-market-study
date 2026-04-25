@@ -1,5 +1,9 @@
 // refresh-ml-token.mjs — Refreshes ML OAuth token before scraping
 import { createClient } from '@supabase/supabase-js';
+import { applyFetchProxy } from './lib/proxy.mjs';
+
+// ML OAuth requires residential AR IP (same lockdown as /sites/MLA/search).
+applyFetchProxy();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
