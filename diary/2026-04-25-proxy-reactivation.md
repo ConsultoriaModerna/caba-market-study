@@ -85,3 +85,61 @@ ML lockdown desde abril 2025 es **estructural**: no hay vuelta atrás a IP datac
 3. Si OK → escalar a 5 páginas, después nightly en VPS.
 4. Después: smoke test ZP enrichment con cap de 20 listings.
 5. Eventualmente: deploy del branch a VPS (`git pull` + `npm install` + actualizar `.env` con `RESIDENTIAL_PROXY_URL`), correr `scripts/test-proxy.mjs` desde allá, activar `ML_ENABLED=true` en `vps/run-nightly.sh`.
+
+---
+
+## Update post-pausa (Nico reinicia computadora)
+
+### Concern arquitectónico que detectó Nico — cookie/IP mismatch
+
+Nico señaló: si abre Chrome regular para "warmup" de cookies (visitar ZP/ML antes de correr el smoke), ese Chrome sale por su IP real (España, no AR), entonces las cookies quedan atadas a sesión española. Cuando después Puppeteer las copia y navega vía proxy AR, hay mismatch IP+cookie+TLS fingerprint → riesgo de quemar la sesión / cookie en Cloudflare.
+
+**Dictamen:** correcto, pero solo aplica al flow de `enrich-zp-cdp.mjs` (que copia profile real). Para el smoke ML que vamos a correr ahora **no aplica**, porque `vps/scrape-ml-headless.mjs` usa profile vacío en `~/.cache/caba-ml-chrome-profile` y Puppeteer genera cookies desde cero a través del proxy AR. No hay mismatch.
+
+**Aclaración importante para fresh-me:** el proxy NO es system-wide. Solo afecta al Chrome que Puppeteer lanza con `--proxy-server=`. El Chrome regular del usuario sale por su IP real (España actualmente). curl/fetch del shell también. Solo los scripts vía nuestro `proxy.mjs` helper rutean por AR.
+
+### Instrucciones corregidas que le pasé a Nico
+
+**OLVIDAR el "warmup manual de Chrome" que sugerí antes (era pensado para enrich-zp-cdp).** Para el smoke ML solo necesita:
+
+```bash
+# 1. Cerrar Chrome
+osascript -e 'quit app "Google Chrome"' 2>/dev/null
+sleep 2; killall "Google Chrome" 2>/dev/null; echo ok
+
+# 2. Limpiar profile temp del scraper (opcional pero recomendado en primer run)
+rm -rf "$HOME/.cache/caba-ml-chrome-profile"
+
+# 3. Correr smoke (1 página = ~48 listings ML, casas Capital Federal)
+cd /Users/nico/AI/PROJECTS/real-estate
+git pull origin main
+set -a && source .env && set +a
+PROXY_MAX_REQUESTS=20 node scripts/vps/scrape-ml-headless.mjs 1 --zone=caba --type=casa
+```
+
+### TODO pendiente que se generó en esta tanda
+
+**[BLOQUEO ARQUITECTÓNICO ZP]** Antes de correr smoke ZP enrichment, hay que decidir:
+- **Opción A (preferida):** modificar `enrich-zp-cdp.mjs` para NO copiar cookies del Chrome real. Que Puppeteer pase Cloudflare por sí mismo desde IP AR (puede tomar 10-30s la primera vez, después cookies van a `/tmp/zp-chrome-profile` y se reusan en runs siguientes).
+- **Opción B:** crear `scripts/warmup-zp-via-proxy.mjs` que abre ZP via Puppeteer+proxy una vez, deja cookies en el profile temp. Después `enrich-zp-cdp.mjs` reusa.
+
+A no ser que Nico tenga preferencia, **arrancar con A** cuando llegue el momento.
+
+### Resume point para fresh-me
+
+**Estado al pausar (Nico va a reiniciar su Mac y relanzar Claude Code):**
+
+- Branch `main` al commit `00990ea` (cross-platform ML scraper + diary inicial).
+- `.env` tiene `RESIDENTIAL_PROXY_URL` con credenciales ProxyEmpire trial (100 MB, AR sticky session). VERIFICADO funciona: AS27984 Ver TV S.A.
+- ML token fresh (refrescado ~30min atrás vía proxy, 6h TTL).
+- Smoke test #1 (cap mechanism) ya validado por test inline.
+- Smoke test #2 (ML discovery con 1 página CABA casas) **listo para correr, esperando que Nico reinicie y lance el comando**.
+
+**Cuando vuelva Nico con output:**
+1. Revisar exit code y logs.
+2. Verificar en Supabase: `SELECT count(*) FROM properties WHERE source='mercadolibre' AND is_active=true AND last_seen_at > NOW() - INTERVAL '1 hour';` debería ser ~48.
+3. Verificar bandwidth en ProxyEmpire dashboard (esperado: ~5-10 MB para 1 página completa con assets).
+4. Si OK → smoke #3 con 5 páginas, después decidir si seguimos en local o pasamos a VPS.
+5. Si falla → diagnosticar (captcha, selectores cambiados, proxy timeout, etc) antes de escalar.
+
+**Cuando volvamos a tocar ZP:** primero resolver el bloqueo arquitectónico (ver TODO arriba). NO correr `enrich-zp-cdp.mjs` con cookies copiadas del Chrome España.
