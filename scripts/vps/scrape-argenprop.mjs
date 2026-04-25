@@ -7,6 +7,9 @@
 
 import { createClient } from '@supabase/supabase-js';
 import puppeteer from 'puppeteer';
+import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, applyFetchProxy } from '../lib/proxy.mjs';
+
+applyFetchProxy();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -259,10 +262,19 @@ async function main() {
     headless: false,
     executablePath: '/usr/bin/google-chrome',
     userDataDir: PROFILE_DIR,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--window-size=1280,800']
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--window-size=1280,800',
+      ...getPuppeteerProxyArgs(),
+    ]
   });
 
   const page = await browser.newPage();
+  await authenticatePuppeteerProxy(page);
+  // Block heavy assets to drop AP bandwidth ~3x: 80KB → 25KB per listing
+  await enableAssetBlocking(page);
   await page.setViewport({ width: 1280, height: 800 });
   await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36');
 

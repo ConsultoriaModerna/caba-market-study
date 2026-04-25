@@ -7,6 +7,7 @@ import puppeteer from 'puppeteer-core';
 import { createClient } from '@supabase/supabase-js';
 import { execSync } from 'child_process';
 import { existsSync, mkdirSync } from 'fs';
+import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking } from './lib/proxy.mjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -147,10 +148,14 @@ async function main() {
       '--remote-debugging-port=9223',
       '--window-size=800,600',
       '--start-minimized',
+      ...getPuppeteerProxyArgs(),
     ],
   });
 
   const page = await browser.newPage();
+  await authenticatePuppeteerProxy(page);
+  // Block heavy assets (images, fonts, css) to drop ZP bandwidth ~4x: 150KB → 30-40KB
+  await enableAssetBlocking(page);
   await page.setViewport({ width: 1440, height: 900 });
 
   // Warmup: pass Cloudflare challenge once on ZP homepage

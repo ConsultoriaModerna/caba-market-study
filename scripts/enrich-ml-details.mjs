@@ -5,6 +5,10 @@
 // Usage: node scripts/enrich-ml-details.mjs [delayMs]
 
 import { createClient } from '@supabase/supabase-js';
+import { applyFetchProxy } from './lib/proxy.mjs';
+
+// ML API requires residential AR IP since April 2025 (403 PolicyAgent otherwise).
+applyFetchProxy();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
