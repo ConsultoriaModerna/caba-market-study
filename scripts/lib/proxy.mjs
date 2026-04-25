@@ -79,3 +79,55 @@ export async function enableAssetBlocking(page, { blockTypes = ['image', 'media'
     }
   });
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// Budget cap — safety net for ALL proxy-routed scripts.
+//
+// Purpose: hard ceiling on requests per run, defending against runaway loops,
+// retry storms, or accidentally large batchSize args that would burn proxy GB
+// (and our wallet) on ProxyEmpire. Independent from ProxyEmpire's own
+// dashboard limit — defense in depth.
+//
+// Default: 5,000 requests per process. Override via PROXY_MAX_REQUESTS env.
+// Set PROXY_MAX_REQUESTS=0 to disable (NOT recommended in production).
+// ──────────────────────────────────────────────────────────────────────────
+
+let _budgetUsed = 0;
+const _budgetMax = parseInt(process.env.PROXY_MAX_REQUESTS || '5000', 10);
+const _budgetByLabel = new Map();
+
+export function incrementBudget(label = 'request') {
+  _budgetUsed++;
+  _budgetByLabel.set(label, (_budgetByLabel.get(label) || 0) + 1);
+  if (_budgetMax > 0 && _budgetUsed > _budgetMax) {
+    console.error(`\n🛑 PROXY BUDGET EXCEEDED: ${_budgetUsed} / ${_budgetMax} requests`);
+    console.error(`   By label: ${[..._budgetByLabel.entries()].map(([k,v]) => `${k}=${v}`).join(', ')}`);
+    console.error(`   Aborting to protect wallet. Override with PROXY_MAX_REQUESTS env if intentional.\n`);
+    process.exit(2);
+  }
+  // Soft warning at 80%
+  if (_budgetMax > 0 && _budgetUsed === Math.floor(_budgetMax * 0.8)) {
+    console.warn(`⚠️  Proxy budget at 80%: ${_budgetUsed} / ${_budgetMax} requests`);
+  }
+  return _budgetUsed;
+}
+
+export function getBudgetStatus() {
+  return {
+    used: _budgetUsed,
+    max: _budgetMax,
+    remaining: _budgetMax > 0 ? Math.max(0, _budgetMax - _budgetUsed) : Infinity,
+    byLabel: Object.fromEntries(_budgetByLabel),
+  };
+}
+
+export function logBudgetSummary() {
+  const s = getBudgetStatus();
+  if (s.used === 0) return;
+  console.log(`\n💰 Proxy budget used: ${s.used}${s.max > 0 ? ` / ${s.max}` : ''} requests`);
+  if (Object.keys(s.byLabel).length > 1) {
+    for (const [label, count] of Object.entries(s.byLabel)) {
+      console.log(`     ${label}: ${count}`);
+    }
+  }
+}

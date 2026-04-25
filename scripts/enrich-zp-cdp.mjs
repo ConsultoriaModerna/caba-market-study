@@ -7,7 +7,7 @@ import puppeteer from 'puppeteer-core';
 import { createClient } from '@supabase/supabase-js';
 import { execSync } from 'child_process';
 import { existsSync, mkdirSync } from 'fs';
-import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking } from './lib/proxy.mjs';
+import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, incrementBudget, logBudgetSummary } from './lib/proxy.mjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -185,6 +185,7 @@ async function main() {
     const prop = props[i];
     if (!prop.permalink) { skipped++; continue; }
 
+    incrementBudget('zp-listing');
     const pageData = await scrapePage(page, prop.permalink);
 
     if (!pageData) {
@@ -255,6 +256,7 @@ async function main() {
 
   const dur = Math.round((Date.now() - t0) / 1000);
   console.log(`\n🏁 ZP CDP enrichment: ${enriched} enriched, ${skipped} skipped, ${errors} errors (${dur}s)`);
+  logBudgetSummary();
 
   await supabase.from('scrape_runs').insert({
     source: 'zonaprop', segment: 'enrich-cdp',

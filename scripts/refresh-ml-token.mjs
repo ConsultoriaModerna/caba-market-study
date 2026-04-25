@@ -1,6 +1,6 @@
 // refresh-ml-token.mjs — Refreshes ML OAuth token before scraping
 import { createClient } from '@supabase/supabase-js';
-import { applyFetchProxy } from './lib/proxy.mjs';
+import { applyFetchProxy, incrementBudget } from './lib/proxy.mjs';
 
 // ML OAuth requires residential AR IP (same lockdown as /sites/MLA/search).
 applyFetchProxy();
@@ -37,6 +37,7 @@ async function main() {
   }
 
   console.log('[TOKEN] Refreshing...');
+  incrementBudget('ml-oauth-refresh');
   const resp = await fetch('https://api.mercadolibre.com/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

@@ -8,7 +8,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import puppeteer from 'puppeteer';
-import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, applyFetchProxy } from '../lib/proxy.mjs';
+import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, applyFetchProxy, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
 
 // Slack webhook fetch also routes through proxy for consistency.
 applyFetchProxy();
@@ -155,6 +155,7 @@ async function scrapeZone(page, zone) {
     const url = pg === 1 ? zone.url : `${zone.url}_Desde_${offset + 1}`;
 
     try {
+      incrementBudget('ml-search-page');
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
 
       // Check for captcha or block
@@ -272,6 +273,7 @@ async function main() {
 
   const dur = Math.round((Date.now() - t0) / 1000);
   console.log(`\nDone: ${grandTotal.scraped} scraped, ${grandTotal.new} upserted (${dur}s)`);
+  logBudgetSummary();
 
   await supabase.from('scrape_runs').insert({
     source: 'mercadolibre', segment: zoneArg + '-headless',

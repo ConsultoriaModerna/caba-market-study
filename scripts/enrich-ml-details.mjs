@@ -5,7 +5,7 @@
 // Usage: node scripts/enrich-ml-details.mjs [delayMs]
 
 import { createClient } from '@supabase/supabase-js';
-import { applyFetchProxy } from './lib/proxy.mjs';
+import { applyFetchProxy, incrementBudget, logBudgetSummary } from './lib/proxy.mjs';
 
 // ML API requires residential AR IP since April 2025 (403 PolicyAgent otherwise).
 applyFetchProxy();
@@ -96,6 +96,7 @@ async function main() {
 
     if (!mlaId) { noDesc++; continue; }
 
+    incrementBudget('ml-description');
     const desc = await fetchDesc(mlaId, token);
 
     if (desc && desc.trim().length > 10) {
@@ -130,6 +131,7 @@ async function main() {
 
   const dur = Math.round((Date.now() - t0) / 1000);
   console.log(`\n🏁 ML descriptions: ${enriched} enriched, ${noDesc} empty, ${errors} errors (${dur}s)`);
+  logBudgetSummary();
 
   await supabase.from('scrape_runs').insert({
     source: 'mercadolibre', segment: 'enrich-descriptions',

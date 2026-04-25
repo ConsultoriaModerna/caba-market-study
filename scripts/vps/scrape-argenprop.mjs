@@ -7,7 +7,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import puppeteer from 'puppeteer';
-import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, applyFetchProxy } from '../lib/proxy.mjs';
+import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, applyFetchProxy, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
 
 applyFetchProxy();
 
@@ -166,6 +166,7 @@ async function scrapeZone(page, zone) {
       : `https://www.argenprop.com/${zone.slug}?pagina-${pg}`;
 
     try {
+      incrementBudget('ap-search-page');
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
 
       // Check for blocks (captcha, 403, etc)
@@ -302,6 +303,7 @@ async function main() {
   await browser.close();
   const dur = Math.round((Date.now() - t0) / 1000);
   console.log(`\nDone: ${grandTotal.scraped} scraped, ${grandTotal.new} upserted (${dur}s)`);
+  logBudgetSummary();
 
   await supabase.from('scrape_runs').insert({
     source: 'argenprop', segment: zoneArg,
