@@ -818,6 +818,13 @@
         <span id="global-filter-count" style="color:var(--accent);font-weight:600;font-size:0.75rem;"></span>
     </div>
 
+    <div id="newSinceBanner" style="display:none;align-items:center;justify-content:center;gap:14px;padding:8px 2rem;background:linear-gradient(90deg,rgba(74,222,128,0.08),rgba(74,222,128,0.03));border-bottom:1px solid rgba(74,222,128,0.25);font-size:0.82rem;">
+        <span style="color:#4ade80;font-weight:600;">🆕 <span id="newSinceCount">0</span> casas nuevas</span>
+        <span style="color:var(--text-secondary);">desde tu última visita <span id="newSinceAgo"></span></span>
+        <button id="newSinceViewBtn" style="padding:4px 12px;border-radius:12px;border:1px solid rgba(74,222,128,0.5);background:rgba(74,222,128,0.1);color:#4ade80;cursor:pointer;font-size:0.75rem;font-weight:600;">Ver lista</button>
+        <button id="newSinceMarkBtn" style="padding:4px 12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:0.75rem;">Marcar vistas</button>
+    </div>
+
     <div class="tabs">
         <button class="tab-button active" data-tab="overview" title="Resumen del mercado: KPIs, barrios por precio, distribucion por zona">📊 Overview</button>
         <button class="tab-button" data-tab="search" title="Busqueda por keywords, filtros avanzados, o lenguaje natural (semantica)">🔍 Search</button>
@@ -1478,7 +1485,46 @@
             populateOpportunities();
             populateFilterNeighborhoods();
             updateFavCount();
+            updateNewSinceBanner();
         }
+
+        function updateNewSinceBanner() {
+            const banner = document.getElementById('newSinceBanner');
+            if (!banner) return;
+            const lv = window.inmofindrLastVisit && window.inmofindrLastVisit();
+            const newOnes = (window.inmofindrIsNewProp && allProperties)
+                ? allProperties.filter(p => window.inmofindrIsNewProp(p))
+                : [];
+            if (!lv || newOnes.length === 0) {
+                banner.style.display = 'none';
+                return;
+            }
+            const days = Math.max(0, Math.floor((Date.now() - lv.getTime()) / 86400000));
+            const ago = days === 0 ? 'hoy' : days === 1 ? 'ayer' : `hace ${days} días`;
+            document.getElementById('newSinceCount').textContent = newOnes.length;
+            document.getElementById('newSinceAgo').textContent = `(${ago})`;
+            banner.style.display = 'flex';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const viewBtn = document.getElementById('newSinceViewBtn');
+            const markBtn = document.getElementById('newSinceMarkBtn');
+            if (viewBtn) viewBtn.addEventListener('click', () => {
+                if (typeof switchTab === 'function') switchTab('opportunities');
+                if (typeof oppSortKey !== 'undefined') {
+                    window.oppSortKey = 'age';
+                    window.oppSortAsc = true;
+                    if (typeof populateOpportunities === 'function') populateOpportunities();
+                }
+                document.getElementById('tab-opportunities')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+            if (markBtn) markBtn.addEventListener('click', () => {
+                if (window.inmofindrMarkAllSeen) window.inmofindrMarkAllSeen();
+                updateNewSinceBanner();
+                if (typeof populateOpportunities === 'function') populateOpportunities();
+                if (typeof populateOverview === 'function') populateOverview();
+            });
+        });
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
