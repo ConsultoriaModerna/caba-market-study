@@ -287,7 +287,7 @@ async function main() {
 
   console.log(`Launching Chrome on ${IS_MAC ? 'macOS' : 'Linux'} (${CHROME_PATH})...`);
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: process.env.ML_HEADLESS === '1' ? 'new' : false,
     executablePath: CHROME_PATH,
     userDataDir: PROFILE_DIR,
     args: [
