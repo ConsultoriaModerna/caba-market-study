@@ -67,6 +67,19 @@ export async function authenticatePuppeteerProxy(page) {
   return true;
 }
 
+// Rotate the ProxyEmpire sticky session ID, getting a fresh residential IP.
+// Username format: ...-sid-XXXX-... — we swap the sid token for a random one.
+// Use between page batches to avoid anti-bot rate counters tied to a single IP.
+export async function rotatePuppeteerProxySession(page) {
+  const cfg = getProxyConfig();
+  if (!cfg || !cfg.username) return null;
+  const newSid = Math.random().toString(36).slice(2, 10);
+  const newUsername = cfg.username.replace(/sid-[a-z0-9]+/i, `sid-${newSid}`);
+  if (newUsername === cfg.username) return null;
+  await page.authenticate({ username: newUsername, password: cfg.password });
+  return newSid;
+}
+
 // Block heavy assets on Puppeteer page to drop bandwidth ~4x on HTML-heavy targets
 // (ZP, AP). Call AFTER authenticatePuppeteerProxy and BEFORE first navigation.
 export async function enableAssetBlocking(page, { blockTypes = ['image', 'media', 'font', 'stylesheet'] } = {}) {

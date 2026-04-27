@@ -9,7 +9,7 @@
 import os from 'os';
 import { createClient } from '@supabase/supabase-js';
 import puppeteer from 'puppeteer-core';
-import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, applyFetchProxy, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
+import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, rotatePuppeteerProxySession, applyFetchProxy, incrementBudget, logBudgetSummary, enableAssetBlocking } from '../lib/proxy.mjs';
 
 // Slack webhook fetch also routes through proxy for consistency.
 applyFetchProxy();
@@ -27,7 +27,10 @@ const CHROME_PATH = IS_MAC
 const PROFILE_DIR = IS_MAC
   ? `${process.env.HOME}/.cache/caba-ml-chrome-profile`
   : '/opt/caba-market-study/.chrome-profile-ml';
-const DELAY_MS = 4000;
+const DELAY_MS = 8000;
+// Rotate ProxyEmpire sticky session every N pages to avoid ML's account-verification
+// challenge (triggers after 2 search-page hits from same IP+cookies session).
+const ROTATE_EVERY = 1;
 
 const zoneArg = process.argv.find(a => a.startsWith('--zone='))?.split('=')[1] || 'all';
 const typeArg = process.argv.find(a => a.startsWith('--type='))?.split('=')[1] || 'casa';
@@ -161,9 +164,23 @@ async function scrapeZone(page, zone) {
     const offset = (pg - 1) * 48;
     const url = pg === 1 ? zone.url : `${zone.url}_Desde_${offset + 1}`;
 
+    // Rotate session before page 1 of each batch (after the first batch).
+    // ML challenges after ~2 consecutive search hits — clear cookies AND IP to
+    // restart as a clean visitor. Skip the homepage hit (counts toward ML quota).
+    if (pg > 1 && ((pg - 1) % ROTATE_EVERY === 0)) {
+      const newSid = await rotatePuppeteerProxySession(page);
+      try {
+        const client = await page.target().createCDPSession();
+        await client.send('Network.clearBrowserCookies');
+        await client.send('Network.clearBrowserCache');
+        await client.detach();
+      } catch (e) { /* best-effort */ }
+      console.log(`  [rotate] new sid=${newSid}, cookies+cache cleared`);
+    }
+
     try {
       incrementBudget('ml-search-page');
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+      await page.goto(url, { waitUntil: 'networkidle2', timeout: 45000 });
 
       // Check for captcha or block
       const title = await page.title();
@@ -173,13 +190,38 @@ async function scrapeZone(page, zone) {
       }
 
       // Wait for results to load
-      await page.waitForSelector('.ui-search-layout__item, .ui-search-result, .poly-card', { timeout: 8000 }).catch(() => {});
+      await page.waitForSelector('.ui-search-layout__item, .ui-search-result, .poly-card', { timeout: 15000 }).catch(() => {});
 
-      const data = await page.evaluate(EXTRACT_JS);
+      let data = await page.evaluate(EXTRACT_JS);
 
+      // Distinguish real "no results" from extract-failure (DOM has items but selectors missed)
       if (!data || data.count === 0) {
-        console.log(`  Page ${pg}: no results`);
-        break;
+        const probe = await page.evaluate(() => ({
+          hasItem: !!document.querySelector('.ui-search-layout__item, .poly-card'),
+          hasEmptyMsg: /no hay resultados|no encontramos/i.test(document.body.innerText || ''),
+          bodyLen: (document.body.innerText || '').length,
+          bodySnippet: (document.body.innerText || '').substring(0, 400).replace(/\s+/g, ' '),
+          title: document.title,
+          url: location.href,
+        }));
+        console.log(`  [DEBUG] title="${probe.title}" url="${probe.url}"`);
+        console.log(`  [DEBUG] body[0..400]: ${probe.bodySnippet}`);
+        if (probe.hasEmptyMsg) {
+          console.log(`  Page ${pg}: end of inventory (empty-results message)`);
+          break;
+        }
+        if (probe.hasItem) {
+          // DOM has listings but extractor returned 0 — wait extra and retry once
+          await new Promise(r => setTimeout(r, 3000));
+          data = await page.evaluate(EXTRACT_JS);
+          if (!data || data.count === 0) {
+            console.log(`  Page ${pg}: extract failed (DOM has items, selectors missed) — bodyLen=${probe.bodyLen}`);
+            continue;
+          }
+        } else {
+          console.log(`  Page ${pg}: no listings in DOM (bodyLen=${probe.bodyLen}) — stopping`);
+          break;
+        }
       }
 
       // Upsert to DB
@@ -263,7 +305,7 @@ async function main() {
 
   // Warm up
   console.log('Warming up...');
-  await page.goto('https://www.mercadolibre.com.ar', { waitUntil: 'networkidle2', timeout: 20000 });
+  await page.goto('https://www.mercadolibre.com.ar', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await new Promise(r => setTimeout(r, 2000));
 
   let grandTotal = { scraped: 0, new: 0 };
