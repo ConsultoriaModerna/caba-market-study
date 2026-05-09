@@ -1,2 +1,6 @@
 .env
 node_modules/
+.claude/scheduled_tasks.lock
+.chrome-profile*/
+/tmp-*
+reports/
