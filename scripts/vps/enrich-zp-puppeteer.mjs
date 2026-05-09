@@ -210,7 +210,7 @@ async function main() {
     total_scraped: props.length, total_new: 0, total_updated: enriched,
     total_deactivated: 0, duration_ms: Date.now() - t0,
     error_message: errors > 0 ? `${errors} errors` : null,
-    metadata: { type: 'enrich-puppeteer-vps', runner: 'vps', delay_ms: DELAY },
+    metadata: { type: 'enrich-puppeteer-vps', runner: 'vps', delay_ms: BASE_DELAY },
     started_at: new Date(t0).toISOString(),
     completed_at: new Date().toISOString(),
   });
