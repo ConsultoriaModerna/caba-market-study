@@ -278,9 +278,8 @@ async function main() {
 
   const page = await browser.newPage();
   await authenticatePuppeteerProxy(page);
-  // Asset blocking disabled while calibrating anti-bot — request interception
-  // suspected of triggering frame-detached errors on AP search pages.
-  // await enableAssetBlocking(page);
+  // Block image/media/font (CSS kept). See proxy.mjs comment.
+  await enableAssetBlocking(page);
   await page.setViewport({ width: 1280, height: 800 });
   await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36');
 

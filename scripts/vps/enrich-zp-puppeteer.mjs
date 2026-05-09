@@ -98,9 +98,8 @@ async function main() {
   // chrome.runtime, WebGL/canvas/audio fingerprints, and several more signals.
   // Manual evaluateOnNewDocument patches removed in favor of the plugin.
   await page.setExtraHTTPHeaders({ 'Accept-Language': 'es-AR,es;q=0.9,en;q=0.8' });
-  // Asset blocking disabled while calibrating anti-bot — request interception
-  // may be triggering frame-detached / CF-fingerprint signals.
-  // await enableAssetBlocking(page);
+  // Block image/media/font (CSS kept — see proxy.mjs note). Cuts bandwidth ~3x.
+  await enableAssetBlocking(page);
   await page.setViewport({ width: 1280, height: 800 });
 
   // Test Cloudflare — navigate to ZP home first

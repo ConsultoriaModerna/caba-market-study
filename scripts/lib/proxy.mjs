@@ -80,9 +80,12 @@ export async function rotatePuppeteerProxySession(page) {
   return newSid;
 }
 
-// Block heavy assets on Puppeteer page to drop bandwidth ~4x on HTML-heavy targets
-// (ZP, AP). Call AFTER authenticatePuppeteerProxy and BEFORE first navigation.
-export async function enableAssetBlocking(page, { blockTypes = ['image', 'media', 'font', 'stylesheet'] } = {}) {
+// Block heavy assets on Puppeteer page to drop bandwidth ~3x on HTML-heavy targets.
+// Default deliberately keeps stylesheet — blocking CSS triggered "frame detached"
+// errors on AP search pages (iframes for ads/analytics) during 2026-05-09
+// calibration and broke ML render at the same time. Image/media/font is plenty.
+// Call AFTER authenticatePuppeteerProxy and BEFORE first navigation.
+export async function enableAssetBlocking(page, { blockTypes = ['image', 'media', 'font'] } = {}) {
   await page.setRequestInterception(true);
   page.on('request', req => {
     if (blockTypes.includes(req.resourceType())) {
