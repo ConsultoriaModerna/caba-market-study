@@ -90,9 +90,17 @@ async function main() {
 
   const page = await browser.newPage();
   await authenticatePuppeteerProxy(page);
+  // Hide automation fingerprint — Cloudflare reads navigator.webdriver and
+  // bot-like plugin/language arrays to gate /propiedades/* with a 403 challenge.
+  await page.evaluateOnNewDocument(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    Object.defineProperty(navigator, 'languages', { get: () => ['es-AR', 'es', 'en'] });
+    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+  });
+  await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36');
+  await page.setExtraHTTPHeaders({ 'Accept-Language': 'es-AR,es;q=0.9,en;q=0.8' });
   // Asset blocking disabled while calibrating anti-bot — request interception
-  // may be triggering frame-detached / CF-fingerprint signals. Re-enable once
-  // we confirm goto-flow stability.
+  // may be triggering frame-detached / CF-fingerprint signals.
   // await enableAssetBlocking(page);
   await page.setViewport({ width: 1280, height: 800 });
 
