@@ -90,7 +90,10 @@ async function main() {
 
   const page = await browser.newPage();
   await authenticatePuppeteerProxy(page);
-  await enableAssetBlocking(page);
+  // Asset blocking disabled while calibrating anti-bot — request interception
+  // may be triggering frame-detached / CF-fingerprint signals. Re-enable once
+  // we confirm goto-flow stability.
+  // await enableAssetBlocking(page);
   await page.setViewport({ width: 1280, height: 800 });
 
   // Test Cloudflare — navigate to ZP home first

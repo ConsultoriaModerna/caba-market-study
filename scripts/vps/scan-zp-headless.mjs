@@ -289,7 +289,8 @@ async function main() {
 
   const page = await browser.newPage();
   await authenticatePuppeteerProxy(page);
-  await enableAssetBlocking(page);
+  // Asset blocking disabled while calibrating anti-bot (see enrich-zp-puppeteer).
+  // await enableAssetBlocking(page);
   await page.setViewport({ width: 1280, height: 800 });
   await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36');
 
