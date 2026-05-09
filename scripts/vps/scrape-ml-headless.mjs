@@ -8,8 +8,11 @@
 
 import os from 'os';
 import { createClient } from '@supabase/supabase-js';
-import puppeteer from 'puppeteer-core';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, rotatePuppeteerProxySession, applyFetchProxy, incrementBudget, logBudgetSummary, enableAssetBlocking } from '../lib/proxy.mjs';
+
+puppeteer.use(StealthPlugin());
 
 // Slack webhook fetch also routes through proxy for consistency.
 applyFetchProxy();

@@ -7,8 +7,11 @@
 // Cron: runs as part of nightly-update.sh
 
 import { createClient } from '@supabase/supabase-js';
-import puppeteer from 'puppeteer-core';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
+
+puppeteer.use(StealthPlugin());
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
