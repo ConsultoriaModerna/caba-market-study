@@ -293,6 +293,7 @@ async function main() {
     headless: process.env.ML_HEADLESS === '1' ? 'new' : false,
     executablePath: CHROME_PATH,
     userDataDir: PROFILE_DIR,
+    protocolTimeout: 60000,
     args: [
       ...(IS_MAC ? [] : ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']),
       '--window-size=1280,800',

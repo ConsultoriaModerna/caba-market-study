@@ -40,7 +40,7 @@ if [ "$ML_ENABLED" = "true" ]; then
   echo "--- [1/7] ML Scan ---"
   ML_OUT=$(node scripts/vps/scrape-ml-headless.mjs 10 2>&1) || ERRORS="${ERRORS}ML scan failed. "
   echo "$ML_OUT"
-  ML_NEW=$(echo "$ML_OUT" | grep -oP '\d+ new' | grep -oP '\d+' || echo "0")
+  ML_NEW=$(echo "$ML_OUT" | grep -oP '\d+ new' | grep -oP '\d+' | awk '{s+=$1} END{print s+0}')
 else
   echo "--- [1/7] ML Scan -- SKIPPED (ML_ENABLED=false) ---"
 fi
@@ -53,8 +53,9 @@ for TYPE in casa ph departamento; do
   echo "  >> ZP scan: $TYPE"
   ZP_OUT=$(node scripts/vps/scan-zp-headless.mjs 20 --zone=all --type=$TYPE 2>&1) || ERRORS="${ERRORS}ZP scan ($TYPE) failed. "
   echo "$ZP_OUT"
-  ZP_T_NEW=$(echo "$ZP_OUT" | grep -oP '\d+ new,' | grep -oP '\d+' || echo "0")
-  ZP_T_REF=$(echo "$ZP_OUT" | grep -oP '\d+ refreshed' | grep -oP '\d+' || echo "0")
+  # awk-sum collapses N matches (one per zone) into a single integer; head -1 alone would only count the first zone.
+  ZP_T_NEW=$(echo "$ZP_OUT" | grep -oP '\d+ new,' | grep -oP '\d+' | awk '{s+=$1} END{print s+0}')
+  ZP_T_REF=$(echo "$ZP_OUT" | grep -oP '\d+ refreshed' | grep -oP '\d+' | awk '{s+=$1} END{print s+0}')
   ZP_NEW=$((ZP_NEW + ZP_T_NEW))
   ZP_REFRESHED=$((ZP_REFRESHED + ZP_T_REF))
   # Check circuit breaker between types
@@ -72,7 +73,7 @@ for TYPE in casa ph departamento; do
   echo "  >> AP scan: $TYPE"
   AP_OUT=$(node scripts/vps/scrape-argenprop.mjs 15 --zone=all --type=$TYPE 2>&1) || ERRORS="${ERRORS}AP scan ($TYPE) failed. "
   echo "$AP_OUT"
-  AP_T_NEW=$(echo "$AP_OUT" | grep -oP '\d+ new' | grep -oP '\d+' || echo "0")
+  AP_T_NEW=$(echo "$AP_OUT" | grep -oP '\d+ new' | grep -oP '\d+' | awk '{s+=$1} END{print s+0}')
   AP_NEW=$((AP_NEW + AP_T_NEW))
   if echo "$AP_OUT" | grep -q "\[CB\] ABORT"; then
     ERRORS="${ERRORS}AP scan ($TYPE) aborted by CB. "
@@ -103,7 +104,7 @@ while [ $BATCH -le $MAX_BATCHES ]; do
     break
   fi
 
-  BATCH_COUNT=$(echo "$ENRICH_OUT" | grep -oP 'Updated \d+' | grep -oP '\d+' || echo "0")
+  BATCH_COUNT=$(echo "$ENRICH_OUT" | grep -oP 'Updated \d+' | grep -oP '\d+' | awk '{s+=$1} END{print s+0}')
   ZP_ENRICHED=$((ZP_ENRICHED + BATCH_COUNT))
 
   REMAINING=$(node -e "
@@ -149,13 +150,15 @@ console.log((count || 0) + ' marked inactive (stale_7d)');
 if (error) console.error('Error:', error.message);
 " --input-type=module 2>&1) || ERRORS="${ERRORS}Stale detection failed. "
 echo "  $STALE_OUT"
-STALE_COUNT=$(echo "$STALE_OUT" | grep -oP '\d+' | head -1 || echo "0")
+STALE_COUNT=$(echo "$STALE_OUT" | grep -oP '\d+' | head -1)
+STALE_COUNT="${STALE_COUNT:-0}"
 
 # ── Step 7: Dead listing check (verify oldest 200 permalinks are still live)
 echo "--- [7/8] Dead Listing Check ---"
 DEAD_OUT=$(node scripts/vps/check-dead-listings.mjs 200 2>&1) || ERRORS="${ERRORS}Dead check failed. "
 echo "$DEAD_OUT"
-DEAD_COUNT=$(echo "$DEAD_OUT" | grep -oP '\d+ dead' | grep -oP '\d+' || echo "0")
+DEAD_COUNT=$(echo "$DEAD_OUT" | grep -oP '\d+ dead' | grep -oP '\d+' | head -1)
+DEAD_COUNT="${DEAD_COUNT:-0}"
 
 # ── Step 8: Dedup + Price Drops
 echo "--- [8/8] Dedup + Price Drops ---"
@@ -166,7 +169,8 @@ const { data } = await sb.rpc('merge_cross_portal_duplicates');
 console.log(JSON.stringify(data));
 " --input-type=module 2>&1) || ERRORS="${ERRORS}Dedup failed. "
 echo "Dedup: $DEDUP_OUT"
-DEDUP_COUNT=$(echo "$DEDUP_OUT" | grep -oP '"merged":\d+' | grep -oP '\d+' || echo "0")
+DEDUP_COUNT=$(echo "$DEDUP_OUT" | grep -oP '"merged":\d+' | grep -oP '\d+' | head -1)
+DEDUP_COUNT="${DEDUP_COUNT:-0}"
 
 DROPS_OUT=$(curl -s -X POST "${SUPABASE_URL}/functions/v1/detect-price-drops" \
   -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \

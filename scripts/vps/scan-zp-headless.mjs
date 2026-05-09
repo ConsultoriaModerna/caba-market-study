@@ -280,6 +280,7 @@ async function main() {
     headless: false,
     executablePath: '/usr/bin/google-chrome',
     userDataDir: PROFILE_DIR,
+    protocolTimeout: 60000,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',

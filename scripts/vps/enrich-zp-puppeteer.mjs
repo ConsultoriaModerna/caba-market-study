@@ -81,6 +81,7 @@ async function main() {
     headless: false, // Needs xvfb on Linux for Cloudflare
     executablePath: '/usr/bin/google-chrome',
     userDataDir: PROFILE_DIR,
+    protocolTimeout: 60000, // VPS+stealth+proxy can spike CDP latency over the 30s default
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
