@@ -4,6 +4,7 @@
 # Cron: 0 3 * * * caffeinate -i bash /Users/nico/AI/PROJECTS/real-estate/scripts/nightly-local.sh >> /tmp/nightly-local.log 2>&1
 
 set -euo pipefail
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 cd /Users/nico/AI/PROJECTS/real-estate
 set -a && source .env && set +a
 
@@ -32,9 +33,9 @@ fi
 echo "--- [1/3] ZP Chrome Enrichment ---"
 ZP_OUT=$(node scripts/enrich-zp-chrome.mjs 3000 500 2>&1) || true
 echo "$ZP_OUT"
-ZP_ENRICHED=$(echo "$ZP_OUT" | grep -oP '(\d+) enriched' | grep -oP '\d+' || echo "0")
-ZP_ERRORS=$(echo "$ZP_OUT" | grep -oP '(\d+) errors' | grep -oP '\d+' || echo "0")
-ZP_TOTAL=$(echo "$ZP_OUT" | grep -oP '(\d+) ZP properties' | grep -oP '\d+' || echo "0")
+ZP_ENRICHED=$(echo "$ZP_OUT" | grep -oE '[0-9]+ enriched' | grep -oE '[0-9]+' || echo "0")
+ZP_ERRORS=$(echo "$ZP_OUT" | grep -oE '[0-9]+ errors' | grep -oE '[0-9]+' || echo "0")
+ZP_TOTAL=$(echo "$ZP_OUT" | grep -oE '[0-9]+ ZP properties' | grep -oE '[0-9]+' || echo "0")
 
 # ── Step 2: Query DB stats for brief
 echo "--- [2/3] Generating brief ---"
