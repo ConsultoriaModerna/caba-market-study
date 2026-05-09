@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import puppeteer from 'puppeteer-core';
+import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -82,11 +83,14 @@ async function main() {
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-gpu',
-      '--window-size=1280,800'
+      '--window-size=1280,800',
+      ...getPuppeteerProxyArgs(),
     ]
   });
 
   const page = await browser.newPage();
+  await authenticatePuppeteerProxy(page);
+  await enableAssetBlocking(page);
   await page.setViewport({ width: 1280, height: 800 });
 
   // Test Cloudflare — navigate to ZP home first
