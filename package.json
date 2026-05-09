@@ -18,6 +18,8 @@
     "@anthropic-ai/sdk": "^0.82.0",
     "@supabase/supabase-js": "^2.104.1",
     "puppeteer-core": "^24.42.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "undici": "^6.21.0"
   }
 }
