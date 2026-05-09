@@ -154,7 +154,7 @@ async function scanLocation(page, location) {
     const url = pg === 1 ? `${baseUrl}.html` : `${baseUrl}-pagina-${pg}.html`;
 
     try {
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+      await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
       // Check for Cloudflare
       const title = await page.title();
@@ -163,7 +163,7 @@ async function scanLocation(page, location) {
         if (CB.shouldAbortZone()) break;
         console.log(`  Page ${pg}: CF challenge, backing off ${CB.BACKOFF_PAUSE_MS / 1000}s...`);
         await new Promise(r => setTimeout(r, CB.BACKOFF_PAUSE_MS));
-        await page.reload({ waitUntil: 'networkidle2', timeout: 30000 });
+        await page.reload({ waitUntil: 'networkidle2', timeout: 60000 });
         const t2 = await page.title();
         if (t2.includes('moment') || t2.includes('Cloudflare')) {
           CB.onCfHit();
@@ -299,7 +299,7 @@ async function main() {
 
   // Warm up with ZP home to pass Cloudflare
   console.log('Warming up Cloudflare...');
-  await page.goto('https://www.zonaprop.com.ar', { waitUntil: 'networkidle2', timeout: 30000 });
+  await page.goto('https://www.zonaprop.com.ar', { waitUntil: 'networkidle2', timeout: 60000 });
   await new Promise(r => setTimeout(r, 3000));
 
   let grandTotal = { scanned: 0, new: 0, updated: 0 };

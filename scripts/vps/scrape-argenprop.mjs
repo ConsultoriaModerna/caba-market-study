@@ -170,7 +170,7 @@ async function scrapeZone(page, zone) {
 
     try {
       incrementBudget('ap-search-page');
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+      await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
       // Check for blocks (captcha, 403, etc)
       const title = await page.title();
@@ -285,7 +285,7 @@ async function main() {
 
   // Warm up
   console.log('Warming up...');
-  await page.goto('https://www.argenprop.com', { waitUntil: 'networkidle2', timeout: 20000 });
+  await page.goto('https://www.argenprop.com', { waitUntil: 'networkidle2', timeout: 60000 });
   await new Promise(r => setTimeout(r, 3000));
 
   let grandTotal = { scraped: 0, new: 0 };
