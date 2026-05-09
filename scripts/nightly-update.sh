@@ -82,15 +82,16 @@ for TYPE in casa ph departamento; do
   sleep 20
 done
 
-# ── Step 4: ZP Enrichment (loop until backlog < 50, batch 500)
-# If scraper hit a block, the enricher will also likely be blocked -- skip
+# ── Step 4: ZP Enrichment (loop until backlog < 50, batch 100)
+# Smaller batches recycle Chrome more often, capping memory pressure on the
+# 1GB-RAM VPS. Total cap stays at 2000/run via MAX_BATCHES.
 echo "--- [4/7] ZP Enrichment (Puppeteer, batch loop) ---"
 ZP_ENRICHED=0
 BATCH=1
-MAX_BATCHES=10
+MAX_BATCHES=20
 while [ $BATCH -le $MAX_BATCHES ]; do
   echo "  Batch $BATCH/$MAX_BATCHES..."
-  ENRICH_OUT=$(node scripts/vps/enrich-zp-puppeteer.mjs 3000 500 2>&1)
+  ENRICH_OUT=$(node scripts/vps/enrich-zp-puppeteer.mjs 3000 100 2>&1)
   ENRICH_EXIT=$?
   echo "$ENRICH_OUT"
 
