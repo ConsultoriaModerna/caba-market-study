@@ -143,8 +143,9 @@ async function main() {
     }
 
     try {
-      await page.goto(prop.permalink, { waitUntil: 'domcontentloaded', timeout: 15000 });
-      await page.waitForFunction(() => !document.title.includes('moment'), { timeout: 10000 }).catch(() => {});
+      await page.goto(prop.permalink, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      // CF JS challenge can take 10-25s to auto-pass. Wait up to 30s.
+      await page.waitForFunction(() => !document.title.includes('moment'), { timeout: 30000 }).catch(() => {});
 
       const pageData = await page.evaluate(() => {
         const ld = document.querySelectorAll('script[type="application/ld+json"]');
