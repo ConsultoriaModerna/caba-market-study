@@ -1672,7 +1672,7 @@
 
         async function fetchProperties() {
             try {
-                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,price_per_covered_sqm,segment,source,slug,keywords,covered_ratio,permalink,address_text,contact_phone,contact_name,thumbnail,description,latitude,longitude,cocheras,first_seen_at,published_at,enriched_at,geo_precision,livability_score,livability_detail,smp,fot,m2_construibles,distrito_urbanistico,property_type';
+                const fields = 'id,title,price,currency,total_area,covered_area,ambientes,bedrooms,bathrooms,neighborhood,price_per_sqm,price_per_covered_sqm,segment,source,slug,keywords,covered_ratio,permalink,address_text,contact_phone,contact_name,thumbnail,description,latitude,longitude,cocheras,first_seen_at,last_seen_at,published_at,enriched_at,geo_precision,livability_score,livability_detail,smp,fot,m2_construibles,distrito_urbanistico,property_type';
                 const base = `${SUPABASE_URL}/rest/v1/properties?select=${fields}&is_active=eq.true&canonical_id=is.null&order=price_per_sqm.asc.nullslast`;
                 const headers = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
 
@@ -1712,6 +1712,32 @@
         function daysOnMarket(p) {
             if (!p.first_seen_at) return null;
             return Math.round((Date.now() - new Date(p.first_seen_at).getTime()) / 86400000);
+        }
+
+        // Hours since the scraper last confirmed the listing was live on the portal.
+        // Properties with last_seen_at older than 7 days get auto-deactivated by the
+        // nightly stale step, so anything still in the active set should be ≤7d.
+        function hoursSinceCheck(p) {
+            if (!p.last_seen_at) return null;
+            return Math.round((Date.now() - new Date(p.last_seen_at).getTime()) / 3600000);
+        }
+
+        function checkLabel(p) {
+            const h = hoursSinceCheck(p);
+            if (h === null) return null;
+            if (h < 1) return 'recién verificada';
+            if (h < 24) return `verificada hace ${h}h`;
+            const d = Math.round(h / 24);
+            return d === 1 ? 'verificada ayer' : `verificada hace ${d}d`;
+        }
+
+        function freshnessBadge(p) {
+            const h = hoursSinceCheck(p);
+            if (h === null) return '';
+            const label = checkLabel(p);
+            if (h <= 48) return `<span title="${label}" style="background:rgba(74,222,128,0.18);color:#4ade80;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">● vigente</span>`;
+            if (h <= 168) return `<span title="${label}" style="background:rgba(251,191,36,0.18);color:#fbbf24;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">● ${Math.round(h/24)}d sin chequeo</span>`;
+            return `<span title="${label}" style="background:rgba(148,163,184,0.18);color:#94a3b8;padding:1px 6px;border-radius:8px;font-size:0.65rem;font-weight:600;">● stale</span>`;
         }
 
         function ageBadge(p) {
@@ -2586,7 +2612,7 @@
                     <td style="padding:6px 4px;max-width:180px;">${tags}</td>
                     <td style="text-align:center;padding:6px 8px;">${sourceBadge(p.source)}</td>
                     <td style="text-align:center;padding:6px 8px;font-size:0.75rem;font-weight:600;color:${p.livability_score >= 60 ? '#4ade80' : p.livability_score >= 40 ? '#eab308' : p.livability_score > 0 ? '#ef4444' : '#334155'};">${p.livability_score ? p.livability_score + '/100' : '-'}</td>
-                    <td style="text-align:center;padding:6px 8px;font-size:0.75rem;">${age}d</td>
+                    <td title="${checkLabel(p) || ''}" style="text-align:center;padding:6px 8px;font-size:0.75rem;">${(() => { const h = hoursSinceCheck(p); const c = h === null ? '#475569' : h <= 48 ? '#4ade80' : h <= 168 ? '#fbbf24' : '#94a3b8'; return `<span style="color:${c};">●</span> ${age}d`; })()}</td>
                     <td style="text-align:center;padding:6px 8px;">${p.permalink ? `<a href="${p.permalink}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:0.75rem;" onclick="event.stopPropagation()">→</a>` : ''}</td>
                 </tr>`;
             }).join('');
@@ -3005,6 +3031,7 @@
                     <!-- Badges -->
                     <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:1rem;">
                         ${sourceBadge(p.source)}
+                        ${freshnessBadge(p)}
                         <span style="background:${segColor}22;color:${segColor};padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;">${segLabel}</span>
                         ${p.keywords?.map(k => `<span style="background:var(--bg-tertiary);color:var(--text-secondary);padding:2px 6px;border-radius:8px;font-size:0.65rem;">${k}</span>`).join('') || ''}
                     </div>
@@ -3032,7 +3059,14 @@
                         ${p.bathrooms ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${p.bathrooms}</div><div style="font-size:0.65rem;color:var(--text-secondary);">baños</div></div>` : ''}
                         ${p.cocheras ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${p.cocheras}</div><div style="font-size:0.65rem;color:var(--text-secondary);">cocheras</div></div>` : ''}
                         ${p.ambientes ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${p.ambientes}</div><div style="font-size:0.65rem;color:var(--text-secondary);">ambientes</div></div>` : ''}
-                        ${daysOnMarket ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${daysOnMarket}d</div><div style="font-size:0.65rem;color:var(--text-secondary);">en mercado</div></div>` : ''}
+                        ${daysOnMarket !== null ? `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;">${daysOnMarket}d</div><div style="font-size:0.65rem;color:var(--text-secondary);">descubierta</div></div>` : ''}
+                        ${(() => {
+                            const h = hoursSinceCheck(p);
+                            if (h === null) return '';
+                            const label = h < 24 ? `${h}h` : `${Math.round(h/24)}d`;
+                            const color = h <= 48 ? '#4ade80' : h <= 168 ? '#fbbf24' : '#94a3b8';
+                            return `<div style="background:var(--bg-primary);border-radius:8px;padding:0.6rem;text-align:center;"><div style="font-size:1.1rem;font-weight:600;color:${color};">${label}</div><div style="font-size:0.65rem;color:var(--text-secondary);">verificada</div></div>`;
+                        })()}
                     </div>
 
                     ${p.livability_score ? `

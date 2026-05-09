@@ -132,9 +132,9 @@ async function main() {
       dead++;
       deadList.push({ id: p.id, source: p.source, neighborhood: p.neighborhood, reason });
 
-      // Mark inactive
+      // Mark inactive + persist reason for UI / debugging
       const { error: upErr } = await supabase.from('properties')
-        .update({ is_active: false })
+        .update({ is_active: false, deactivation_reason: reason, updated_at: new Date().toISOString() })
         .eq('id', p.id);
 
       if (upErr) console.log(`  Error deactivating ${p.id}: ${upErr.message}`);

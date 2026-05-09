@@ -131,23 +131,21 @@ else
   echo "--- [5/7] ML Enrichment -- SKIPPED ---"
 fi
 
-# ── Step 6: Mark stale listings inactive (not seen in 14+ days)
+# ── Step 6: Mark stale listings inactive (not seen in 7+ days)
 echo "--- [6/7] Stale Detection ---"
 STALE_OUT=$(node -e "
 import { createClient } from '@supabase/supabase-js';
 const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-// Mark properties inactive if not seen in 14 days
-const cutoff = new Date(Date.now() - 14 * 86400000).toISOString();
-const { data, error } = await sb.from('properties')
-  .update({ is_active: false })
+// Mark properties inactive if not seen in 7 days; tag reason for forensics.
+const cutoff = new Date(Date.now() - 7 * 86400000).toISOString();
+const { count, error } = await sb.from('properties')
+  .update({ is_active: false, deactivation_reason: 'stale_7d', updated_at: new Date().toISOString() }, { count: 'exact' })
   .eq('is_active', true)
   .lt('last_seen_at', cutoff)
-  .not('last_seen_at', 'is', null)
-  .select('id', { count: 'exact', head: true });
+  .not('last_seen_at', 'is', null);
 
-const count = data?.length || 0;
-console.log(count + ' marked inactive');
+console.log((count || 0) + ' marked inactive (stale_7d)');
 if (error) console.error('Error:', error.message);
 " --input-type=module 2>&1) || ERRORS="${ERRORS}Stale detection failed. "
 echo "  $STALE_OUT"
