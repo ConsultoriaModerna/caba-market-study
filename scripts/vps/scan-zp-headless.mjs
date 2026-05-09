@@ -7,7 +7,7 @@
 // Cron: runs as part of nightly-update.sh
 
 import { createClient } from '@supabase/supabase-js';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,

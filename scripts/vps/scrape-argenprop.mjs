@@ -6,7 +6,7 @@
 // Usage: node scripts/vps/scrape-argenprop.mjs [maxPages] [--zone=caba|gba-norte|all]
 
 import { createClient } from '@supabase/supabase-js';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, applyFetchProxy, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
 
 applyFetchProxy();
