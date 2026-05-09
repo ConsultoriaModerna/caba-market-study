@@ -173,6 +173,14 @@ DROPS_OUT=$(curl -s -X POST "${SUPABASE_URL}/functions/v1/detect-price-drops" \
   -H 'Content-Type: application/json' -d '{}' 2>&1) || ERRORS="${ERRORS}Price drops failed. "
 echo "Price drops: $DROPS_OUT"
 
+# ── Refresh turnover_metrics_weekly materialized view (cheap, ~100ms on 13K rows)
+node -e "
+import { createClient } from '@supabase/supabase-js';
+const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const { error } = await sb.rpc('refresh_turnover_metrics');
+console.log('Turnover view refresh: ' + (error ? 'FAILED ' + error.message : 'OK'));
+" --input-type=module 2>&1 || ERRORS="${ERRORS}Turnover refresh failed. "
+
 # ── Summary
 TOTALS=$(node -e "
 import { createClient } from '@supabase/supabase-js';
