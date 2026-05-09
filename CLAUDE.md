@@ -20,26 +20,33 @@ InmoFindr: sistema de inteligencia inmobiliaria para Buenos Aires (CABA + GBA No
 - **DB:** Supabase PostgreSQL (proyecto `inmofindr`, URL: ysynltkotzizayjtoujf.supabase.co)
 - **Repo:** GitHub ConsultoriaModerna/caba-market-study
 - **Dashboard:** inmofindr.vercel.app
-- **Scraping:** Node.js local (ML bloquea IPs cloud)
+- **Scraping:** VPS DigitalOcean (104.236.250.126) + ProxyEmpire residential AR proxy + puppeteer-extra-plugin-stealth. Cron `0 6 * * *` UTC = 03:00 ARG.
 
 ## Structure
 - `public/index.html` — Main entry
 - `public/mapa.html` — Interactive map view
 - `public/wave.html` — Wave Above the City (market pulse)
 - `public/d3-analytics.html` — D3 analytics dashboard
-- `scripts/scrape-meli.mjs` — MercadoLibre scraper
+- `scripts/nightly-update.sh` — VPS nightly pipeline (canonical entry)
+- `scripts/lib/proxy.mjs` — Residential proxy + budget cap helper
+- `scripts/vps/scan-zp-headless.mjs` — ZP search-page scanner
+- `scripts/vps/enrich-zp-puppeteer.mjs` — ZP property-page enrichment
+- `scripts/vps/scrape-argenprop.mjs` — AP scraper
+- `scripts/vps/scrape-ml-headless.mjs` — ML browser scraper (gated by ML_ENABLED)
+- `scripts/vps/check-dead-listings.mjs` — HEAD-checks oldest 200 active permalinks per night
 - `scripts/enrich-ml-details.mjs` — ML description enrichment via API
-- `scripts/enrich-zp-chrome.mjs` — ZP enrichment via Chrome AppleScript
+- `scripts/refresh-ml-token.mjs` — MercadoLibre OAuth token refresh
 - `scripts/geocode-nominatim.mjs` — Address geocoding via Nominatim
-- `scripts/refresh-ml-token.mjs` — MercadoLibre token refresh
-- `scrape-local.sh` — Local scraping convenience script
+- `scripts/test-proxy.mjs` — Smoke test for ProxyEmpire integration
 
 ## Datos actuales
-- 10,016 propiedades (5,562 ZonaProp + 2,463 MercadoLibre + 1,991 Argenprop)
-- 104 barrios, 13 capas de mapa, 6 charts 3D/4D en /advanced
-- Livability Score calculado para ~2,000 propiedades geocodeadas
-- 426 propiedades con SMP catastral, 318K parcelas descargadas
-- Datasets GCBA: ruido real (dBA), anegamiento, transporte (744K viajes), barrios populares (468 manzanas)
+- ~12,700 propiedades en `properties` (~2,800 activas, resto histórico con `is_active=false`).
+- Materialized view `turnover_metrics_weekly` para análisis de churn / DOM / discovery rate por (week, neighborhood, segment, source, property_type). Refresh al final del nightly via RPC `public.refresh_turnover_metrics()`.
+- Stale window: 7 días. Listings sin `last_seen_at` refresh en 7d se marcan `is_active=false, deactivation_reason='stale_7d'`.
+- 104 barrios, 13 capas de mapa, 6 charts 3D/4D en /advanced.
+- Livability Score calculado para ~2,000 propiedades geocodeadas.
+- 426 propiedades con SMP catastral, 318K parcelas descargadas.
+- Datasets GCBA: ruido real (dBA), anegamiento, transporte (744K viajes), barrios populares (468 manzanas).
 
 ## Responsabilidades
 - Mantener y mejorar pipelines de scraping
@@ -66,10 +73,11 @@ InmoFindr: sistema de inteligencia inmobiliaria para Buenos Aires (CABA + GBA No
 - Never use em dashes in text or comments
 
 ## Issues conocidos
-- MercadoLibre bloquea IPs cloud → scraping solo funciona desde Mac local
-- ZonaProp tiene Cloudflare → scraping via Chrome AppleScript (no curl/Puppeteer)
-- caba-dashboard.jsx sin build pipeline
-- D3 analytics lee CSV estático, no Supabase live
+- ZP scan pagination: pages 2+ disparan CF re-challenge incluso con stealth. Cada zona/tipo aporta ~25 listings de page 1; pages 2+ timeout. Tracked como task #7. Mitigation candidate: rotar sticky session por página vía `rotatePuppeteerProxySession`.
+- ML scan deshabilitado en VPS (`ML_ENABLED=false` en `.env`). Decisión: re-activar cuando se valide que stealth pasa el rate-limit del 04-27.
+- VPS RAM 1GB es marginal para puppeteer + stealth + chrome. Si se satura, considerar resize a 2GB ($12/mes) o reducir batch_size del enrichment.
+- ProxyEmpire dashboard no soporta spending limit nativo. Cap dual implementado: `PROXY_MAX_REQUESTS=5000` env (code-side) + manual top-up en porciones de $3.50 (dashboard-side).
+- D3 analytics lee CSV estático, no Supabase live.
 
 ## Visión de producto
 Evolucionar de dashboard estático a sistema de búsqueda vectorial de propiedades con capas superpuestas de información geográfica, demográfica y ambiental (Google Maps Platform APIs: Places, Geocoding, Distance Matrix, Street View, Elevation, Air Quality, Solar).
