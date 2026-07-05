@@ -73,11 +73,12 @@ InmoFindr: sistema de inteligencia inmobiliaria para Buenos Aires (CABA + GBA No
 - Never use em dashes in text or comments
 
 ## Issues conocidos
-- ZP scan pagination: pages 2+ disparan CF re-challenge incluso con stealth. Cada zona/tipo aporta ~25 listings de page 1; pages 2+ timeout. Tracked como task #7. Mitigation candidate: rotar sticky session por página vía `rotatePuppeteerProxySession`.
+- ZP scan pagination (task #7): RESUELTO 05-jul. Causa: `page.goto` frío a `-pagina-N.html` disparaba el CF managed challenge. Fix: paginar por click in-site (`PAGING_NEXT`) + gotos con `domcontentloaded` (no `networkidle2`, que timeouteaba por los long-poll de ads/tracking de ZP) + rotación de IP/re-warm como fallback + budget contado por navegación. Validado en prod: page 1 y pages 2+ verdes.
 - ML scan deshabilitado en VPS (`ML_ENABLED=false` en `.env`). Decisión: re-activar cuando se valide que stealth pasa el rate-limit del 04-27.
 - VPS RAM 1GB es marginal para puppeteer + stealth + chrome. Si se satura, considerar resize a 2GB ($12/mes) o reducir batch_size del enrichment.
 - ProxyEmpire dashboard no soporta spending limit nativo. Cap dual implementado: `PROXY_MAX_REQUESTS=5000` env (code-side) + manual top-up en porciones de $3.50 (dashboard-side).
-- D3 analytics lee CSV estático, no Supabase live.
+- Nightly outage (10-may a 05-jul): el cron y `nightly-update.sh` cargaban env con `export $(cat .env | xargs)`, que salía con exit 1 cuando `.env` sumó una línea de comentario (el `#` expandido por xargs no es comentario de shell). Corría desde el 9-may. RESUELTO 05-jul: el script hace `set -a; . ./.env; set +a` y el crontab dejó de usar el export frágil.
+- Semantic search: cobertura de embeddings baja (~7% de activas) porque solo se embeben props con `description`, y las descripciones dependen del enrichment de ZP (que estuvo caído). Mejora a medida que el nightly resucitado enriquece. Candidato v2: RPC híbrido (vector + full-text) para props sin embedding.
 
 ## Visión de producto
 Evolucionar de dashboard estático a sistema de búsqueda vectorial de propiedades con capas superpuestas de información geográfica, demográfica y ambiental (Google Maps Platform APIs: Places, Geocoding, Distance Matrix, Street View, Elevation, Air Quality, Solar).
