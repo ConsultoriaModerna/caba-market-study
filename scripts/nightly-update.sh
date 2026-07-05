@@ -6,14 +6,21 @@
 # Steps: ZP scan -> AP scan -> ZP enrich (loop) -> Stale detection -> Dedup -> Price drops -> Slack
 #
 # Usage: bash scripts/nightly-update.sh
-# Cron:  0 6 * * * cd /opt/caba-market-study && export $(cat .env | xargs) && export DISPLAY=:99 && bash scripts/nightly-update.sh >> /var/log/caba-nightly.log 2>&1
+# Cron:  0 6 * * * cd /opt/caba-market-study && export DISPLAY=:99 && bash scripts/nightly-update.sh >> /var/log/caba-nightly.log 2>&1
 
 cd "$(dirname "$0")/.."
 
 # Pull latest code before running
 git pull --ff-only origin main 2>&1 || echo "WARN: git pull failed, running with current code"
 
-export $(cat .env | xargs)
+# Load .env robustly (respects comments, blank lines, quoted values). The old
+# `export $(cat .env | xargs)` silently killed the nightly for ~2 months once a
+# comment line landed in .env: an xargs-expanded '#' is NOT a shell comment, so
+# words like "Re-enable" reached `export` as invalid identifiers (exit 1), which
+# aborted the cron's `&&` chain before the pipeline could start.
+set -a
+[ -f .env ] && . ./.env
+set +a
 export DISPLAY=:99
 
 T0=$(date +%s)
