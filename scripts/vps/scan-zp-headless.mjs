@@ -168,12 +168,12 @@ async function gotoNextPage(page, baseUrl, pg) {
   incrementBudget('zp-scan');
   try {
     await Promise.all([
-      page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 }),
+      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 }),
       nextEl.click(),
     ]);
   } catch (e) {
     console.log(`  [next] click nav failed (${e.message.slice(0, 40)}), goto fallback`);
-    await page.goto(`${baseUrl}-pagina-${pg}.html`, { waitUntil: 'networkidle2', timeout: 60000 });
+    await page.goto(`${baseUrl}-pagina-${pg}.html`, { waitUntil: 'domcontentloaded', timeout: 60000 });
   }
   return true;
 }
@@ -201,7 +201,10 @@ async function scanLocation(page, location) {
     try {
       if (pg === 1) {
         incrementBudget('zp-scan');
-        await page.goto(`${baseUrl}.html`, { waitUntil: 'networkidle2', timeout: 60000 });
+        // domcontentloaded (not networkidle2): ZP listing pages keep long-poll
+        // ads/tracking sockets open, so networkidle2 times out at 60s even
+        // though the grid is already rendered. waitForSelector below confirms it.
+        await page.goto(`${baseUrl}.html`, { waitUntil: 'domcontentloaded', timeout: 60000 });
       } else {
         // Task #7: reach deep pages via in-site pagination click, not a cold
         // goto to -pagina-N.html (which is what CF re-challenges).
@@ -225,7 +228,7 @@ async function scanLocation(page, location) {
         await sleep(jitter(2000));
         incrementBudget('zp-scan-retry');
         const retryUrl = pg === 1 ? `${baseUrl}.html` : `${baseUrl}-pagina-${pg}.html`;
-        await page.goto(retryUrl, { waitUntil: 'networkidle2', timeout: 60000 });
+        await page.goto(retryUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
         title = await page.title();
         if (isCloudflareTitle(title)) {
           CB.onCfHit();
