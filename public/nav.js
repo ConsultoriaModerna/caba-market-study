@@ -4,6 +4,7 @@
     { href: '/', label: 'Dashboard', icon: '📊' },
     { href: '/mapa', label: 'Mapa', icon: '🗺️' },
     { href: '/wave', label: 'Wave', icon: '🌊' },
+    { href: '/oportunidades', label: 'Oportunidades', icon: '💎' },
     { href: '/analytics', label: 'Analytics', icon: '📈' },
     { href: '/advanced', label: 'Advanced', icon: '🔬' }
   ];

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InmoFindr -- Radar de Oportunidades</title>
+  <script src="/auth.js"></script>
+  <script src="/nav.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.35.0.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a1f3a;
+      --border: #1e293b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #00d4ff;
+      --green: #4ade80;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --orange: #f97316;
+      --purple: #a78bfa;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 32px 24px; }
+    header { text-align: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid var(--accent); }
+    header h1 { font-size: 2rem; color: var(--accent); font-weight: 700; }
+    header p { color: var(--text-muted); margin-top: 6px; font-size: 0.9rem; }
+
+    .note { background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.35); color: #d6b34a;
+            border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; margin-bottom: 20px; }
+
+    /* KPI tiles */
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .kpi .label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+    .kpi .value { font-size: 1.6rem; font-weight: 700; margin-top: 4px; color: var(--text); }
+    .kpi .value.good { color: var(--green); }
+    .kpi .value.accent { color: var(--accent); }
+    .kpi .sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* Filter bar */
+    .filters { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center; margin-bottom: 18px;
+               padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+    .filters .lbl { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+    .filters select, .filters input {
+      padding: 5px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-size: 0.8rem; font-family: inherit;
+    }
+    .filters input[type=number] { width: 90px; }
+    .filters input[type=text] { width: 150px; }
+    .filters label.chk { display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--text-muted); cursor: pointer; }
+    .filters button { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); background: transparent;
+                      color: var(--text-muted); cursor: pointer; font-size: 0.75rem; font-family: inherit; }
+    .filters button:hover { color: var(--text); border-color: var(--accent); }
+    #result-count { font-size: 0.78rem; color: var(--accent); font-weight: 600; margin-left: auto; }
+
+    .section { background: var(--surface); border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--border); }
+    .section h2 { font-size: 1.15rem; color: var(--accent); margin-bottom: 4px; font-weight: 600; }
+    .section .subtitle { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 16px; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    thead th { text-align: right; padding: 10px 12px; color: var(--text-muted); font-weight: 600; font-size: 0.72rem;
+               text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--border); cursor: pointer;
+               white-space: nowrap; user-select: none; }
+    thead th:first-child, thead th.txt { text-align: left; }
+    thead th:hover { color: var(--accent); }
+    thead th .arrow { color: var(--accent); font-size: 0.7rem; }
+    tbody td { padding: 10px 12px; text-align: right; border-bottom: 1px solid rgba(30,41,59,0.5); white-space: nowrap; }
+    tbody td.txt { text-align: left; }
+    tbody tr:hover { background: rgba(0,212,255,0.04); }
+    tbody tr { transition: background 0.15s; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.68rem; font-weight: 600; }
+    .badge.verified { background: rgba(74,222,128,0.15); color: var(--green); }
+    .badge.lot { background: rgba(234,179,8,0.15); color: var(--yellow); }
+    .gap { font-weight: 700; }
+    .score-bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--accent); vertical-align: middle; margin-left: 6px; }
+    a.listing { color: var(--accent); text-decoration: none; }
+    a.listing:hover { text-decoration: underline; }
+    .loading { text-align: center; padding: 60px; color: var(--text-muted); font-size: 1.05rem; }
+    .loading::after { content: ''; display: inline-block; width: 18px; height: 18px; border: 2px solid var(--accent);
+      border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-left: 12px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>💎 Radar de Oportunidades</h1>
+      <p>Casas en venta (USD) por debajo de la mediana de su barrio, valuadas por m&sup2; cubierto. Solo casas.</p>
+    </header>
+
+    <div id="loading" class="loading">Cargando oportunidades desde Supabase</div>
+
+    <div id="content" style="display:none;">
+      <div class="note" id="market-note"></div>
+
+      <div class="kpis" id="kpis"></div>
+
+      <div class="filters">
+        <span class="lbl">Precio USD</span>
+        <input type="number" id="f-price-min" placeholder="Min" value="">
+        <span style="color:var(--text-muted)">-</span>
+        <input type="number" id="f-price-max" placeholder="Max" value="">
+        <span class="lbl">Gap min</span>
+        <select id="f-gap">
+          <option value="0">cualquiera</option>
+          <option value="15">&ge; 15%</option>
+          <option value="25" selected>&ge; 25%</option>
+          <option value="35">&ge; 35%</option>
+          <option value="50">&ge; 50%</option>
+        </select>
+        <select id="f-source">
+          <option value="">Todas las fuentes</option>
+          <option value="zonaprop">ZonaProp</option>
+          <option value="argenprop">ArgenProp</option>
+          <option value="mercadolibre">MercadoLibre</option>
+        </select>
+        <input type="text" id="f-barrio" placeholder="Barrio...">
+        <label class="chk"><input type="checkbox" id="f-verified" checked> Solo &aacute;rea verificada</label>
+        <button onclick="resetFilters()">&#x21bb; Reset</button>
+        <span id="result-count"></span>
+      </div>
+
+      <div class="section">
+        <h2>Mapa precio / descuento</h2>
+        <p class="subtitle">Cada punto es una casa. X = precio USD, Y = descuento vs mediana del barrio (%), tama&ntilde;o = m&sup2; cubierto, color = score. Abajo a la derecha = caras y sin descuento; arriba a la izquierda = baratas y con mayor descuento. Click para abrir el aviso.</p>
+        <div id="scatter" style="height:460px;"></div>
+      </div>
+
+      <div class="section">
+        <h2>Ranking de oportunidades</h2>
+        <p class="subtitle">Ordenado por <strong>score</strong> (descuento capado al 50% &times; confianza de &aacute;rea &times; liquidez del barrio). Click en las columnas para reordenar.</p>
+        <div class="table-wrap">
+          <table id="opp-table">
+            <thead>
+              <tr>
+                <th class="txt" data-sort="neighborhood">Barrio</th>
+                <th data-sort="price">Precio</th>
+                <th data-sort="covered_area">m&sup2; cub</th>
+                <th data-sort="price_per_covered_sqm">USD/m&sup2;</th>
+                <th data-sort="barrio_median_ppcs">Mediana barrio</th>
+                <th data-sort="gap_pct">Gap</th>
+                <th data-sort="opportunity_score">Score</th>
+                <th data-sort="bedrooms">Dorm</th>
+                <th data-sort="discovered_12w">Activ. barrio</th>
+                <th class="txt">&Aacute;rea</th>
+                <th class="txt"></th>
+              </tr>
+            </thead>
+            <tbody id="opp-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -- Config --
+    const SUPABASE_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
+    const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
+
+    let _all = [];
+    let _sort = { key: 'opportunity_score', dir: 'desc' };
+
+    const fmtUSD = n => n == null ? '--' : '$' + Math.round(n).toLocaleString('es-AR');
+    const num = v => v == null ? null : parseFloat(v);
+
+    async function load() {
+      const url = `${SUPABASE_URL}/rest/v1/opportunity_scan?select=*&order=opportunity_score.desc&limit=2000`;
+      const resp = await fetch(url, { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } });
+      if (!resp.ok) { document.getElementById('loading').textContent = 'Error cargando datos: ' + resp.status; return; }
+      _all = (await resp.json()).map(r => ({
+        ...r,
+        price: num(r.price), covered_area: num(r.covered_area), total_area: num(r.total_area),
+        price_per_covered_sqm: num(r.price_per_covered_sqm), barrio_median_ppcs: num(r.barrio_median_ppcs),
+        gap_pct: num(r.gap_pct), opportunity_score: num(r.opportunity_score),
+        discovered_12w: r.discovered_12w == null ? null : parseInt(r.discovered_12w),
+        dom: r.dom == null ? null : parseInt(r.dom)
+      }));
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+      buildMarketNote();
+      wireFilters();
+      render();
+    }
+
+    function buildMarketNote() {
+      const withDom = _all.filter(r => r.dom != null).length;
+      document.getElementById('market-note').innerHTML =
+        '&#9432; El descuento se calcula sobre precio por m&sup2; <strong>cubierto</strong> (evita la distorsi&oacute;n de lotes grandes). ' +
+        'La actividad del barrio proviene de <code>turnover_metrics_weekly</code>, que se re-alimenta cuando el nightly retoma el descubrimiento de avisos. ' +
+        (withDom === 0 ? 'D&iacute;as en mercado (DOM) a&uacute;n sin datos suficientes.' : '');
+    }
+
+    function wireFilters() {
+      ['f-price-min','f-price-max','f-gap','f-source','f-barrio','f-verified'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', render);
+      });
+      document.querySelectorAll('#opp-table thead th[data-sort]').forEach(th => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.sort;
+          if (_sort.key === key) _sort.dir = _sort.dir === 'desc' ? 'asc' : 'desc';
+          else { _sort.key = key; _sort.dir = (key === 'gap_pct' || key === 'price_per_covered_sqm' || key === 'price') ? 'asc' : 'desc'; }
+          render();
+        });
+      });
+    }
+
+    function resetFilters() {
+      document.getElementById('f-price-min').value = '';
+      document.getElementById('f-price-max').value = '';
+      document.getElementById('f-gap').value = '25';
+      document.getElementById('f-source').value = '';
+      document.getElementById('f-barrio').value = '';
+      document.getElementById('f-verified').checked = true;
+      render();
+    }
+
+    function currentFilter() {
+      const pmin = parseFloat(document.getElementById('f-price-min').value) || 0;
+      const pmax = parseFloat(document.getElementById('f-price-max').value) || Infinity;
+      const gapMin = parseFloat(document.getElementById('f-gap').value) || 0;
+      const source = document.getElementById('f-source').value;
+      const barrio = document.getElementById('f-barrio').value.trim().toLowerCase();
+      const verifiedOnly = document.getElementById('f-verified').checked;
+      return _all.filter(r =>
+        r.price >= pmin && r.price <= pmax &&
+        (-r.gap_pct) >= gapMin &&
+        (!source || r.source === source) &&
+        (!barrio || (r.neighborhood || '').toLowerCase().includes(barrio)) &&
+        (!verifiedOnly || r.area_confidence === 'verified')
+      );
+    }
+
+    function render() {
+      const rows = currentFilter();
+      renderKpis(rows);
+      renderScatter(rows);
+      renderTable(rows);
+      document.getElementById('result-count').textContent = rows.length + ' oportunidades';
+    }
+
+    function renderKpis(rows) {
+      const n = rows.length;
+      const gaps = rows.map(r => r.gap_pct).sort((a,b) => a-b);
+      const medGap = gaps.length ? gaps[Math.floor(gaps.length/2)] : 0;
+      const bestGap = gaps.length ? gaps[0] : 0;
+      const verified = rows.filter(r => r.area_confidence === 'verified').length;
+      const inRange = rows.filter(r => r.price >= 120000 && r.price <= 220000).length;
+      const kpis = [
+        { label: 'Oportunidades', value: n, cls: 'accent' },
+        { label: 'En rango 120-220k', value: inRange, sub: 'presupuesto objetivo' },
+        { label: 'Descuento mediano', value: medGap ? medGap.toFixed(0) + '%' : '--', cls: 'good' },
+        { label: 'Mejor descuento', value: bestGap ? bestGap.toFixed(0) + '%' : '--', cls: 'good' },
+        { label: '&Aacute;rea verificada', value: n ? Math.round(verified/n*100) + '%' : '--', sub: verified + ' de ' + n }
+      ];
+      document.getElementById('kpis').innerHTML = kpis.map(k =>
+        `<div class="kpi"><div class="label">${k.label}</div><div class="value ${k.cls||''}">${k.value}</div>${k.sub ? `<div class="sub">${k.sub}</div>` : ''}</div>`
+      ).join('');
+    }
+
+    function renderScatter(rows) {
+      const trace = {
+        x: rows.map(r => r.price),
+        y: rows.map(r => r.gap_pct),
+        text: rows.map(r => `<b>${r.neighborhood}</b><br>${fmtUSD(r.price)} &middot; ${r.covered_area||'?'} m&sup2; cub<br>${Math.round(r.price_per_covered_sqm)} USD/m&sup2; (barrio ${Math.round(r.barrio_median_ppcs)})<br>Gap ${r.gap_pct}% &middot; score ${r.opportunity_score}`),
+        customdata: rows.map(r => r.permalink),
+        mode: 'markers',
+        type: 'scattergl',
+        hovertemplate: '%{text}<extra></extra>',
+        marker: {
+          size: rows.map(r => Math.max(6, Math.min(26, (r.covered_area||100)/12))),
+          color: rows.map(r => r.opportunity_score),
+          colorscale: [[0,'#334155'],[0.5,'#0891b2'],[1,'#00d4ff']],
+          showscale: true, colorbar: { title: 'score', titlefont:{color:'#94a3b8'}, tickfont:{color:'#94a3b8'} },
+          line: { width: rows.map(r => r.area_confidence === 'verified' ? 0 : 1.5), color: '#eab308' },
+          opacity: 0.82
+        }
+      };
+      const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+        margin: { l: 55, r: 20, t: 10, b: 45 },
+        xaxis: { title: 'Precio USD', gridcolor: '#1e293b', color: '#94a3b8', zeroline: false },
+        yaxis: { title: 'Descuento vs barrio (%)', gridcolor: '#1e293b', color: '#94a3b8', zeroline: false },
+        font: { family: 'Inter', color: '#e2e8f0' }, hoverlabel: { bgcolor: '#1a1f3a', bordercolor: '#00d4ff' }
+      };
+      Plotly.react('scatter', [trace], layout, { displayModeBar: false, responsive: true });
+      const el = document.getElementById('scatter');
+      el.removeAllListeners && el.removeAllListeners('plotly_click');
+      el.on('plotly_click', ev => {
+        const url = ev.points[0].customdata;
+        if (url) window.open(url, '_blank');
+      });
+    }
+
+    function renderTable(rows) {
+      const s = _sort;
+      const sorted = [...rows].sort((a,b) => {
+        let va = a[s.key], vb = b[s.key];
+        if (typeof va === 'string' || typeof vb === 'string') { va = (va||'').toString(); vb = (vb||'').toString(); return s.dir==='asc' ? va.localeCompare(vb) : vb.localeCompare(va); }
+        va = va == null ? -Infinity : va; vb = vb == null ? -Infinity : vb;
+        return s.dir === 'asc' ? va - vb : vb - va;
+      });
+      const maxScore = Math.max(1, ...sorted.map(r => r.opportunity_score || 0));
+      document.getElementById('opp-body').innerHTML = sorted.slice(0, 300).map(r => `
+        <tr>
+          <td class="txt">${r.neighborhood || '--'}</td>
+          <td>${fmtUSD(r.price)}</td>
+          <td>${r.covered_area ? Math.round(r.covered_area) : '--'}</td>
+          <td>${r.price_per_covered_sqm ? Math.round(r.price_per_covered_sqm).toLocaleString('es-AR') : '--'}</td>
+          <td style="color:var(--text-muted)">${r.barrio_median_ppcs ? Math.round(r.barrio_median_ppcs).toLocaleString('es-AR') : '--'}</td>
+          <td class="gap" style="color:${r.gap_pct <= -35 ? 'var(--green)' : r.gap_pct <= -20 ? '#a3e635' : 'var(--text)'}">${r.gap_pct}%</td>
+          <td>${r.opportunity_score}<span class="score-bar" style="width:${Math.round((r.opportunity_score/maxScore)*36)}px"></span></td>
+          <td>${r.bedrooms || '--'}</td>
+          <td style="color:var(--text-muted)">${r.discovered_12w == null ? '--' : r.discovered_12w}</td>
+          <td class="txt"><span class="badge ${r.area_confidence === 'verified' ? 'verified' : 'lot'}">${r.area_confidence === 'verified' ? 'verificada' : 's/verificar'}</span></td>
+          <td class="txt">${r.permalink ? `<a class="listing" href="${r.permalink}" target="_blank">ver &rarr;</a>` : ''}</td>
+        </tr>
+      `).join('');
+      document.querySelectorAll('#opp-table thead th[data-sort]').forEach(th => {
+        const base = th.textContent.replace(/ [▲▼]$/, '');
+        th.innerHTML = th.dataset.sort === s.key ? `${base} <span class="arrow">${s.dir==='asc'?'▲':'▼'}</span>` : base;
+      });
+    }
+
+    load();
+  </script>
+</body>
+</html>

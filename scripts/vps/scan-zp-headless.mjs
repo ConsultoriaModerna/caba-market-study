@@ -131,6 +131,53 @@ function extractNeighborhood(locText) {
   return parts.length >= 2 ? parts[parts.length - 2] : parts[0];
 }
 
+// ── Pagination + Cloudflare helpers (task #7: pages 2+ re-challenge) ──────────
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const jitter = (ms, spread = 0.35) => Math.round(ms * (1 - spread + Math.random() * spread * 2));
+
+function isCloudflareTitle(t) {
+  return /moment|cloudflare|verifying you are human|attention required/i.test(t || '');
+}
+
+// Re-pass Cloudflare on the current (possibly freshly rotated) IP by hitting the
+// ZP homepage. Returns true if the homepage rendered without a challenge.
+async function warmupCF(page, tag = '') {
+  incrementBudget('zp-warmup');
+  try {
+    await page.goto('https://www.zonaprop.com.ar', { waitUntil: 'networkidle2', timeout: 60000 });
+  } catch (e) {
+    console.log(`  [warmup${tag}] nav error: ${e.message.slice(0, 50)}`);
+    return false;
+  }
+  await sleep(jitter(3000));
+  const t = await page.title();
+  const passed = !isCloudflareTitle(t);
+  console.log(`  [warmup${tag}] "${(t || '').slice(0, 40)}" ${passed ? 'OK' : 'CF-BLOCKED'}`);
+  return passed;
+}
+
+// Advance to the next results page by clicking ZP's in-site pagination link.
+// A cold page.goto() to -pagina-N.html is what trips CF's managed challenge; an
+// in-site click preserves referer + cf_clearance and reads as human. Falls back
+// to a cold goto if the link is missing/unclickable. Returns false when there is
+// no next page.
+async function gotoNextPage(page, baseUrl, pg) {
+  const nextSel = '[data-qa="PAGING_NEXT"]';
+  const nextEl = await page.$(nextSel);
+  if (!nextEl) return false;
+  incrementBudget('zp-scan');
+  try {
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 }),
+      nextEl.click(),
+    ]);
+  } catch (e) {
+    console.log(`  [next] click nav failed (${e.message.slice(0, 40)}), goto fallback`);
+    await page.goto(`${baseUrl}-pagina-${pg}.html`, { waitUntil: 'networkidle2', timeout: 60000 });
+  }
+  return true;
+}
+
 async function scanLocation(page, location) {
   const baseUrl = `https://www.zonaprop.com.ar/${location.slug}`;
   console.log(`\n--- ${location.city} (${location.slug}) ---`);
@@ -151,23 +198,38 @@ async function scanLocation(page, location) {
       break;
     }
 
-    const url = pg === 1 ? `${baseUrl}.html` : `${baseUrl}-pagina-${pg}.html`;
-
     try {
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+      if (pg === 1) {
+        incrementBudget('zp-scan');
+        await page.goto(`${baseUrl}.html`, { waitUntil: 'networkidle2', timeout: 60000 });
+      } else {
+        // Task #7: reach deep pages via in-site pagination click, not a cold
+        // goto to -pagina-N.html (which is what CF re-challenges).
+        const advanced = await gotoNextPage(page, baseUrl, pg);
+        if (!advanced) {
+          console.log(`  Page ${pg}: no next link`);
+          break;
+        }
+      }
 
-      // Check for Cloudflare
-      const title = await page.title();
-      if (title.includes('moment') || title.includes('Cloudflare')) {
+      // Check for Cloudflare -- on a hit, rotate to a fresh residential IP,
+      // re-warm CF on it, and retry the deep page once via cold goto.
+      let title = await page.title();
+      if (isCloudflareTitle(title)) {
         CB.onCfHit();
         if (CB.shouldAbortZone()) break;
-        console.log(`  Page ${pg}: CF challenge, backing off ${CB.BACKOFF_PAUSE_MS / 1000}s...`);
-        await new Promise(r => setTimeout(r, CB.BACKOFF_PAUSE_MS));
-        await page.reload({ waitUntil: 'networkidle2', timeout: 60000 });
-        const t2 = await page.title();
-        if (t2.includes('moment') || t2.includes('Cloudflare')) {
+        console.log(`  Page ${pg}: CF challenge -> rotate IP + re-warm + retry`);
+        const sid = await rotatePuppeteerProxySession(page);
+        if (sid) console.log(`  [rotate] fresh IP sid-${sid}`);
+        await warmupCF(page, ` retry-p${pg}`);
+        await sleep(jitter(2000));
+        incrementBudget('zp-scan-retry');
+        const retryUrl = pg === 1 ? `${baseUrl}.html` : `${baseUrl}-pagina-${pg}.html`;
+        await page.goto(retryUrl, { waitUntil: 'networkidle2', timeout: 60000 });
+        title = await page.title();
+        if (isCloudflareTitle(title)) {
           CB.onCfHit();
-          break; // Still blocked after pause, abort zone
+          break; // Still blocked after rotate+rewarm, abort zone
         }
       }
 

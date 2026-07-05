@@ -4,3 +4,6 @@ node_modules/
 .chrome-profile*/
 /tmp-*
 reports/
+
+# Playwright MCP verification artifacts
+.playwright-mcp/
