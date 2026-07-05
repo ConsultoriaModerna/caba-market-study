@@ -23,6 +23,16 @@ set -a
 set +a
 export DISPLAY=:99
 
+# Tunable caps (env-overridable). Defaults sized for the 1GB VPS now that the
+# ZP pagination fix makes deep pages actually load (pages 2+ used to fail fast,
+# which kept old runs artificially short). Deep result pages are mostly already-
+# known listings, so 6 pages/zone catches the fresh ones. Enrichment is the long
+# pole (~8s/listing via puppeteer); MAX_BATCHES bounds it per night so a large
+# backlog is chipped down over several nights instead of a multi-hour OOM risk.
+ZP_PAGES="${ZP_PAGES:-6}"
+AP_PAGES="${AP_PAGES:-6}"
+ENRICH_BATCH="${ENRICH_BATCH:-100}"
+
 T0=$(date +%s)
 ERRORS=""
 
@@ -58,7 +68,7 @@ ZP_NEW=0
 ZP_REFRESHED=0
 for TYPE in casa ph departamento; do
   echo "  >> ZP scan: $TYPE"
-  ZP_OUT=$(node scripts/vps/scan-zp-headless.mjs 20 --zone=all --type=$TYPE 2>&1) || ERRORS="${ERRORS}ZP scan ($TYPE) failed. "
+  ZP_OUT=$(node scripts/vps/scan-zp-headless.mjs "$ZP_PAGES" --zone=all --type=$TYPE 2>&1) || ERRORS="${ERRORS}ZP scan ($TYPE) failed. "
   echo "$ZP_OUT"
   # awk-sum collapses N matches (one per zone) into a single integer; head -1 alone would only count the first zone.
   ZP_T_NEW=$(echo "$ZP_OUT" | grep -oP '\d+ new,' | grep -oP '\d+' | awk '{s+=$1} END{print s+0}')
@@ -78,7 +88,7 @@ echo "--- [3/7] Argenprop Scan (multi-type) ---"
 AP_NEW=0
 for TYPE in casa ph departamento; do
   echo "  >> AP scan: $TYPE"
-  AP_OUT=$(node scripts/vps/scrape-argenprop.mjs 15 --zone=all --type=$TYPE 2>&1) || ERRORS="${ERRORS}AP scan ($TYPE) failed. "
+  AP_OUT=$(node scripts/vps/scrape-argenprop.mjs "$AP_PAGES" --zone=all --type=$TYPE 2>&1) || ERRORS="${ERRORS}AP scan ($TYPE) failed. "
   echo "$AP_OUT"
   AP_T_NEW=$(echo "$AP_OUT" | grep -oP '\d+ new' | grep -oP '\d+' | awk '{s+=$1} END{print s+0}')
   AP_NEW=$((AP_NEW + AP_T_NEW))
@@ -95,10 +105,10 @@ done
 echo "--- [4/7] ZP Enrichment (Puppeteer, batch loop) ---"
 ZP_ENRICHED=0
 BATCH=1
-MAX_BATCHES=20
+MAX_BATCHES="${ENRICH_MAX_BATCHES:-3}"
 while [ $BATCH -le $MAX_BATCHES ]; do
   echo "  Batch $BATCH/$MAX_BATCHES..."
-  ENRICH_OUT=$(node scripts/vps/enrich-zp-puppeteer.mjs 3000 100 2>&1)
+  ENRICH_OUT=$(node scripts/vps/enrich-zp-puppeteer.mjs 3000 "$ENRICH_BATCH" 2>&1)
   ENRICH_EXIT=$?
   echo "$ENRICH_OUT"
 
