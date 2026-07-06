@@ -64,12 +64,10 @@ function extractFromBody(body) {
   if (bathMatch) data.bathrooms = parseInt(bathMatch[1]);
   const cochMatch = body.match(/(\d+)\s*coch/i);
   if (cochMatch) data.cocheras = parseInt(cochMatch[1]);
-  const descMatch = body.match(/Descripción:\n([\s\S]+?)(?:\nLeer descripción completa|\nVer más\s*\n|\n¿Cómo evitar|\nCompartir\n|$)/);
+  // ZP renders "Descripción\n\n<body>" (NO colon, double newline) — the old
+  // /Descripción:\n/ never matched, which silently starved every description.
+  const descMatch = body.match(/Descripci[oó]n\s*\n+([\s\S]+?)(?:\n(?:Superficie|Caracter[ií]sticas|Ambientes|Servicios|Ubicaci[oó]n|Leer descripci[oó]n|Ver m[aá]s|¿C[oó]mo evitar|Compartir)\b|$)/i);
   if (descMatch) data.description = descMatch[1].trim().substring(0, 10000);
-  if (!data.description) {
-    const altDesc = body.match(/Casa (?:Venta|Alquiler)\n([\s\S]{50,})(?:\nLeer descripción|\n¿Cómo evitar|$)/);
-    if (altDesc) data.description = altDesc[1].trim().substring(0, 10000);
-  }
   return data;
 }
 
@@ -152,6 +150,15 @@ async function main() {
       await page.goto(prop.permalink, { waitUntil: 'domcontentloaded', timeout: 30000 });
       // CF JS challenge can take 10-25s to auto-pass. Wait up to 30s.
       await page.waitForFunction(() => !document.title.includes('moment'), { timeout: 30000 }).catch(() => {});
+      // ZP renders the description section client-side and lazily; nudge it with a
+      // scroll, then wait for the section to carry the full body. The class varies
+      // across templates (section-description vs article-section-description), so
+      // match by substring. >200 chars distinguishes the body from the ~150-char teaser.
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)).catch(() => {});
+      await page.waitForFunction(() => {
+        const el = document.querySelector('[class*="section-description" i]');
+        return el && el.innerText && el.innerText.trim().length > 200;
+      }, { timeout: 8000 }).catch(() => {});
 
       const pageData = await page.evaluate(() => {
         const ld = document.querySelectorAll('script[type="application/ld+json"]');
@@ -159,9 +166,20 @@ async function main() {
         for (const el of ld) {
           try { const j = JSON.parse(el.textContent); if (j['@type'] === 'House' || j['@type'] === 'Apartment') house = j; } catch {}
         }
+        // Primary description source: the dedicated section, cleaned of a leading
+        // "Descripción" header. Class varies across templates → match by substring.
+        // ld+json.description is only a ~150-char teaser, so it is not used here.
+        let description = '';
+        const secEl = document.querySelector('[class*="section-description" i]');
+        if (secEl) {
+          const t = (secEl.innerText || '').trim();
+          const m = t.match(/Descripci[oó]n\s*\n+([\s\S]+)$/i);
+          description = (m ? m[1] : t).trim();
+        }
         return {
           house,
-          body: document.body.innerText.substring(0, 5000),
+          description,
+          body: document.body.innerText.substring(0, 8000),
           title: document.title
         };
       });
@@ -176,7 +194,9 @@ async function main() {
       const house = pageData.house || {};
       const update = {};
 
-      if (!prop.description && fromBody.description) update.description = fromBody.description;
+      // DOM section first, innerText regex as fallback.
+      const desc = (pageData.description || fromBody.description || '').trim();
+      if (!prop.description && desc) update.description = desc.substring(0, 10000);
       if (!prop.covered_area && fromBody.covered_area) update.covered_area = fromBody.covered_area;
       if (fromBody.total_area) update.total_area = fromBody.total_area;
       if (!prop.bedrooms) update.bedrooms = fromBody.bedrooms || house.numberOfBedrooms || null;
