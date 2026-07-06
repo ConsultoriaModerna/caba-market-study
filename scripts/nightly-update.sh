@@ -150,6 +150,20 @@ else
   echo "--- [5/7] ML Enrichment -- SKIPPED ---"
 fi
 
+# ── Step 5b: Semantic embeddings for freshly-described props (OpenAI, incremental)
+# generate-embeddings.mjs only touches active props that have a description but no
+# embedding, so it is cheap (~$0.01/night) and self-limiting. Runs after the ZP
+# enrich so the descriptions extracted tonight get embedded the same night, keeping
+# semantic-search coverage current. Degrades gracefully if the key is absent.
+if [ -n "$OPENAI_API_KEY" ]; then
+  echo "--- [5b/8] Semantic Embeddings (OpenAI, incremental) ---"
+  EMBED_OUT=$(node scripts/generate-embeddings.mjs 100 2>&1)
+  echo "$EMBED_OUT"
+  echo "$EMBED_OUT" | grep -q "💀" && ERRORS="${ERRORS}Embeddings step failed. "
+else
+  echo "--- [5b/8] Semantic Embeddings -- SKIPPED (no OPENAI_API_KEY) ---"
+fi
+
 # ── Step 6: Mark stale listings inactive (not seen in 7+ days)
 echo "--- [6/7] Stale Detection ---"
 STALE_OUT=$(node -e "
