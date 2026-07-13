@@ -164,8 +164,22 @@ else
   echo "--- [5b/8] Semantic Embeddings -- SKIPPED (no OPENAI_API_KEY) ---"
 fi
 
+# ── Step 5c: Geocode props that have an address but no coordinates (Nominatim)
+# Active listings land from the ZP scan without GPS; enrichment adds address_text.
+# Without this step the active set's geo coverage decays to 0 as older geocoded
+# rows go stale, and the map ends up showing only dead/inactive listings. Nominatim
+# policy is 1 req/s (the script self-throttles) and PostgREST caps the fetch at
+# 1000 rows, so this is naturally bounded; GEOCODE_LIMIT trims it further if needed.
+# price_per_sqm/price_per_covered_sqm are derived by the DB trigger trg_derive_price_per_sqm,
+# so no separate USD/m2 recompute step is required here.
+echo "--- [5c/8] Geocoding (Nominatim, 1 req/s) ---"
+GEO_OUT=$(node scripts/geocode-nominatim.mjs --limit "${GEOCODE_LIMIT:-800}" 2>&1) || ERRORS="${ERRORS}Geocode failed. "
+echo "$GEO_OUT" | tail -6
+GEO_COUNT=$(echo "$GEO_OUT" | grep -oP 'Geocoded: \K\d+' | head -1)
+GEO_COUNT="${GEO_COUNT:-0}"
+
 # ── Step 6: Mark stale listings inactive (not seen in 7+ days)
-echo "--- [6/7] Stale Detection ---"
+echo "--- [6/8] Stale Detection ---"
 STALE_OUT=$(node -e "
 import { createClient } from '@supabase/supabase-js';
 const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -251,6 +265,7 @@ SLACK_MSG="${SLACK_MSG}  AP: ${AP_NEW} new\n"
 SLACK_MSG="${SLACK_MSG}  ML: ${ML_NEW} new\n\n"
 SLACK_MSG="${SLACK_MSG}*Processing*\n"
 SLACK_MSG="${SLACK_MSG}  ZP enriched: ${ZP_ENRICHED}\n"
+SLACK_MSG="${SLACK_MSG}  Geocoded: ${GEO_COUNT}\n"
 SLACK_MSG="${SLACK_MSG}  Stale removed: ${STALE_COUNT}\n"
 SLACK_MSG="${SLACK_MSG}  Dead verified: ${DEAD_COUNT}\n"
 SLACK_MSG="${SLACK_MSG}  Dedup merged: ${DEDUP_COUNT}\n\n"
