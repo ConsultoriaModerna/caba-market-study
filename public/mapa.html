@@ -888,6 +888,8 @@ function renderList() {
 
 // Select property
 const DEACTIVATION_REASONS = [
+    { key: 'listing_down', label: '📉 Anuncio dado de baja (ya no publicado)' },
+    { key: 'misleading', label: '⚠️ Enganoso: mal ubicado a proposito (registrar p/ IA)', flag: true },
     { key: 'bad_city', label: 'Ciudad/zona incorrecta' },
     { key: 'bad_geography', label: 'Ubicacion mala (tren, villa, inundable)' },
     { key: 'price_high', label: 'Precio demasiado alto' },
@@ -897,6 +899,13 @@ const DEACTIVATION_REASONS = [
     { key: 'sold', label: 'Vendido / no disponible' },
     { key: 'not_interested', label: 'No me interesa (otro)' },
 ];
+
+// Reasons that open a capture form (learning registry) instead of an instant baja.
+function handleReasonPick(id, key) {
+    const r = DEACTIVATION_REASONS.find(x => x.key === key);
+    if (r && r.flag) showMisleadingForm(id);
+    else confirmDeactivate(id, key);
+}
 
 function showDeactivateModal(id) {
     const existing = document.getElementById('deact-modal');
@@ -908,13 +917,17 @@ function showDeactivateModal(id) {
     modal.innerHTML = `<div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px 24px;max-width:340px;width:90%;">
         <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text);">Motivo de baja</div>
         <div style="display:flex;flex-direction:column;gap:6px;">
-            ${DEACTIVATION_REASONS.map((r, i) => `<button class="deact-reason-btn" data-reason="${r.key}" style="text-align:left;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">${i+1}. ${r.label}</button>`).join('')}
+            ${DEACTIVATION_REASONS.map((r, i) => {
+                const special = i < 2;
+                const bd = special ? (r.flag ? '#f59e0b' : '#38bdf8') : 'var(--border)';
+                return `<button class="deact-reason-btn" data-reason="${r.key}" style="text-align:left;padding:8px 12px;background:var(--card);border:1px solid ${bd};border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.1s;${special ? 'font-weight:600;' : ''}" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='${bd}'">${i+1}. ${r.label}</button>${i === 1 ? '<div style="height:1px;background:var(--border);margin:4px 0;"></div>' : ''}`;
+            }).join('')}
         </div>
         <button onclick="document.getElementById('deact-modal').remove()" style="margin-top:10px;width:100%;padding:6px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--dim);font-size:11px;cursor:pointer;font-family:inherit;">Cancelar (Esc)</button>
     </div>`;
 
     modal.querySelectorAll('.deact-reason-btn').forEach(btn => {
-        btn.onclick = () => confirmDeactivate(id, btn.dataset.reason);
+        btn.onclick = () => handleReasonPick(id, btn.dataset.reason);
     });
     modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
 
@@ -925,8 +938,8 @@ function showDeactivateModal(id) {
         if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', onKey); return; }
         const num = parseInt(e.key);
         if (num >= 1 && num <= DEACTIVATION_REASONS.length) {
-            confirmDeactivate(id, DEACTIVATION_REASONS[num - 1].key);
             document.removeEventListener('keydown', onKey);
+            handleReasonPick(id, DEACTIVATION_REASONS[num - 1].key);
         }
     }
     document.addEventListener('keydown', onKey);
@@ -948,6 +961,61 @@ async function confirmDeactivate(id, reason) {
     } catch (e) {
         alert('Error: ' + e.message);
     }
+}
+
+// Deceptive listing: capture the real location + note into our learning registry
+// (listing_flags), then deactivate on the map. Framed as internal registration for
+// LLM learning, NOT an external report.
+function showMisleadingForm(id) {
+    const p = (typeof allProps !== 'undefined' ? allProps : []).find(x => x.id === id) || {};
+    let modal = document.getElementById('deact-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'deact-modal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;';
+        document.body.appendChild(modal);
+    }
+    const claimed = p.neighborhood || p.address_text || '—';
+    modal.innerHTML = `<div style="background:var(--panel);border:1px solid #f59e0b;border-radius:10px;padding:20px 24px;max-width:360px;width:90%;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--text);">Registro de anuncio enganoso</div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.4;">No es una denuncia: se guarda en nuestra herramienta para que la IA aprenda el patron. Igual se da de baja del mapa.</div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:8px;">Publicado como: <b style="color:var(--text);">${claimed}</b></div>
+        <label style="font-size:11px;color:var(--dim);display:block;margin-bottom:3px;">Ubicacion real</label>
+        <input id="mis-actual" type="text" placeholder="ej: Munro, Vicente Lopez" style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:inherit;margin-bottom:10px;" />
+        <label style="font-size:11px;color:var(--dim);display:block;margin-bottom:3px;">Nota (opcional)</label>
+        <textarea id="mis-note" rows="2" placeholder="que estaba mal / como se detecta" style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:inherit;resize:vertical;margin-bottom:12px;"></textarea>
+        <div style="display:flex;gap:8px;">
+            <button id="mis-confirm" style="flex:1;padding:8px;background:#f59e0b;border:none;border-radius:6px;color:#000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Registrar y dar de baja</button>
+            <button id="mis-cancel" style="padding:8px 12px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--dim);font-size:11px;cursor:pointer;font-family:inherit;">Cancelar</button>
+        </div>
+    </div>`;
+    const input = modal.querySelector('#mis-actual');
+    const note = () => modal.querySelector('#mis-note').value.trim();
+    modal.querySelector('#mis-cancel').onclick = () => modal.remove();
+    modal.querySelector('#mis-confirm').onclick = () => confirmMisleading(id, input.value.trim(), note());
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') confirmMisleading(id, input.value.trim(), note()); });
+    setTimeout(() => input.focus(), 30);
+}
+
+async function confirmMisleading(id, actual, note) {
+    const p = (typeof allProps !== 'undefined' ? allProps : []).find(x => x.id === id) || {};
+    try {
+        await fetch(`${SB_URL}/rest/v1/listing_flags`, {
+            method: 'POST',
+            headers: { ...HEADERS, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({
+                property_id: id,
+                flag_type: 'misleading',
+                claimed_location: p.neighborhood || p.address_text || null,
+                actual_location: actual || null,
+                note: note || null,
+                neighborhood: p.neighborhood || null,
+                source: p.source || null,
+                snapshot: { title: p.title, price: p.price, currency: p.currency, price_per_sqm: p.price_per_sqm, permalink: p.permalink, address_text: p.address_text, latitude: p.latitude, longitude: p.longitude }
+            })
+        });
+    } catch (e) { /* the baja below is what matters; registry insert is best-effort */ }
+    confirmDeactivate(id, 'misleading');
 }
 
 // Legacy name kept for popup buttons
