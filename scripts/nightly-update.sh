@@ -178,6 +178,17 @@ echo "$GEO_OUT" | tail -6
 GEO_COUNT=$(echo "$GEO_OUT" | grep -oP 'Geocoded: \K\d+' | head -1)
 GEO_COUNT="${GEO_COUNT:-0}"
 
+# ── Step 5d: Livability Score for freshly-geocoded props
+# Reconstructs the 5-component score (noise/flood/crime/subte/transport, simple
+# mean) from the static GCBA datasets in public/data. Runs after geocoding so
+# any prop that just got coordinates gets a score the same night. Purely local
+# (no external calls), only touches active props where livability_score IS NULL.
+echo "--- [5d/8] Livability Score ---"
+LIV_OUT=$(node scripts/compute-livability.mjs --limit "${LIVABILITY_LIMIT:-2000}" 2>&1) || ERRORS="${ERRORS}Livability failed. "
+echo "$LIV_OUT" | tail -3
+LIV_COUNT=$(echo "$LIV_OUT" | grep -oP 'livability for \K\d+' | head -1)
+LIV_COUNT="${LIV_COUNT:-0}"
+
 # ── Step 6: Mark stale listings inactive (not seen in 7+ days)
 echo "--- [6/8] Stale Detection ---"
 STALE_OUT=$(node -e "
@@ -266,6 +277,7 @@ SLACK_MSG="${SLACK_MSG}  ML: ${ML_NEW} new\n\n"
 SLACK_MSG="${SLACK_MSG}*Processing*\n"
 SLACK_MSG="${SLACK_MSG}  ZP enriched: ${ZP_ENRICHED}\n"
 SLACK_MSG="${SLACK_MSG}  Geocoded: ${GEO_COUNT}\n"
+SLACK_MSG="${SLACK_MSG}  Livability: ${LIV_COUNT}\n"
 SLACK_MSG="${SLACK_MSG}  Stale removed: ${STALE_COUNT}\n"
 SLACK_MSG="${SLACK_MSG}  Dead verified: ${DEAD_COUNT}\n"
 SLACK_MSG="${SLACK_MSG}  Dedup merged: ${DEDUP_COUNT}\n\n"
