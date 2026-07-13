@@ -933,10 +933,10 @@ function showDeactivateModal(id) {
 
     document.body.appendChild(modal);
 
-    // Keyboard shortcuts: 1-8 for reasons, Esc to cancel
+    // Keyboard shortcuts: 1-9 for reasons, 0 for the 10th, Esc to cancel
     function onKey(e) {
         if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', onKey); return; }
-        const num = parseInt(e.key);
+        const num = e.key === '0' ? 10 : parseInt(e.key);
         if (num >= 1 && num <= DEACTIVATION_REASONS.length) {
             document.removeEventListener('keydown', onKey);
             handleReasonPick(id, DEACTIVATION_REASONS[num - 1].key);
