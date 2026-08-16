@@ -1267,6 +1267,13 @@
     <script>
         // Configuration
         const SUPABASE_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
+        // Gate de intel-query (PA, 16/08/2026 — protocolo §23). No es un secreto:
+        // esta pagina es estatica, asi que cualquiera que pase el gate del dashboard
+        // lo ve. Sube la barra de "cualquiera con la URL" a "cualquiera que ya entro",
+        // que es la decision que ya estaba tomada para esta pagina. Sin esto, un POST
+        // anonimo hacia escribir SQL a un LLM, lo ejecutaba con service_role y gastaba
+        // tokens de Anthropic de la casa sin techo.
+        const INTEL_TOKEN = 'iq_02a16593023e8309c50a51e1ad2fc717932b487d';
         const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
 
         const ZONES = {
@@ -3357,7 +3364,7 @@ IMPORTANTE: El dataset actual contiene exclusivamente CASAS (no departamentos, P
 
                 const resp = await fetch(`${SUPABASE_URL}/functions/v1/intel-query`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'x-intel-token': INTEL_TOKEN },
                     body: JSON.stringify({ question, context })
                 });
 
@@ -3425,7 +3432,7 @@ Responde con profundidad, datos concretos del dataset, y vision estrategica de i
             try {
                 const resp = await fetch(`${SUPABASE_URL}/functions/v1/intel-query`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'x-intel-token': INTEL_TOKEN },
                     body: JSON.stringify({ question, model: 'opus' })
                 });
                 if (!resp.ok) throw new Error(`API error: ${resp.status}`);
