@@ -136,6 +136,12 @@ Deno.serve(async (req: Request) => {
     const sqlData = await sqlResp.json();
     let sql = (sqlData.content?.[0]?.text || '').trim();
     sql = sql.replace(/```sql\n?/gi, '').replace(/```\n?/g, '').trim();
+    // 16/08/2026 (PA): sacar el punto y coma final. `exec_readonly_sql` mete el
+    // SQL dentro de un subquery (`SELECT jsonb_agg(...) FROM (<sql>) t`), asi que
+    // un `;` al final lo rompe con 42601, y el LLM lo pone casi siempre. Probado:
+    // la misma consulta con y sin `;` da 1.292 filas o error de sintaxis. El panel
+    // Intel venia devolviendo "error en la consulta" por esto, no por el gate.
+    sql = sql.replace(/;\s*$/, '').trim();
 
     if (!sql.toUpperCase().startsWith('SELECT')) {
       throw new Error('Only SELECT queries allowed');
