@@ -375,6 +375,10 @@
 const SB_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
 const HEADERS = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
+// Gate de las edge functions que gastan modelo (PA, 16/08/2026, protocolo 23).
+// No es un secreto: esta pagina es estatica. Sube la barra de cualquiera-con-la-URL
+// a cualquiera-que-ya-entro, que es la decision que ya estaba tomada para el dashboard.
+const INTEL_TOKEN = 'iq_02a16593023e8309c50a51e1ad2fc717932b487d';
 
 const KEYWORDS = [
     { kw: 'jardín', label: 'Jardín', star: true },
@@ -598,7 +602,7 @@ async function runSemanticSearch(query) {
     try {
         const resp = await fetch(`${SB_URL}/functions/v1/semantic-search`, {
             method: 'POST',
-            headers: { ...HEADERS, 'Content-Type': 'application/json' },
+            headers: { ...HEADERS, 'Content-Type': 'application/json', 'x-intel-token': INTEL_TOKEN },
             body: JSON.stringify({ query, match_count: 200 })
         });
         if (!resp.ok) throw new Error('Semantic search failed');

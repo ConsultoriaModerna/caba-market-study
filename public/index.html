@@ -3693,7 +3693,7 @@ Responde con profundidad, datos concretos del dataset, y vision estrategica de i
             try {
                 const resp = await fetch(`${SUPABASE_URL}/functions/v1/analyze-property`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'x-intel-token': INTEL_TOKEN },
                     body: JSON.stringify({
                         property: p,
                         comparables: comps,
@@ -3730,7 +3730,7 @@ Responde con profundidad, datos concretos del dataset, y vision estrategica de i
             try {
                 const resp = await fetch(`${SUPABASE_URL}/functions/v1/semantic-search`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'x-intel-token': INTEL_TOKEN },
                     body: JSON.stringify({ query, match_count: 20 })
                 });
 
