@@ -26,7 +26,6 @@ InmoFindr: sistema de inteligencia inmobiliaria para Buenos Aires (CABA + GBA No
 - `public/index.html` — Main entry
 - `public/mapa.html` — Interactive map view
 - `public/wave.html` — Wave Above the City (market pulse)
-- `public/d3-analytics.html` — D3 analytics dashboard
 - `scripts/nightly-update.sh` — VPS nightly pipeline (canonical entry)
 - `scripts/lib/proxy.mjs` — Residential proxy + budget cap helper
 - `scripts/vps/scan-zp-headless.mjs` — ZP search-page scanner
