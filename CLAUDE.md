@@ -39,14 +39,15 @@ InmoFindr: sistema de inteligencia inmobiliaria para Buenos Aires (CABA + GBA No
 - `scripts/geocode-nominatim.mjs` — Address geocoding via Nominatim
 - `scripts/test-proxy.mjs` — Smoke test for ProxyEmpire integration
 
-## Datos actuales
-- ~12,700 propiedades en `properties` (~2,800 activas, resto histórico con `is_active=false`).
-- Materialized view `turnover_metrics_weekly` para análisis de churn / DOM / discovery rate por (week, neighborhood, segment, source, property_type). Refresh al final del nightly via RPC `public.refresh_turnover_metrics()`.
-- Stale window: 7 días. Listings sin `last_seen_at` refresh en 7d se marcan `is_active=false, deactivation_reason='stale_7d'`.
-- 104 barrios, 13 capas de mapa, 6 charts 3D/4D en /advanced.
-- Livability Score calculado para ~2,000 propiedades geocodeadas.
-- 426 propiedades con SMP catastral, 318K parcelas descargadas.
-- Datasets GCBA: ruido real (dBA), anegamiento, transporte (744K viajes), barrios populares (468 manzanas).
+## Datos actuales (verificado 27-ago-2026)
+- **16.829 propiedades** en `properties`, **1.290 activas**, y las 1.290 son 100% ZonaProp: ML y AP tienen 0 activas.
+- **El padron es una foto congelada del 5 al 12 de julio.** No entra un alta desde el 12-jul (ver Issues). Mezcla real: 562 casas, 462 PH, 266 departamentos. Cualquier texto que hable de "el mercado de casas" sobre este dataset es falso.
+- Cobertura sobre las 1.290 activas: barrio 100%, precio/m2 99%, geo y livability 97%, descripcion y embedding 62%, thumbnail 49%, SMP catastral **0%** (las 1.038 con SMP son historicas).
+- Barrios: 39 en la tabla `neighborhoods`, 48 en el geojson, pero **92 valores de texto libre** distintos en las activas, sin mapear entre si.
+- Datasets GCBA (estos si estan completos y no caducan): 317.627 parcelas con FOT, 416.764 usos de suelo, 4.874 espacios culturales, 3.085 precios historicos (2019), demograficos (2020), ruido, anegamiento, transporte, barrios populares.
+- Cementerios: `opportunity_events` sin un evento desde el 29-jun; `callejero`, `listing_flags` y las tablas de artquitech con 0 filas.
+- `turnover_metrics_weekly` se refresca al final del nightly via RPC `public.refresh_turnover_metrics()`.
+- Stale window: 7 dias, pero **solo corre si el proxy respondio** (ver Issues): no se caduca el padron por no haber podido verificarlo.
 
 ## Responsabilidades
 - Mantener y mejorar pipelines de scraping
@@ -73,6 +74,11 @@ InmoFindr: sistema de inteligencia inmobiliaria para Buenos Aires (CABA + GBA No
 - Never use em dashes in text or comments
 
 ## Issues conocidos
+- **BLOQUEANTE — ProxyEmpire devuelve 407 desde el 13-jul-2026.** Es la causa de que no entre un alta desde el 12-jul. Credencial rechazada: saldo agotado o sub-user dado de baja, se confirma en su dashboard (no hay API que lo diga). El 12-jul, con el proxy vivo, el scan trajo 600 propiedades en una noche, asi que el stack (stealth + proxy + paginacion por click) esta intacto: lo unico que falta es saldo. Recarga manual en porciones de $3,50.
+- **Por que el apagon duro 45 noches sin que nadie se enterara (27-ago).** Chrome con un `--proxy-server` muerto NO lanza excepcion: renderiza `chrome-error://chromewebdata/` y pone el hostname como `<title>`. Los tres detectores buscaban "moment|cloudflare" en el titulo, no matcheaban, y concluian "Cloudflare passed"; despues no habia tarjetas en el DOM y se logueaba "empty page" / "no listings found", que es el mensaje de "el portal no tiene resultados". **Regla que salio de esto: un scraper tiene que distinguir "la fuente no tiene resultados" de "no llegue a la fuente".** Ya esta implementado: `preflightProxy()` y `looksLikeProxyError()` en `scripts/lib/proxy.mjs`, paso 0 del nightly, y fatales en scan y enrich.
+- **Argenprop no es un problema de proxy.** El 12-jul, con el proxy funcionando, AP ya daba "0 scraped". Su ultima alta real es del 09-may. Canal alternativo verificado el 27-ago: **Tavily extrae las paginas de busqueda de Argenprop con datos completos** (precio, direccion, m2, dormitorios, antiguedad, inmobiliaria, descripcion). Tavily NO sirve para ZonaProp (el extract falla).
+- **MercadoLibre caido desde abril.** La busqueda publica de la API devuelve 403 incluso desde IP residencial: ML cerro el acceso anonimo, no es un problema de IP ni de re-autorizar. El 401 autenticado si es token vencido. Quedan **7 edge functions de ML vivas** (meli-oauth, meli-oauth-callback, meli-refresh-token, meli-search, meli-explore, scrape-meli, test-ml-api) y un cron cada 5h refrescando un token contra una API cerrada. Pendiente de decision: revivir o dar de baja.
+- **El dashboard es publico con un gate falso.** `auth.js` compara un hash en el cliente: no protege nada server-side. El 27-ago se cerro la escritura anonima (ver commit de seguridad), pero el token de `admin-write` e `intel-query` viaja igual en la pagina. El arreglo de fondo es auth real, pendiente.
 - ZP scan pagination (task #7): RESUELTO 05-jul. Causa: `page.goto` frío a `-pagina-N.html` disparaba el CF managed challenge. Fix: paginar por click in-site (`PAGING_NEXT`) + gotos con `domcontentloaded` (no `networkidle2`, que timeouteaba por los long-poll de ads/tracking de ZP) + rotación de IP/re-warm como fallback + budget contado por navegación. Validado en prod: page 1 y pages 2+ verdes.
 - ZP enrich descripciones (issue #6): RESUELTO 06-jul. NO era Cloudflare (las fichas cargan: ld+json, address, m² se extraían bien). El enrich reportaba "updated" en verde pero escribía 0 descripciones → cobertura de `description` en activas cayó a 0%. Dos causas: (1) el regex buscaba `Descripción:\n` (con dos puntos) pero ZP renderiza `Descripción\n\n`; (2) el texto vive en un contenedor cuyo class varía por template (`section-description` vs `article-section-description`) y se inyecta lazy. Fix en `enrich-zp-puppeteer.mjs`: scroll para gatillar el lazy-load + `waitForFunction` sobre `[class*="section-description" i]` (>200 chars) + extracción de ese nodo (regex de innerText como fallback). Validado en prod: 0% → 92% de acierto, avg ~2100 chars.
 - ML scan deshabilitado en VPS (`ML_ENABLED=false` en `.env`). Decisión: re-activar cuando se valide que stealth pasa el rate-limit del 04-27.
