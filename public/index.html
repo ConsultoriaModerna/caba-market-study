@@ -776,7 +776,7 @@
             <div style="margin-top:2rem;padding:1rem;background:var(--bg-tertiary);border-radius:10px;">
                 <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.5rem;">Datos disponibles para consulta:</div>
                 <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                    <span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">10K propiedades</span>
+                    <span id="intel-chip-props" style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">propiedades activas</span>
                     <span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">318K parcelas + FOT</span>
                     <span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">417K usos del suelo</span>
                     <span style="padding:2px 8px;border-radius:8px;font-size:0.65rem;background:rgba(0,212,255,0.1);color:var(--accent);">3K precios historicos</span>
@@ -1164,7 +1164,7 @@
                 </div>
             </div>
             <div id="textSearchResults" class="results-container">
-                <div class="empty-state">Busca texto libre en titulo y descripcion de 11,500+ propiedades de todos los portales</div>
+                <div class="empty-state">Busca texto libre en titulo y descripcion del padron activo</div>
             </div>
         </div>
 
@@ -1226,7 +1226,11 @@
                     <tbody id="oppTableBody"></tbody>
                 </table>
             </div>
-            <div class="opportunities-list" id="opportunitiesList" style="display:none;">
+            <!-- 27/08/2026: este contenedor estaba con display:none y nada lo mostraba
+                 nunca, pero seis controles (el checkbox de zona norte, los botones de
+                 orden, el cambio de tab) llamaban al render igual. Resultado: filtros
+                 que responden y una lista que no aparece. Se muestra. -->
+            <div class="opportunities-list" id="opportunitiesList">
                 <div class="empty-state">Cargando oportunidades...</div>
             </div>
         </div>
@@ -1518,11 +1522,12 @@
             const markBtn = document.getElementById('newSinceMarkBtn');
             if (viewBtn) viewBtn.addEventListener('click', () => {
                 if (typeof switchTab === 'function') switchTab('opportunities');
-                if (typeof oppSortKey !== 'undefined') {
-                    window.oppSortKey = 'age';
-                    window.oppSortAsc = true;
-                    if (typeof populateOpportunities === 'function') populateOpportunities();
-                }
+                // 27/08/2026: esto asignaba window.oppSortKey, pero la variable real es
+                // un `let` del scope del script (linea ~2583), asi que el orden nunca
+                // cambiaba: el boton cambiaba de tab y nada mas. Se usa el setter que
+                // ya existe para eso.
+                if (typeof sortOppTable === 'function') sortOppTable('age');
+                if (typeof populateOpportunities === 'function') populateOpportunities();
                 document.getElementById('tab-opportunities')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
             if (markBtn) markBtn.addEventListener('click', () => {
@@ -1693,6 +1698,25 @@
                     if (chunk.length < 1000) break;
                 }
                 allProperties = [...allPropertiesRaw];
+
+                // 27/08/2026: el chip del tab Intel decia "10K propiedades" fijo. Ahora
+                // dice el numero real y, si el padron esta viejo, lo avisa: un dashboard
+                // que no declara la antiguedad de su dato se lee como si fuera de hoy.
+                const chip = document.getElementById('intel-chip-props');
+                if (chip) {
+                    const ultimaAlta = allPropertiesRaw.map(p => p.first_seen_at)
+                        .filter(Boolean).sort().slice(-1)[0];
+                    const dias = ultimaAlta
+                        ? Math.floor((Date.now() - new Date(ultimaAlta)) / 86400000)
+                        : null;
+                    chip.textContent = `${allPropertiesRaw.length.toLocaleString()} propiedades activas`;
+                    if (dias !== null && dias > 10) {
+                        chip.textContent += ` · ultima alta hace ${dias} dias`;
+                        chip.style.background = 'rgba(239,68,68,0.12)';
+                        chip.style.color = '#ef4444';
+                        chip.title = 'El scraping no esta trayendo altas nuevas: estos datos son una foto, no el mercado de hoy.';
+                    }
+                }
             } catch (error) {
                 console.error('Error fetching properties:', error);
                 allPropertiesRaw = [];
@@ -2453,6 +2477,7 @@
         }
 
         function populateOpportunities() {
+            let avisoFeed = '';
             const container = document.getElementById('opportunitiesList');
             const p75 = getNeighborhoodP75();
             const includeZN = document.getElementById('oppIncludeZN')?.checked ?? true;
@@ -2499,14 +2524,25 @@
                     const p = baseProps.find(x => x.id === opp.property_id);
                     return p ? { ...p, _drop: opp } : null;
                 }).filter(Boolean);
+
+                // 27/08/2026: opportunity_events no recibe un evento desde el 29-jun,
+                // y esta lista los mostraba sin fecha, o sea como si fueran novedades
+                // de hoy. Si el evento mas nuevo es viejo, se dice.
+                const ultimoEvento = allOpportunities[0]?.created_at;
+                if (ultimoEvento) {
+                    const diasEvento = Math.floor((Date.now() - new Date(ultimoEvento)) / 86400000);
+                    if (diasEvento > 10) {
+                        avisoFeed = `<div style="padding:0.6rem 0.9rem;margin-bottom:0.8rem;border-radius:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#fca5a5;font-size:0.78rem;">Estas bajadas de precio no son nuevas: el ultimo evento registrado es del ${String(ultimoEvento).slice(0,10)}, hace ${diasEvento} dias. El detector de oportunidades no esta corriendo.</div>`;
+                    }
+                }
             }
 
             if (!ranked.length) {
-                container.innerHTML = '<div class="empty-state">No hay oportunidades en este filtro</div>';
+                container.innerHTML = avisoFeed + '<div class="empty-state">No hay oportunidades en este filtro</div>';
                 return;
             }
 
-            container.innerHTML = ranked.map(p => {
+            container.innerHTML = avisoFeed + ranked.map(p => {
                 const price = convertToUSD(p);
                 const usdM2 = p.price_per_sqm ? `$${Math.round(p.price_per_sqm).toLocaleString()}/m²` : '';
                 const usdM2Cub = p.price_per_covered_sqm ? `$${Math.round(p.price_per_covered_sqm).toLocaleString()}/m² cub.` : '';
@@ -2751,7 +2787,7 @@
             const query = document.getElementById('textSearchInput').value.trim();
             if (!query) return;
             const container = document.getElementById('textSearchResults');
-            container.innerHTML = '<div class="search-loading">Buscando en 11,500+ propiedades...</div>';
+            container.innerHTML = `<div class="search-loading">Buscando en ${allPropertiesRaw.length.toLocaleString()} propiedades activas...</div>`;
 
             try {
                 const propType = document.getElementById('textFilterType').value || null;
@@ -2869,7 +2905,10 @@
                 const statsEl = document.getElementById('enrichmentStats');
                 statsEl.innerHTML = 'Cargando estadísticas...';
 
-                const url = `${SUPABASE_URL}/rest/v1/properties?select=id&description=not.is.null`;
+                // 27/08/2026: contaba sobre las 16.829 filas historicas, asi que el
+                // numero que mostraba (miles) no tenia relacion con lo que la busqueda
+                // puede encontrar, que son solo las activas.
+                const url = `${SUPABASE_URL}/rest/v1/properties?select=id&description=not.is.null&is_active=eq.true`;
                 const response = await fetch(url, {
                     headers: {
                         'apikey': ANON_KEY,
@@ -2891,7 +2930,9 @@
                     }
                 }
 
-                statsEl.innerHTML = `✓ ${countWithDescriptions} propiedades tienen descripción disponible para búsqueda full-text`;
+                const totalActivas = allPropertiesRaw.length || 0;
+                const pct = totalActivas ? Math.round(countWithDescriptions / totalActivas * 100) : 0;
+                statsEl.innerHTML = `✓ ${countWithDescriptions} de ${totalActivas.toLocaleString()} propiedades activas (${pct}%) tienen descripción para búsqueda full-text`;
             } catch (error) {
                 console.error('Error loading enrichment stats:', error);
                 document.getElementById('enrichmentStats').innerHTML = 'Estadísticas no disponibles';
@@ -3354,9 +3395,25 @@
                 // Sweet spot
                 const sweetSpot = allPropertiesRaw.filter(p => p.currency === 'USD' && p.price >= 100000 && p.price <= 180000);
 
+                // 27/08/2026: este bloque afirmaba "el dataset contiene exclusivamente
+                // CASAS" cuando el padron activo son 562 casas, 462 PH y 266 deptos, y
+                // repetia conteos hardcodeados. El modelo respondia bien encuadrado en
+                // una premisa falsa. Ahora la mezcla se calcula y la antiguedad del dato
+                // se declara, que es lo que mas cambia una conclusion de mercado.
+                const mixByType = allPropertiesRaw.reduce((acc, p) => {
+                    const t = p.property_type || 'sin tipo';
+                    acc[t] = (acc[t] || 0) + 1;
+                    return acc;
+                }, {});
+                const mixStr = Object.entries(mixByType).sort((a,b) => b[1]-a[1])
+                    .map(([t, n]) => `${n} ${t}`).join(', ');
+                const lastSeenTs = allPropertiesRaw
+                    .map(p => p.first_seen_at).filter(Boolean).sort().slice(-1)[0];
+
                 const context = `Datos de InmoFindr Buenos Aires (CABA + GBA Norte).
-IMPORTANTE: El dataset actual contiene exclusivamente CASAS (no departamentos, PH, oficinas ni locales). Todas las metricas, promedios y conclusiones refieren al mercado de casas.
-- ${totalProps} casas activas (ZP: ${zpN}, ML: ${mlN}, AP: ${apN})
+IMPORTANTE sobre la composicion: el padron activo NO es solo casas. Mezcla real: ${mixStr}. No generalices al "mercado de casas" salvo que la pregunta lo acote.
+IMPORTANTE sobre la antiguedad: el alta mas reciente del padron es de ${lastSeenTs ? String(lastSeenTs).slice(0,10) : 'fecha desconocida'}. Si esa fecha no es reciente, el scraping esta detenido y estos datos son una foto de ese momento, no el mercado de hoy. Decilo cuando respondas sobre tendencias o actividad actual.
+- ${totalProps} propiedades activas (ZP: ${zpN}, ML: ${mlN}, AP: ${apN})
 - ${sweetSpot.length} en sweet spot $100-180K
 - Barrios top: ${topBarrios.slice(0,10).map(b => `${b.name}(${b.count} casas, $${b.median_usd_m2}/m2, liv:${b.avg_livability||'?'})`).join(', ')}
 - DB tiene: 318K parcelas con FOT, 417K usos del suelo, 3K precios historicos, 3K espacios culturales, demograficos
@@ -3419,13 +3476,13 @@ IMPORTANTE: El dataset actual contiene exclusivamente CASAS (no departamentos, P
 
             const question = `Analisis experto de distribucion de oferta inmobiliaria en Buenos Aires.
 
-Top 15 barrios por cantidad de casas en venta:
+Top 15 barrios por cantidad de propiedades en venta:
 ${topBarriosData}
 
-Total: ${allProperties.length} casas activas en ${Object.keys(barrioCountMap).length} barrios.
+Total: ${allProperties.length} propiedades activas en ${Object.keys(barrioCountMap).length} barrios.
 
 Analiza como experto en real estate LatAm:
-1. Por que Liniers, Mataderos, V.Devoto lideran en oferta? Que dice esto del mercado?
+1. Por que ${Object.entries(barrioCountMap).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n])=>n).join(', ')} lideran en oferta? Que dice esto del mercado?
 2. Buenos Aires va camino a una "CDMXizacion": expats, remote workers, gentrificacion. Compara con lo que paso en CDMX 2018-2025: Roma/Condesa (luxe), Coyoacan (familiar), Polanco (premium), Iztapalapa (periferico). Que barrios de BA siguen cada patron?
 3. El jardin con tierra y parrilla es el ultimo lifestyle flex de BA - un commodity que se vuelve escaso. Donde queda stock de esto y como impacta precios a 5-10 anos?
 4. Que barrios estan subvaluados HOY considerando estas tendencias?

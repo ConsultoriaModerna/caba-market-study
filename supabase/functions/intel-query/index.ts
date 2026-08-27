@@ -37,12 +37,14 @@ const sb = createClient(SB_URL, SB_KEY);
 
 const MODELS: Record<string, string> = {
   haiku: 'claude-haiku-4-5-20251001',
-  // OJO (PA, 16/08/2026): estos dos IDs no son de la familia vigente y la API
-  // los rechaza, así que la cadena de fallback termina siempre en Haiku. El
-  // botón "Opus" del dashboard viene sirviendo Haiku. No lo cambio acá porque
-  // es decisión de producto de RE (coste por consulta), va reportado aparte.
-  sonnet: 'claude-sonnet-4-5-20241022',
-  opus: 'claude-opus-4-0-20250514',
+  // 27/08/2026 (RE, cerrando el aviso de PA del 16/08): los dos IDs anteriores
+  // (claude-sonnet-4-5-20241022 y claude-opus-4-0-20250514) no son de familias
+  // vigentes, la API los rechazaba y la cadena de fallback terminaba siempre en
+  // Haiku: el boton "Opus" del dashboard servia Haiku y decia que era Opus.
+  // Se pasan a los IDs vigentes. Son consultas on-demand, disparadas a mano
+  // desde el dashboard, no hay ninguna en el nightly.
+  sonnet: 'claude-sonnet-5',
+  opus: 'claude-opus-5',
 };
 
 const SCHEMA = `Tables available (Supabase PostgreSQL):

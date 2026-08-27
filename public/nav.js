@@ -6,7 +6,10 @@
     { href: '/wave', label: 'Wave', icon: '🌊' },
     { href: '/oportunidades', label: 'Oportunidades', icon: '💎' },
     { href: '/analytics', label: 'Analytics', icon: '📈' },
-    { href: '/advanced', label: 'Advanced', icon: '🔬' }
+    { href: '/advanced', label: 'Advanced', icon: '🔬' },
+    // 27/08/2026: mapa3d existia, funcionaba y leia datos vivos, pero no estaba
+    // en el nav ni incluia nav.js, asi que solo se llegaba tipeando la URL.
+    { href: '/mapa3d', label: 'Mapa 3D', icon: '🏙️' }
   ];
 
   const path = window.location.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';

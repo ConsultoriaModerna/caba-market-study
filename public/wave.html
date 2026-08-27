@@ -426,7 +426,7 @@
 
     <!-- AI ANALYSIS -->
     <div class="churn-section" style="margin-top: 2rem;">
-        <h2>Conclusiones AI — Haiku analiza el mercado</h2>
+        <h2>Resumen del mercado</h2>
         <div id="ai-analysis" class="ai-analysis"></div>
     </div>
 
@@ -659,6 +659,12 @@
             const totalActive = data.reduce((s, d) => s + d.active, 0);
             const totalInactive = data.reduce((s, d) => s + d.inactive, 0);
             const avgChurn = totalInactive / (totalActive + totalInactive) * 100;
+            // 27/08/2026: la tarjeta decia "Bajadas esta semana" pero mostraba
+            // totalInactive, que es el acumulado historico de inactivas (~15.500),
+            // no las de la semana. Lo de la semana es demandL7D, que ya llegaba al
+            // cliente sin usarse. Las dos tarjetas quedan con el nombre de lo que
+            // de verdad miden.
+            const totalDemandL7D = data.reduce((s, d) => s + (d.demandL7D || 0), 0);
             const allPrices = data.filter(d => d.medianPrice > 0).map(d => d.medianPrice);
             const globalMedianPrice = median(allPrices);
 
@@ -668,12 +674,12 @@
                     <div class="label">Propiedades activas</div>
                 </div>
                 <div class="stat-card">
-                    <div class="value">${totalInactive}</div>
-                    <div class="label">Bajadas esta semana</div>
+                    <div class="value">${totalDemandL7D.toLocaleString()}</div>
+                    <div class="label">Bajas ultimos 7 dias</div>
                 </div>
                 <div class="stat-card">
                     <div class="value">${avgChurn.toFixed(1)}%</div>
-                    <div class="label">Demand rate</div>
+                    <div class="label">Churn historico acumulado</div>
                 </div>
                 <div class="stat-card">
                     <div class="value">${data.length}</div>
@@ -793,7 +799,9 @@
         ]);
 
         async function fetchWordData() {
-            const url = `${SUPABASE_URL}/rest/v1/properties?select=description,segment&description=not.is.null&canonical_id=is.null`;
+            // 27/08/2026: sin is_active la nube mezclaba descripciones de avisos
+            // dados de baja hace meses con las del padron vigente.
+            const url = `${SUPABASE_URL}/rest/v1/properties?select=description,segment&description=not.is.null&canonical_id=is.null&is_active=eq.true`;
             const resp = await fetch(url, {
                 headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}`, 'Range': '0-9999' }
             });
@@ -960,7 +968,7 @@
 
             const el = document.getElementById('ai-analysis');
             el.innerHTML = `
-                <div class="ai-badge">CLAUDE HAIKU - MARKET ANALYSIS</div>
+                <div class="ai-badge">RESUMEN AUTOMATICO (PLANTILLA, SIN IA)</div>
 
                 <h3>El mercado en un vistazo</h3>
                 <p>El mercado de <strong>casas</strong> tiene <span class="metric">${totalActive.toLocaleString()} casas activas</span> distribuidas en <span class="metric">${data.length} barrios</span>. La mediana de precio se ubica en <span class="metric">USD ${median(allPrices.map(d => d.medianPrice)).toLocaleString()}/m²</span>, con una dispersión significativa entre zonas.</p>
