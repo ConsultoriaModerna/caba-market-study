@@ -227,6 +227,21 @@ LIV_COUNT="${LIV_COUNT:-0}"
 
 # ── Step 6: Mark stale listings inactive (not seen in 7+ days)
 echo "--- [6/8] Stale Detection ---"
+# 27/08/2026: la caducidad tambien depende de haber podido mirar. Hasta hoy el
+# dead-check le refrescaba last_seen_at a todo el padron aunque la fuente
+# devolviera 403, y por eso stale_7d no vencio ni una vez en 45 noches. Al
+# arreglar eso, el reloj de las 1.290 activas empieza a correr de verdad: si el
+# proxy sigue caido, en una semana el padron entero caduca por no haber podido
+# verificarlo, y el dashboard queda vacio.
+#
+# Eso seria castigar a los datos por un fallo nuestro. Mismo criterio que en el
+# dead-check: sin salida a internet no hay evidencia en ninguna direccion, asi
+# que no se da de baja a nadie. La caducidad se reanuda sola cuando el proxy
+# vuelva y podamos volver a mirar.
+STALE_COUNT=0
+if [ "$PROXY_OK" != "1" ]; then
+  echo "  Salteado (proxy caido): no se caduca por no haber podido verificar."
+else
 STALE_OUT=$(node -e "
 import { createClient } from '@supabase/supabase-js';
 const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -245,6 +260,7 @@ if (error) console.error('Error:', error.message);
 echo "  $STALE_OUT"
 STALE_COUNT=$(echo "$STALE_OUT" | grep -oP '\d+' | head -1)
 STALE_COUNT="${STALE_COUNT:-0}"
+fi
 
 # ── Step 7: Dead listing check (verify oldest 200 permalinks are still live)
 echo "--- [7/8] Dead Listing Check ---"
