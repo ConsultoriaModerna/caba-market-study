@@ -176,6 +176,23 @@ async function geocodeSingle(address) {
   };
 }
 
+// 27/08/2026: marcar el no-encontrado para no reintentarlo cada noche. Nominatim
+// es gratis pero su politica de uso pide cachear resultados, y este script venia
+// reintentando las mismas 37 direcciones (con varias variantes cada una) durante
+// 45 noches seguidas. --retry-failed sigue permitiendo forzar el reintento.
+async function markGeocodeFailed(id) {
+  await fetch(`${SUPABASE_URL}/rest/v1/properties?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({ geocode_failed_at: new Date().toISOString() })
+  }).catch(() => {});
+}
+
 // Update property in Supabase
 async function updateProperty(id, lat, lng, precision) {
   const enrichLevel = precision === 'exact' ? 2 : precision === 'address' ? 2 : 3;
@@ -206,12 +223,15 @@ async function updateProperty(id, lat, lng, precision) {
 async function fetchProperties() {
   let filters = 'is_active=eq.true&latitude=is.null';
 
+  // Excluir lo que ya fallo antes, salvo que se pida el reintento explicito.
+  if (!retryFailed) filters += '&geocode_failed_at=is.null';
+
   if (targetOnly) {
     filters += '&price=lte.200000&total_area=gte.120';
   }
 
   // Properties with address OR neighborhood (we can geocode by barrio as fallback)
-  const url = `${SUPABASE_URL}/rest/v1/properties?select=id,address_text,neighborhood,city,state&${filters}&order=price_per_sqm.asc&limit=${limit}`;
+  const url = `${SUPABASE_URL}/rest/v1/properties?select=id,address_text,neighborhood,city,state,geocode_failed_at&${filters}&order=price_per_sqm.asc&limit=${limit}`;
 
   const resp = await fetch(url, {
     headers: {
@@ -247,6 +267,7 @@ async function main() {
 
     if (variants.length === 0) {
       notFound++;
+      await markGeocodeFailed(p.id);
       continue;
     }
 
@@ -262,6 +283,7 @@ async function main() {
         console.log(`${progress} OK ${p.address_text || p.neighborhood} -> ${result.lat.toFixed(5)}, ${result.lng.toFixed(5)} [${result.precision}] (${elapsed}s)`);
       } else {
         notFound++;
+        await markGeocodeFailed(p.id);
         console.log(`${progress} -- ${p.address_text || p.neighborhood} -> not found (${elapsed}s)`);
       }
     } catch (err) {

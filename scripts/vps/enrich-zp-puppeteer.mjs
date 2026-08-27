@@ -6,7 +6,7 @@
 import { createClient } from '@supabase/supabase-js';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
+import { looksLikeProxyError, getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
 
 puppeteer.use(StealthPlugin());
 
@@ -104,6 +104,21 @@ async function main() {
   console.log('Testing Cloudflare...');
   await page.goto('https://www.zonaprop.com.ar', { waitUntil: 'networkidle2', timeout: 30000 });
   const title = await page.title();
+
+  // 27/08/2026: este chequeo daba "✅ Cloudflare passed" durante 45 noches contra
+  // una pagina de error de Chrome. Con el proxy caido (407) Chrome no lanza
+  // excepcion: pinta chrome-error://chromewebdata/ y pone el hostname como
+  // <title>, asi que title.includes('moment') era false y el script seguia
+  // adelante visitando 300 paginas de error por noche y escribiendo nulls.
+  const cfUrl = page.url();
+  const cfBody = await page.evaluate(() => document.body?.innerText?.slice(0, 2000) || '').catch(() => '');
+  if (looksLikeProxyError(cfUrl, title, cfBody)) {
+    console.error(`❌ No hay salida a internet: el proxy no responde (url=${cfUrl}, title="${title}").`);
+    console.error('   Esto NO es Cloudflare ni fichas vacias: no llegamos a la fuente. Abortando para no escribir nulls.');
+    await browser.close();
+    process.exit(1);
+  }
+
   if (title.includes('moment')) {
     console.log('⏳ Cloudflare challenge... waiting 15s for manual solve or auto-pass');
     await page.waitForFunction(() => !document.title.includes('moment'), { timeout: 30000 }).catch(() => {});
@@ -124,6 +139,12 @@ async function main() {
     .eq('is_active', true)
     .not('permalink', 'is', null)
     .or('description.is.null,covered_area.is.null,bedrooms.is.null,bathrooms.is.null')
+    // 27/08/2026: sin ORDER BY, PostgREST devolvia siempre el mismo primer tramo,
+    // asi que las 3 tandas de cada noche masticaban las MISMAS 100 filas y
+    // "Remaining: 553" no se movia nunca. Ordenar por enriched_at (nulls primero)
+    // hace que la cola avance: lo nunca visitado va primero, y lo ya visitado
+    // vuelve recien cuando es lo mas viejo.
+    .order('enriched_at', { ascending: true, nullsFirst: true })
     .limit(BATCH_SIZE);
 
   if (error) { console.error('❌', error.message); await browser.close(); process.exit(1); }
@@ -199,8 +220,16 @@ async function main() {
       if (!prop.description && desc) update.description = desc.substring(0, 10000);
       if (!prop.covered_area && fromBody.covered_area) update.covered_area = fromBody.covered_area;
       if (fromBody.total_area) update.total_area = fromBody.total_area;
-      if (!prop.bedrooms) update.bedrooms = fromBody.bedrooms || house.numberOfBedrooms || null;
-      if (!prop.bathrooms) update.bathrooms = fromBody.bathrooms || house.numberOfBathroomsTotal || null;
+      // 27/08/2026: estas dos lineas terminaban en `|| null`, asi que cuando la
+      // ficha no traia el dato se metia igual la clave con valor null. Sumada a
+      // enrichment_level y enriched_at, el update superaba el umbral de >2 claves
+      // de abajo y la fila se contaba como "enriched" habiendo escrito nada util.
+      // De ahi salia el "70 enriched, 0 errors" de todas las noches sobre paginas
+      // de error. Si no hay dato, no va la clave.
+      const bed = fromBody.bedrooms || house.numberOfBedrooms;
+      const bath = fromBody.bathrooms || house.numberOfBathroomsTotal;
+      if (!prop.bedrooms && bed) update.bedrooms = bed;
+      if (!prop.bathrooms && bath) update.bathrooms = bath;
       if (fromBody.cocheras) update.cocheras = fromBody.cocheras;
       if (house.address?.streetAddress) update.address_text = house.address.streetAddress;
       if (house.telephone) update.contact_phone = house.telephone;

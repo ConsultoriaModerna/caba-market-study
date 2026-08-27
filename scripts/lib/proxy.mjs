@@ -67,6 +67,56 @@ export async function authenticatePuppeteerProxy(page) {
   return true;
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Preflight — comprobar que el proxy CONTESTA antes de gastar una corrida.
+//
+// 27/08/2026. Esto no existia y costo 45 noches de apagon silencioso. El 13/07
+// ProxyEmpire empezo a devolver 407 (credencial rechazada, saldo agotado o
+// sub-user dado de baja) y NADA en el pipeline se entero, porque Chrome con un
+// --proxy-server muerto no tira excepcion: renderiza una pagina de error cuyo
+// <title> es el propio hostname. Los checks de Cloudflare buscaban la palabra
+// "moment" en el titulo, no la encontraban, y concluian "Cloudflare passed".
+// Despues no habia tarjetas en el DOM y se logueaba "empty page" / "no listings
+// found". Tres detectores leyendo una pagina de error 407 como una pagina
+// normal y vacia, todas las noches, durante mes y medio.
+//
+// La leccion: un scraper tiene que distinguir "la fuente no tiene resultados"
+// de "no llegue a la fuente". Son estados opuestos y aca se veian iguales.
+export async function preflightProxy({ testUrl = 'https://api.ipify.org', timeoutMs = 20000 } = {}) {
+  const cfg = getProxyConfig();
+  if (!cfg) return { ok: true, skipped: true, reason: 'proxy no configurado, corriendo directo' };
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const { ProxyAgent } = await import('undici');
+    const resp = await fetch(testUrl, { dispatcher: new ProxyAgent(cfg.url), signal: ctrl.signal });
+    if (resp.status === 407) {
+      return { ok: false, status: 407, reason: 'proxy rechaza la credencial (407): saldo agotado o sub-user dado de baja' };
+    }
+    if (!resp.ok) {
+      return { ok: false, status: resp.status, reason: `proxy devolvio HTTP ${resp.status}` };
+    }
+    const exitIp = (await resp.text()).trim().slice(0, 45);
+    return { ok: true, exitIp, reason: `proxy vivo, IP de salida ${exitIp}` };
+  } catch (e) {
+    const msg = e.name === 'AbortError' ? `timeout de ${timeoutMs}ms` : e.message;
+    return { ok: false, reason: `no se pudo establecer el tunel: ${msg}` };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ¿Esta pagina es en realidad el error de Chrome por proxy caido, y no la web?
+// Chrome pinta chrome-error://chromewebdata/ y pone el hostname como <title>,
+// que es exactamente lo que hacia pasar el error por "pagina vacia".
+export function looksLikeProxyError(url, title, body) {
+  const u = String(url || '');
+  if (u.startsWith('chrome-error://')) return true;
+  const t = `${title || ''} ${String(body || '').slice(0, 2000)}`;
+  return /ERR_TUNNEL_CONNECTION_FAILED|ERR_PROXY_CONNECTION_FAILED|HTTP ERROR 407|Proxy Authentication Required/i.test(t);
+}
+
 // Rotate the ProxyEmpire sticky session ID, getting a fresh residential IP.
 // Username format: ...-sid-XXXX-... — we swap the sid token for a random one.
 // Use between page batches to avoid anti-bot rate counters tied to a single IP.

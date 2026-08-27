@@ -47,6 +47,35 @@ if ! pgrep -x Xvfb > /dev/null; then
   sleep 2
 fi
 
+# ── Step 0: Preflight del proxy ────────────────────────────────────────────
+# 27/08/2026. Agregado despues de un apagon de 45 noches. El 13/07 ProxyEmpire
+# empezo a devolver 407 y el pipeline siguio reportando verde: Chrome con el
+# proxy caido no falla, pinta una pagina de error, y los detectores de
+# Cloudflare la leian como "pagina vacia". Resultado: 4.600s de Chrome por
+# noche, cero altas, y un parte de Slack identico durante mes y medio.
+#
+# Ahora se comprueba el tunel ANTES de gastar la corrida. Si el proxy no
+# contesta, los pasos que salen a internet se saltean (SKIP_NET=1) en vez de
+# fingir que la fuente no tiene resultados, y el error viaja al parte.
+PROXY_OK=1
+PREFLIGHT=$(node -e "
+  import('./scripts/lib/proxy.mjs').then(async m => {
+    const r = await m.preflightProxy();
+    console.log(JSON.stringify(r));
+    process.exit(r.ok ? 0 : 1);
+  });
+" 2>&1) || PROXY_OK=0
+
+if [ "$PROXY_OK" = "1" ]; then
+  echo "--- [0/8] Preflight proxy -- OK: $PREFLIGHT"
+else
+  echo "--- [0/8] Preflight proxy -- CAIDO: $PREFLIGHT"
+  echo "    Los pasos de red (scan ZP, scan AP, enrich, dead-check) se saltean."
+  echo "    Sin proxy no se distingue 'no hay resultados' de 'no llegue', y"
+  echo "    correrlos igual ensucia la base con falsos negativos."
+  ERRORS="${ERRORS}PROXY CAIDO: ${PREFLIGHT}. Pasos de red salteados. "
+fi
+
 # ── Step 1: ML Scan ── DISABLED while API ban is active
 # Re-enable when ban lifts (2026-04-02). Set ML_ENABLED=true in .env
 ML_ENABLED="${ML_ENABLED:-false}"
@@ -67,6 +96,7 @@ echo "--- [2/7] ZP Grid Scan (headless, all zones, multi-type) ---"
 ZP_NEW=0
 ZP_REFRESHED=0
 for TYPE in casa ph departamento; do
+  [ "$PROXY_OK" = "1" ] || { echo "  >> ZP scan: salteado (proxy caido)"; break; }
   echo "  >> ZP scan: $TYPE"
   ZP_OUT=$(node scripts/vps/scan-zp-headless.mjs "$ZP_PAGES" --zone=all --type=$TYPE 2>&1) || ERRORS="${ERRORS}ZP scan ($TYPE) failed. "
   echo "$ZP_OUT"
@@ -87,6 +117,7 @@ done
 echo "--- [3/7] Argenprop Scan (multi-type) ---"
 AP_NEW=0
 for TYPE in casa ph departamento; do
+  [ "$PROXY_OK" = "1" ] || { echo "  >> AP scan: salteado (proxy caido)"; break; }
   echo "  >> AP scan: $TYPE"
   AP_OUT=$(node scripts/vps/scrape-argenprop.mjs "$AP_PAGES" --zone=all --type=$TYPE 2>&1) || ERRORS="${ERRORS}AP scan ($TYPE) failed. "
   echo "$AP_OUT"
@@ -106,6 +137,7 @@ echo "--- [4/7] ZP Enrichment (Puppeteer, batch loop) ---"
 ZP_ENRICHED=0
 BATCH=1
 MAX_BATCHES="${ENRICH_MAX_BATCHES:-3}"
+[ "$PROXY_OK" = "1" ] || { echo "  Salteado (proxy caido): sin tunel, cada ficha seria una pagina de error 407 y se escribirian nulls sobre la base."; MAX_BATCHES=0; }
 while [ $BATCH -le $MAX_BATCHES ]; do
   echo "  Batch $BATCH/$MAX_BATCHES..."
   ENRICH_OUT=$(node scripts/vps/enrich-zp-puppeteer.mjs 3000 "$ENRICH_BATCH" 2>&1)
@@ -122,7 +154,11 @@ while [ $BATCH -le $MAX_BATCHES ]; do
     break
   fi
 
-  BATCH_COUNT=$(echo "$ENRICH_OUT" | grep -oP 'Updated \d+' | grep -oP '\d+' | awk '{s+=$1} END{print s+0}')
+  # 27/08/2026: esto buscaba 'Updated N', que el script no imprime nunca, asi que
+  # ZP_ENRICHED daba 0 y el parte de Slack informaba "ZP enriched: 0" las noches
+  # en que el enrich creia haber enriquecido 210 fichas. Lo que si imprime es
+  # "🏁 ZP enrichment: N enriched".
+  BATCH_COUNT=$(echo "$ENRICH_OUT" | grep -oP 'ZP enrichment: \K\d+' | awk '{s+=$1} END{print s+0}')
   ZP_ENRICHED=$((ZP_ENRICHED + BATCH_COUNT))
 
   REMAINING=$(node -e "
@@ -212,10 +248,25 @@ STALE_COUNT="${STALE_COUNT:-0}"
 
 # ── Step 7: Dead listing check (verify oldest 200 permalinks are still live)
 echo "--- [7/8] Dead Listing Check ---"
-DEAD_OUT=$(node scripts/vps/check-dead-listings.mjs 200 2>&1) || ERRORS="${ERRORS}Dead check failed. "
-echo "$DEAD_OUT"
-DEAD_COUNT=$(echo "$DEAD_OUT" | grep -oP '\d+ dead' | grep -oP '\d+' | head -1)
-DEAD_COUNT="${DEAD_COUNT:-0}"
+DEAD_COUNT=0
+DEAD_CHECKED=0
+DEAD_UNKNOWN=0
+if [ "$PROXY_OK" = "1" ]; then
+  DEAD_OUT=$(node scripts/vps/check-dead-listings.mjs 200 2>&1) || ERRORS="${ERRORS}Dead check failed. "
+  echo "$DEAD_OUT"
+  # 27/08/2026: esto era `grep -oP '\d+ dead' | head -1`, que pescaba la linea de
+  # progreso "50/200 -- alive:50 dead:0" (el "50 dead" de "alive:50 dead:0") en vez
+  # del total. Por eso el parte decia "Dead verified: 50" todas las noches, con 200
+  # chequeadas. Se lee la linea final, que es la unica que trae totales.
+  DEAD_COUNT=$(echo "$DEAD_OUT"   | grep -oP 'Done: \d+ checked, \K\d+' | tail -1)
+  DEAD_CHECKED=$(echo "$DEAD_OUT" | grep -oP 'Done: \K\d+'               | tail -1)
+  DEAD_UNKNOWN=$(echo "$DEAD_OUT" | grep -oP '\K\d+(?= unknown)'          | tail -1)
+  DEAD_COUNT="${DEAD_COUNT:-0}"
+  DEAD_CHECKED="${DEAD_CHECKED:-0}"
+  DEAD_UNKNOWN="${DEAD_UNKNOWN:-0}"
+else
+  echo "  Salteado (proxy caido): sin tunel toda ficha responde 403 y el checker no puede distinguir un aviso dado de baja de un bloqueo."
+fi
 
 # ── Step 8: Dedup + Price Drops
 echo "--- [8/8] Dedup + Price Drops ---"
@@ -279,7 +330,7 @@ SLACK_MSG="${SLACK_MSG}  ZP enriched: ${ZP_ENRICHED}\n"
 SLACK_MSG="${SLACK_MSG}  Geocoded: ${GEO_COUNT}\n"
 SLACK_MSG="${SLACK_MSG}  Livability: ${LIV_COUNT}\n"
 SLACK_MSG="${SLACK_MSG}  Stale removed: ${STALE_COUNT}\n"
-SLACK_MSG="${SLACK_MSG}  Dead verified: ${DEAD_COUNT}\n"
+SLACK_MSG="${SLACK_MSG}  Dead check: ${DEAD_CHECKED} chequeadas, ${DEAD_COUNT} de baja, ${DEAD_UNKNOWN} sin respuesta\n"
 SLACK_MSG="${SLACK_MSG}  Dedup merged: ${DEDUP_COUNT}\n\n"
 SLACK_MSG="${SLACK_MSG}*Totals*\n"
 SLACK_MSG="${SLACK_MSG}  Active: ${TOTAL_ACTIVE}  |  Price drops: ${TOTAL_DROPS}  |  Events: ${TOTAL_EVENTS}\n"

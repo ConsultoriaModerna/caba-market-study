@@ -104,7 +104,7 @@ async function main() {
 
   console.log(`Checking ${props.length} listings...`);
 
-  let dead = 0, alive = 0, errors = 0, skipped = 0;
+  let dead = 0, alive = 0, errors = 0, skipped = 0, unknown = 0;
   const deadList = [];
 
   for (let i = 0; i < props.length; i++) {
@@ -123,6 +123,31 @@ async function main() {
 
     if (result.isSlugChange) {
       alive++;
+      await sleep(DELAY_MS);
+      continue;
+    }
+
+    // 27/08/2026 — el bug que fabricaba el padron.
+    //
+    // isDead() solo devuelve motivo con 404/301/302 o textos de baja. Un 403
+    // (Cloudflare, CloudFront, rate-limit) caia en `return null` y el listing
+    // se contaba VIVO y encima se le refrescaba last_seen_at. Como este script
+    // corre sin proxy y la IP del VPS esta bloqueada, desde el 13/07 las 200
+    // fichas de cada noche devolvian 403 y las 200 se marcaban vivas. Efecto
+    // combinado: la ventana stale de 7 dias no vencio ni una vez en 45 noches
+    // (el propio checker le rearmaba el reloj a todo el padron cada 6,5 dias) y
+    // las "1.290 activas" pasaron a ser un censo congelado del 12-jul que nadie
+    // habia verificado.
+    //
+    // Un chequeo que no llega a la fuente NO es un chequeo con resultado
+    // negativo. Ante 403 / 429 / 5xx / red caida no se toca nada: ni se da de
+    // baja ni se refresca el reloj. Que expire por stale es la respuesta
+    // correcta cuando llevamos semanas sin poder verificar.
+    if (result.status === 403 || result.status === 429 || result.status >= 500 || result.status === 0) {
+      unknown++;
+      if ((i + 1) % 50 === 0) {
+        console.log(`  ${i + 1}/${props.length} -- alive:${alive} dead:${dead} unknown:${unknown} err:${errors}`);
+      }
       await sleep(DELAY_MS);
       continue;
     }
@@ -147,13 +172,16 @@ async function main() {
     }
 
     if ((i + 1) % 50 === 0) {
-      console.log(`  ${i + 1}/${props.length} -- alive:${alive} dead:${dead} err:${errors}`);
+      console.log(`  ${i + 1}/${props.length} -- alive:${alive} dead:${dead} unknown:${unknown} err:${errors}`);
     }
 
     await sleep(DELAY_MS);
   }
 
-  console.log(`\nDone: ${props.length} checked, ${dead} dead, ${alive} alive, ${errors} errors, ${skipped} skipped`);
+  console.log(`\nDone: ${props.length} checked, ${dead} dead, ${alive} alive, ${unknown} unknown, ${errors} errors, ${skipped} skipped`);
+  if (unknown > props.length / 2) {
+    console.log(`\n[!] ${unknown}/${props.length} sin respuesta concluyente: la fuente nos esta bloqueando, no es que las propiedades sigan vivas.`);
+  }
   if (deadList.length) {
     console.log('\nDead listings:');
     deadList.forEach(d => console.log(`  ${d.id} (${d.source}) ${d.neighborhood} -- ${d.reason}`));

@@ -9,7 +9,7 @@
 import { createClient } from '@supabase/supabase-js';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
+import { looksLikeProxyError, getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
 
 puppeteer.use(StealthPlugin());
 
@@ -366,6 +366,31 @@ async function main() {
   console.log('Warming up Cloudflare...');
   await page.goto('https://www.zonaprop.com.ar', { waitUntil: 'networkidle2', timeout: 60000 });
   await new Promise(r => setTimeout(r, 3000));
+
+  // 27/08/2026 — la causa del apagon silencioso de 45 noches.
+  //
+  // Con el proxy devolviendo 407, Chrome no lanza excepcion: renderiza
+  // chrome-error://chromewebdata/ y usa el hostname como <title>. Como
+  // isCloudflareTitle() busca "moment|cloudflare|..." y el titulo era
+  // "www.zonaprop.com.ar", el warmup pasaba como bueno. Despues el evaluate no
+  // encontraba tarjetas y se logueaba "Page 1: no listings found" / "empty page",
+  // que es el mensaje de "el portal no tiene resultados". Nunca los tuvo que
+  // buscar: no habia salido a internet.
+  //
+  // "No hay resultados" y "no llegue a la fuente" son estados opuestos y hasta
+  // hoy se veian iguales en el log. Este chequeo los separa.
+  {
+    const wTitle = await page.title();
+    const wUrl = page.url();
+    const wBody = await page.evaluate(() => document.body?.innerText?.slice(0, 2000) || '').catch(() => '');
+    if (looksLikeProxyError(wUrl, wTitle, wBody)) {
+      console.error(`\n[FATAL] Sin salida a internet: el proxy no responde (url=${wUrl}, title="${wTitle}").`);
+      console.error('        No es Cloudflare ni un portal vacio: no llegamos a la fuente.');
+      console.error('        Revisar saldo/credencial de ProxyEmpire (407 = credencial rechazada).');
+      await browser.close();
+      process.exit(1);
+    }
+  }
 
   let grandTotal = { scanned: 0, new: 0, updated: 0 };
 
