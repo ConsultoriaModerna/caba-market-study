@@ -82,29 +82,50 @@ export async function authenticatePuppeteerProxy(page) {
 //
 // La leccion: un scraper tiene que distinguir "la fuente no tiene resultados"
 // de "no llegue a la fuente". Son estados opuestos y aca se veian iguales.
-export async function preflightProxy({ testUrl = 'https://api.ipify.org', timeoutMs = 20000 } = {}) {
+export async function preflightProxy({ testHost = 'api.ipify.org', timeoutMs = 20000 } = {}) {
   const cfg = getProxyConfig();
   if (!cfg) return { ok: true, skipped: true, reason: 'proxy no configurado, corriendo directo' };
 
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const { ProxyAgent } = await import('undici');
-    const resp = await fetch(testUrl, { dispatcher: new ProxyAgent(cfg.url), signal: ctrl.signal });
-    if (resp.status === 407) {
-      return { ok: false, status: 407, reason: 'proxy rechaza la credencial (407): saldo agotado o sub-user dado de baja' };
-    }
-    if (!resp.ok) {
-      return { ok: false, status: resp.status, reason: `proxy devolvio HTTP ${resp.status}` };
-    }
-    const exitIp = (await resp.text()).trim().slice(0, 45);
-    return { ok: true, exitIp, reason: `proxy vivo, IP de salida ${exitIp}` };
-  } catch (e) {
-    const msg = e.name === 'AbortError' ? `timeout de ${timeoutMs}ms` : e.message;
-    return { ok: false, reason: `no se pudo establecer el tunel: ${msg}` };
-  } finally {
-    clearTimeout(timer);
-  }
+  // CONNECT crudo en vez de fetch(): undici envuelve el fallo del tunel en un
+  // "fetch failed" generico y se pierde el codigo, que es justo el dato que hace
+  // falta para saber si hay que recargar saldo o si es un corte de red.
+  const net = await import('node:net');
+  const u = new URL(cfg.url);
+  const auth = Buffer.from(`${decodeURIComponent(u.username)}:${decodeURIComponent(u.password)}`).toString('base64');
+
+  return await new Promise((resolve) => {
+    let settled = false;
+    const done = (r) => { if (!settled) { settled = true; try { sock.destroy(); } catch {} resolve(r); } };
+
+    const sock = net.connect({ host: u.hostname, port: Number(u.port) || 8080 });
+    sock.setTimeout(timeoutMs);
+
+    sock.on('timeout', () => done({ ok: false, reason: `timeout de ${timeoutMs}ms hablando con ${cfg.hostPort}` }));
+    sock.on('error', (e) => done({ ok: false, reason: `no se pudo abrir socket a ${cfg.hostPort}: ${e.message}` }));
+
+    sock.on('connect', () => {
+      sock.write(
+        `CONNECT ${testHost}:443 HTTP/1.1\r\n` +
+        `Host: ${testHost}:443\r\n` +
+        `Proxy-Authorization: Basic ${auth}\r\n` +
+        `\r\n`
+      );
+    });
+
+    let buf = '';
+    sock.on('data', (chunk) => {
+      buf += chunk.toString('latin1');
+      if (!buf.includes('\r\n')) return;
+      const status = parseInt((buf.split('\r\n')[0].match(/HTTP\/1\.[01] (\d{3})/) || [])[1], 10);
+
+      if (status === 200) return done({ ok: true, status, reason: `tunel abierto contra ${cfg.hostPort}` });
+      if (status === 407) return done({
+        ok: false, status,
+        reason: `el proxy rechaza la credencial (407). Causas tipicas: saldo agotado o sub-user dado de baja en ProxyEmpire. Se comprueba en su dashboard.`,
+      });
+      return done({ ok: false, status, reason: `el proxy respondio HTTP ${status} al CONNECT` });
+    });
+  });
 }
 
 // ¿Esta pagina es en realidad el error de Chrome por proxy caido, y no la web?
