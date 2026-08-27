@@ -3170,7 +3170,7 @@
                     <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
                         <button onclick="toggleFavorite('${p.id}');openPropModal('${p.id}')" style="padding:0.5rem 1rem;background:${isFavorite(p.id) ? 'rgba(251,191,36,0.15)' : 'transparent'};border:1px solid ${isFavorite(p.id) ? 'var(--yellow)' : 'var(--border)'};color:${isFavorite(p.id) ? 'var(--yellow)' : 'var(--text-secondary)'};border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:inherit;">${isFavorite(p.id) ? '★ Favorita' : '☆ Agregar a Fav'}</button>
                         <button onclick="editProperty('${p.id}')" style="flex:1;padding:0.5rem;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Editar</button>
-                        <button onclick="deleteProperty('${p.id}')" style="padding:0.5rem 1rem;background:transparent;border:1px solid rgba(239,68,68,0.3);color:var(--red);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Borrar</button>
+                        <button onclick="deactivateProperty('${p.id}')" style="padding:0.5rem 1rem;background:transparent;border:1px solid rgba(239,68,68,0.3);color:var(--red);border-radius:6px;cursor:pointer;font-size:0.8rem;font-family:inherit;">Dar de baja</button>
                     </div>
 
                     <!-- AI Analysis container -->
@@ -3189,19 +3189,23 @@
             document.getElementById('propModal').style.display = 'none';
         }
 
-        async function deleteProperty(propId) {
-            if (!confirm(`Borrar propiedad ${propId} de la base de datos?\n\nEsta accion no se puede deshacer.`)) return;
-            if (!confirm('Confirmar: BORRAR definitivamente?')) return;
+        // 27/08/2026: antes era deleteProperty y hacia DELETE con la anon key. No hay
+        // politica DELETE para anon, asi que fallaba siempre: un boton muerto desde
+        // el dia uno. Ahora da de baja (is_active=false), que es lo que el resto del
+        // sistema entiende por "sacar del padron" y ademas conserva el historico.
+        async function deactivateProperty(propId) {
+            if (!confirm(`Dar de baja la propiedad ${propId}?\n\nSale del padron activo pero queda en el historico.`)) return;
             try {
-                const resp = await fetch(`${SUPABASE_URL}/rest/v1/properties?id=eq.${propId}`, {
-                    method: 'DELETE',
-                    headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` }
+                const resp = await fetch(`${SUPABASE_URL}/functions/v1/admin-write`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-intel-token': INTEL_TOKEN },
+                    body: JSON.stringify({ op: 'deactivate', id: propId, reason: 'manual' })
                 });
                 if (resp.ok) {
                     allPropertiesRaw = allPropertiesRaw.filter(p => p.id !== propId);
                     applyGlobalPriceFilter();
                     closePropModal();
-                    alert('Propiedad eliminada');
+                    alert('Propiedad dada de baja');
                 } else {
                     alert('Error al borrar: ' + resp.status);
                 }
@@ -3284,15 +3288,13 @@
             }
 
             try {
-                const resp = await fetch(`${SUPABASE_URL}/rest/v1/properties?id=eq.${propId}`, {
-                    method: 'PATCH',
-                    headers: {
-                        apikey: ANON_KEY,
-                        Authorization: `Bearer ${ANON_KEY}`,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
-                    },
-                    body: JSON.stringify(updates)
+                // 27/08/2026: la edicion manual ya no escribe con la anon key contra
+                // el REST generico. Va por admin-write, que solo acepta las columnas
+                // de su allowlist y escribe con service_role.
+                const resp = await fetch(`${SUPABASE_URL}/functions/v1/admin-write`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-intel-token': INTEL_TOKEN },
+                    body: JSON.stringify({ op: 'update', id: propId, fields: updates })
                 });
                 if (resp.ok) {
                     // Update local data

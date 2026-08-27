@@ -953,10 +953,13 @@ async function confirmDeactivate(id, reason) {
     const modal = document.getElementById('deact-modal');
     if (modal) modal.remove();
     try {
-        const resp = await fetch(`${SB_URL}/rest/v1/properties?id=eq.${id}`, {
-            method: 'PATCH',
-            headers: { ...HEADERS, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-            body: JSON.stringify({ is_active: false, deactivation_reason: reason })
+        // 27/08/2026: la baja ya no se escribe con la anon key contra el REST
+        // generico (esa politica dejaba a cualquier visitante desactivar toda la
+        // tabla). Va por admin-write, que valida el motivo y escribe con service_role.
+        const resp = await fetch(`${SB_URL}/functions/v1/admin-write`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-intel-token': INTEL_TOKEN },
+            body: JSON.stringify({ op: 'deactivate', id, reason })
         });
         if (!resp.ok) throw new Error(`${resp.status}`);
         allProps = allProps.filter(p => p.id !== id);

@@ -9,8 +9,18 @@
  *   --retry-failed: also retry properties that failed before (address-based)
  */
 
-const SUPABASE_URL = 'https://ysynltkotzizayjtoujf.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ysynltkotzizayjtoujf.supabase.co';
+
+// 27/08/2026 - this script used to carry the anon key hardcoded and write with it,
+// which is why the properties table had an anon UPDATE policy with USING true.
+// The anon key ships inside the public dashboard, so that policy let any visitor
+// edit or deactivate all 16.829 rows. Geocoding now writes with the service role
+// (VPS-only, never shipped to a browser) and that policy is gone.
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SUPABASE_KEY) {
+  console.error('Missing SUPABASE_SERVICE_ROLE_KEY (load .env before running)');
+  process.exit(1);
+}
 
 const args = process.argv.slice(2);
 const targetOnly = args.includes('--target-only');
