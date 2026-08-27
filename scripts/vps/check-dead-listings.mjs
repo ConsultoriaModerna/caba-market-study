@@ -6,6 +6,15 @@
 // Default: 200 oldest active listings across all sources
 
 import { createClient } from '@supabase/supabase-js';
+import { applyFetchProxy, incrementBudget } from '../lib/proxy.mjs';
+
+// 27/08/2026: este script salia DIRECTO por la IP del VPS, que ZonaProp bloquea.
+// Por eso cada ficha devolvia 403 y (antes del fix de abajo) se contaba como
+// "viva". Aun con el 403 ya tratado como "unknown", saliendo directo el chequeo
+// no puede verificar nada nunca: el padron no se depura y stale no caduca. Sale
+// por el mismo proxy residencial que el resto del pipeline. Son requests HEAD-ish
+// de una pagina, el consumo es bajo comparado con el scan.
+applyFetchProxy();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -55,6 +64,7 @@ async function checkUrl(permalink) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
+    incrementBudget('dead-check');
     const resp = await fetch(permalink, {
       headers: { 'User-Agent': USER_AGENT },
       redirect: 'manual',  // Don't follow redirects, we want to detect them
