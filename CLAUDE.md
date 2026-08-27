@@ -69,6 +69,16 @@ InmoFindr: sistema de inteligencia inmobiliaria para Buenos Aires (CABA + GBA No
 - Borrar datos de propiedades
 - Cambios en crons de producción
 
+## Output rules (non-negotiable)
+
+These are about being able to coordinate, not about style. They come before any other formatting preference.
+
+**1. Numbered, referable output (Protocol §19).** More than one point means numbered points, under **one scheme chosen before writing**: either headers carry no number and items run as a single continuous sequence across them, or headers are numbered and **every item under them is dotted (1.1, 1.2, 2.1)**. Never both at once. **There is never a second "1" in the same response**, and the counter does not restart when a new message starts either (scope across the thread: see 1b). Self-check before sending: if any digit appears twice as a label, the numbering is broken and gets rebuilt, not patched. Nico answers by citing numbers; two items sharing one destroys that.
+
+**1b. The count runs across the thread, and with numbered headers the HEADER is what carries it (Protocol §19; Nico, 2026-08-13 and 2026-08-14).** A reply does not restart at 1 just because it is a new message. If the previous message closed at **header 8**, the next one opens at **header 9** and its items are 9.1, 9.2. **The pre-send check is on the last header sent in the conversation, not on the last item**, which is exactly where this kept failing: the dotted scheme held perfectly inside each answer while the next answer reopened at header 1, leaving two `5.1` an hour apart in the same thread. Nico does not argue the content when that happens, he refuses it unread ("numeros sin secuencia logica no voy a leer"), so a finished analysis is worth zero. An item Nico cites keeps its own number and is never relabelled. If a restart already happened, state the offset once instead of renumbering the past. New session, new counter.
+
+**2. No em-dashes** in anything written for Nico or for publication.
+
 ## Conventions
 - Spanish for user-facing text, English for code/comments
 - Never use em dashes in text or comments
