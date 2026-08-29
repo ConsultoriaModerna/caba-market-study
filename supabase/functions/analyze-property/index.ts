@@ -1,6 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY')!;
+// 29/08/2026: clave identity-linked, exige este header o la API devuelve 400.
+const ANTHROPIC_WORKSPACE_ID = Deno.env.get('ANTHROPIC_WORKSPACE_ID')!;
+
+const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
 
 // ── Gate (PA, 16/08/2026 — protocolo §23) ───────────────────────────────────
@@ -27,6 +32,21 @@ Deno.serve(async (req: Request) => {
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
       }
+    });
+  }
+
+  // 29/08/2026: cap de gasto (auditoria RE+Fable+GPT-Sol, FA-07/GS-01).
+  const { data: underCap, error: capError } = await sb.rpc('check_and_increment_usage', {
+    p_fn: 'analyze-property', p_max: 150,
+  });
+  if (capError) {
+    return new Response(JSON.stringify({ error: 'rate limit check failed' }), {
+      status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
+  }
+  if (!underCap) {
+    return new Response(JSON.stringify({ error: 'daily limit reached, try again tomorrow' }), {
+      status: 429, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
   }
 
@@ -68,6 +88,7 @@ Da tu analisis en 4 secciones cortas:
       headers: {
         'x-api-key': ANTHROPIC_KEY,
         'anthropic-version': '2023-06-01',
+        'anthropic-workspace-id': ANTHROPIC_WORKSPACE_ID,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

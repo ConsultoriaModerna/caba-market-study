@@ -22,7 +22,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // allowlist de columnas y de operaciones. El arreglo de verdad es auth real.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const INTEL_TOKEN = Deno.env.get('INTEL_QUERY_TOKEN');
+// 29/08/2026: token separado del de intel-query (auditoria RE+Fable+GPT-Sol,
+// GS-02/FA-02). Antes admin-write aceptaba el mismo INTEL_QUERY_TOKEN que el
+// buscador semantico: filtrar el token de busqueda tambien daba escritura.
+const ADMIN_TOKEN = Deno.env.get('ADMIN_WRITE_TOKEN');
 const ALLOWED_ORIGIN = Deno.env.get('INTEL_ALLOWED_ORIGIN') ?? 'https://inmofindr.vercel.app';
 
 const SB_URL = Deno.env.get('SUPABASE_URL')!;
@@ -63,7 +66,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
   if (req.method !== 'POST') return json(req, { error: 'method not allowed' }, 405);
 
-  if (!INTEL_TOKEN || req.headers.get('x-intel-token') !== INTEL_TOKEN) {
+  if (!ADMIN_TOKEN || req.headers.get('x-intel-token') !== ADMIN_TOKEN) {
     return json(req, { error: 'unauthorized' }, 401);
   }
 

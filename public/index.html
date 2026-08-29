@@ -1277,7 +1277,12 @@
         // que es la decision que ya estaba tomada para esta pagina. Sin esto, un POST
         // anonimo hacia escribir SQL a un LLM, lo ejecutaba con service_role y gastaba
         // tokens de Anthropic de la casa sin techo.
-        const INTEL_TOKEN = 'iq_02a16593023e8309c50a51e1ad2fc717932b487d';
+        // 29/08/2026: token rotado (auditoria RE+Fable+GPT-Sol) y separado en dos.
+        // ADMIN_TOKEN es exclusivo de admin-write (escritura); si se filtra el de
+        // busqueda ya no alcanza para editar/dar de baja, y viceversa. Sigue siendo
+        // un secreto embebido en una pagina estatica: el arreglo de fondo es auth real.
+        const INTEL_TOKEN = 'iq_ee662cf5be5d92d63ddc7d80f29ffb5e32203c1f';
+        const ADMIN_TOKEN = 'aw_bfa2747049d5202c202a747fb23364e5eb02bebb';
         const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
 
         const ZONES = {
@@ -3239,7 +3244,7 @@
             try {
                 const resp = await fetch(`${SUPABASE_URL}/functions/v1/admin-write`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-intel-token': INTEL_TOKEN },
+                    headers: { 'Content-Type': 'application/json', 'x-intel-token': ADMIN_TOKEN },
                     body: JSON.stringify({ op: 'deactivate', id: propId, reason: 'manual' })
                 });
                 if (resp.ok) {
@@ -3334,7 +3339,7 @@
                 // de su allowlist y escribe con service_role.
                 const resp = await fetch(`${SUPABASE_URL}/functions/v1/admin-write`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-intel-token': INTEL_TOKEN },
+                    headers: { 'Content-Type': 'application/json', 'x-intel-token': ADMIN_TOKEN },
                     body: JSON.stringify({ op: 'update', id: propId, fields: updates })
                 });
                 if (resp.ok) {

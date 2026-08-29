@@ -378,7 +378,10 @@ const HEADERS = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
 // Gate de las edge functions que gastan modelo (PA, 16/08/2026, protocolo 23).
 // No es un secreto: esta pagina es estatica. Sube la barra de cualquiera-con-la-URL
 // a cualquiera-que-ya-entro, que es la decision que ya estaba tomada para el dashboard.
-const INTEL_TOKEN = 'iq_02a16593023e8309c50a51e1ad2fc717932b487d';
+// 29/08/2026: token rotado y separado (auditoria RE+Fable+GPT-Sol). ADMIN_TOKEN
+// es exclusivo de admin-write; si se filtra el de busqueda ya no alcanza para editar.
+const INTEL_TOKEN = 'iq_ee662cf5be5d92d63ddc7d80f29ffb5e32203c1f';
+const ADMIN_TOKEN = 'aw_bfa2747049d5202c202a747fb23364e5eb02bebb';
 
 const KEYWORDS = [
     { kw: 'jardín', label: 'Jardín', star: true },
@@ -958,7 +961,7 @@ async function confirmDeactivate(id, reason) {
         // tabla). Va por admin-write, que valida el motivo y escribe con service_role.
         const resp = await fetch(`${SB_URL}/functions/v1/admin-write`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-intel-token': INTEL_TOKEN },
+            headers: { 'Content-Type': 'application/json', 'x-intel-token': ADMIN_TOKEN },
             body: JSON.stringify({ op: 'deactivate', id, reason })
         });
         if (!resp.ok) throw new Error(`${resp.status}`);

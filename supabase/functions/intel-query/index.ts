@@ -30,6 +30,18 @@ function corsHeaders(req: Request): Record<string, string> {
 }
 
 const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY')!;
+// 29/08/2026: las claves personales de esta cuenta son identity-linked
+// (alcance "todos los espacios de trabajo"), asi que cada request necesita
+// decir en que workspace actua. El de Default no tiene un wrkspc_... visible
+// en la consola (a diferencia de "Claude Code", que si lo tiene); su slug de
+// URL es literalmente "default", que es lo que probamos aca.
+const ANTHROPIC_WORKSPACE_ID = Deno.env.get('ANTHROPIC_WORKSPACE_ID')!;
+const anthropicHeaders = {
+  'x-api-key': ANTHROPIC_KEY,
+  'anthropic-version': '2023-06-01',
+  'anthropic-workspace-id': ANTHROPIC_WORKSPACE_ID,
+  'Content-Type': 'application/json',
+};
 const SB_URL = Deno.env.get('SUPABASE_URL')!;
 const SB_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -110,9 +122,37 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // 29/08/2026: cap de gasto (auditoria RE+Fable+GPT-Sol, FA-07). El token va
+  // embebido en el bundle publico (ver comentario arriba); si se filtra, esto
+  // pone un techo diario al gasto de Anthropic, no solo el gate de auth.
+  const { data: underCap, error: capError } = await sb.rpc('check_and_increment_usage', {
+    p_fn: 'intel-query', p_max: 150,
+  });
+  if (capError) {
+    return new Response(JSON.stringify({ error: 'rate limit check failed' }), {
+      status: 500, headers: { 'Content-Type': 'application/json', ...cors },
+    });
+  }
+  if (!underCap) {
+    return new Response(JSON.stringify({ error: 'daily limit reached, try again tomorrow' }), {
+      status: 429, headers: { 'Content-Type': 'application/json', ...cors },
+    });
+  }
+
   try {
     const { question, context, model: modelKey } = await req.json();
     if (!question) throw new Error('No question provided');
+
+    if (modelKey === 'opus') {
+      const { data: underOpusCap } = await sb.rpc('check_and_increment_usage', {
+        p_fn: 'intel-query-opus', p_max: 20,
+      });
+      if (!underOpusCap) {
+        return new Response(JSON.stringify({ error: 'opus daily limit reached, try sonnet or haiku' }), {
+          status: 429, headers: { 'Content-Type': 'application/json', ...cors },
+        });
+      }
+    }
 
     const sqlModel = MODELS.haiku;
     // For analysis: try requested model, fallback chain opus -> sonnet -> haiku
@@ -121,11 +161,7 @@ Deno.serve(async (req: Request) => {
     // Step 1: Ask Claude to generate SQL (always haiku - cheap)
     const sqlResp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json'
-      },
+      headers: anthropicHeaders,
       body: JSON.stringify({
         model: sqlModel,
         max_tokens: 500,
@@ -134,7 +170,7 @@ Deno.serve(async (req: Request) => {
       })
     });
 
-    if (!sqlResp.ok) throw new Error(`SQL gen failed: ${sqlResp.status}`);
+    if (!sqlResp.ok) throw new Error(`SQL gen failed: ${sqlResp.status} ${await sqlResp.text()}`);
     const sqlData = await sqlResp.json();
     let sql = (sqlData.content?.[0]?.text || '').trim();
     sql = sql.replace(/```sql\n?/gi, '').replace(/```\n?/g, '').trim();
@@ -167,11 +203,7 @@ Deno.serve(async (req: Request) => {
     // Try requested model, fallback to sonnet if opus fails
     let analysisResp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json'
-      },
+      headers: anthropicHeaders,
       body: JSON.stringify({
         model: analysisModel,
         max_tokens: modelKey === 'opus' ? 4000 : 1500,
@@ -185,7 +217,7 @@ Deno.serve(async (req: Request) => {
       usedModel = MODELS.sonnet;
       analysisResp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+        headers: anthropicHeaders,
         body: JSON.stringify({ model: usedModel, max_tokens: 3000, messages: [{ role: 'user', content: analysisPrompt }] })
       });
     }
@@ -193,7 +225,7 @@ Deno.serve(async (req: Request) => {
       usedModel = MODELS.haiku;
       analysisResp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+        headers: anthropicHeaders,
         body: JSON.stringify({ model: usedModel, max_tokens: 1500, messages: [{ role: 'user', content: analysisPrompt }] })
       });
     }
