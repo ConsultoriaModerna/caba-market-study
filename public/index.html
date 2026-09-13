@@ -1283,6 +1283,10 @@
         // un secreto embebido en una pagina estatica: el arreglo de fondo es auth real.
         const INTEL_TOKEN = 'iq_ee662cf5be5d92d63ddc7d80f29ffb5e32203c1f';
         const ADMIN_TOKEN = 'aw_bfa2747049d5202c202a747fb23364e5eb02bebb';
+        // 13/09/2026: request-enrich. Solo anota "esto se pidio" (enrich_requested_at);
+        // el enrich real lo hace un cron del VPS. Cap diario propio (200/dia) del lado
+        // de la funcion, asi que aunque este token se filtre el gasto tiene techo.
+        const ENRICH_TOKEN = 'er_c83a86ead06d2b63cacfe553ced217646e6022e0';
         const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeW5sdGtvdHppemF5anRvdWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzM1MjksImV4cCI6MjA4MTIwOTUyOX0.-rSFZIILSIwPWIRW-frMm27_wRsIOK79Txz5alE6QUE';
 
         const ZONES = {
@@ -3186,7 +3190,10 @@
                     <div style="margin-bottom:1rem;">
                         <div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;margin-bottom:0.3rem;">Descripcion</div>
                         <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;max-height:200px;overflow-y:auto;">${p.description}</div>
-                    </div>` : ''}
+                    </div>` : (p.source === 'zonaprop' ? `
+                    <div id="enrichStatus" style="margin-bottom:1rem;font-size:0.8rem;color:var(--text-secondary);">
+                        ⏳ Pidiendo descripcion completa a la fuente...
+                    </div>` : '')}
 
                     <!-- Comparables -->
                     ${comps.length ? `
@@ -3229,10 +3236,54 @@
             `;
 
             modal.style.display = 'block';
+            maybeRequestEnrich(p);
+        }
+
+        // 13/09/2026: enrichment on-demand. Antes el nightly enriquecia TODO lo
+        // activo cada noche (~$30-40/mes de proxy sin importar si Nico miraba
+        // esas fichas). Ahora solo se pide cuando alguien abre el detalle: esto
+        // llama a la Edge Function (gratis, solo anota la fila) y hace polling
+        // corto mientras el cron de 5 min del VPS la visita de verdad.
+        let enrichPollTimer = null;
+
+        function maybeRequestEnrich(p) {
+            if (enrichPollTimer) { clearInterval(enrichPollTimer); enrichPollTimer = null; }
+            if (p.source !== 'zonaprop' || p.description) return;
+
+            fetch(`${SUPABASE_URL}/functions/v1/request-enrich`, {
+                method: 'POST',
+                headers: { 'x-intel-token': ENRICH_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: p.id }),
+            }).catch(() => {});
+
+            let tries = 0;
+            enrichPollTimer = setInterval(async () => {
+                tries++;
+                if (tries > 15) { clearInterval(enrichPollTimer); enrichPollTimer = null; return; } // ~45s
+                try {
+                    const resp = await fetch(
+                        `${SUPABASE_URL}/rest/v1/properties?id=eq.${p.id}&select=description,covered_area,bedrooms,bathrooms,total_area,cocheras,segment,contact_phone,contact_name,address_text,thumbnail,enrichment_level`,
+                        { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
+                    );
+                    const rows = await resp.json();
+                    const fresh = rows?.[0];
+                    if (!fresh || !fresh.description) return; // sigue en cola o CF la trabo, sigue esperando
+
+                    clearInterval(enrichPollTimer);
+                    enrichPollTimer = null;
+                    Object.assign(p, fresh);
+                    const idx = allProperties.findIndex(x => x.id === p.id);
+                    if (idx !== -1) Object.assign(allProperties[idx], fresh);
+                    // Si el modal sigue abierto en esta misma ficha, refresca el contenido
+                    const modal = document.getElementById('propModal');
+                    if (modal.style.display === 'block') openPropModal(p.id);
+                } catch { /* proximo tick reintenta */ }
+            }, 3000);
         }
 
         function closePropModal() {
             document.getElementById('propModal').style.display = 'none';
+            if (enrichPollTimer) { clearInterval(enrichPollTimer); enrichPollTimer = null; }
         }
 
         // 27/08/2026: antes era deleteProperty y hacia DELETE con la anon key. No hay
