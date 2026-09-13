@@ -23,6 +23,16 @@ set -a
 set +a
 export DISPLAY=:99
 
+# 13/09/2026: scan/enrich/dead-check comparten el mismo perfil de Chrome
+# (.chrome-profile). Desde que el enrich on-demand tiene su propio cron cada
+# 5 min (ver crontab del VPS), hay una ventana real de que dispare a mitad de
+# este script y los dos Chrome se peleen por el mismo profile lock. El
+# nightly tiene prioridad: espera hasta 5 min el lock en vez de arrancar
+# igual y chocar. El cron de 5 min usa flock -n (no bloqueante) del otro
+# lado, asi que si el nightly ya tiene el lock, ese ciclo se saltea solo.
+exec 200>/tmp/caba-chrome.lock
+flock -w 300 200 || echo "WARN: no se pudo tomar el lock de Chrome en 5 min, sigo igual"
+
 # Tunable caps (env-overridable). Defaults sized for the 1GB VPS now that the
 # ZP pagination fix makes deep pages actually load (pages 2+ used to fail fast,
 # which kept old runs artificially short). Deep result pages are mostly already-
