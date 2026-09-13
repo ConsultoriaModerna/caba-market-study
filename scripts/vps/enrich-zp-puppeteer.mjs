@@ -75,6 +75,28 @@ function extractFromBody(body) {
 async function main() {
   const t0 = Date.now();
 
+  // 13/09/2026: antes esto enriquecia TODO lo activo con algun campo faltante,
+  // todas las noches (~$30-40/mes de proxy al ritmo actual, sin importar si
+  // Nico miraba esa ficha o no). Ahora solo se enriquece lo que se pidio desde
+  // el dashboard (enrich_requested_at, seteado por la Edge Function
+  // request-enrich cuando alguien abre la ficha). La query de la cola es
+  // gratis (Postgres, sin proxy); Chrome NO se lanza si esta vacia, asi que un
+  // dia sin visitas al dashboard cuesta $0 de proxy.
+  const { data: props, error } = await supabase
+    .from('properties')
+    .select('id, permalink, description, covered_area, bedrooms, bathrooms, price, segment')
+    .eq('source', 'zonaprop')
+    .eq('is_active', true)
+    .not('permalink', 'is', null)
+    .not('enrich_requested_at', 'is', null)
+    .or('description.is.null,covered_area.is.null,bedrooms.is.null,bathrooms.is.null')
+    .order('enrich_requested_at', { ascending: true })
+    .limit(BATCH_SIZE);
+
+  if (error) { console.error('❌', error.message); process.exit(1); }
+  if (!props.length) { console.log('📭 Nada en la cola de enrich_requested_at. Nada que hacer, no se lanza Chrome.'); return; }
+  console.log(`📦 ${props.length} ZP properties requested for enrichment\n`);
+
   console.log('Launching Chrome...');
   const browser = await puppeteer.launch({
     headless: false, // Needs xvfb on Linux for Cloudflare
@@ -131,25 +153,6 @@ async function main() {
     }
   }
   console.log('✅ Cloudflare passed\n');
-
-  // Get ZP properties needing enrichment
-  const { data: props, error } = await supabase
-    .from('properties')
-    .select('id, permalink, description, covered_area, bedrooms, bathrooms, price, segment')
-    .eq('source', 'zonaprop')
-    .eq('is_active', true)
-    .not('permalink', 'is', null)
-    .or('description.is.null,covered_area.is.null,bedrooms.is.null,bathrooms.is.null')
-    // 27/08/2026: sin ORDER BY, PostgREST devolvia siempre el mismo primer tramo,
-    // asi que las 3 tandas de cada noche masticaban las MISMAS 100 filas y
-    // "Remaining: 553" no se movia nunca. Ordenar por enriched_at (nulls primero)
-    // hace que la cola avance: lo nunca visitado va primero, y lo ya visitado
-    // vuelve recien cuando es lo mas viejo.
-    .order('enriched_at', { ascending: true, nullsFirst: true })
-    .limit(BATCH_SIZE);
-
-  if (error) { console.error('❌', error.message); await browser.close(); process.exit(1); }
-  console.log(`📦 ${props.length} ZP properties to enrich\n`);
 
   let enriched = 0, skipped = 0, errors = 0;
 
@@ -243,15 +246,18 @@ async function main() {
 
       update.enrichment_level = 1;
       update.enriched_at = new Date().toISOString();
+      // Se pide una vez, se visita una vez. Si la limpiamos solo cuando salio
+      // algo util, una ficha que ZP no trae completa (ej. sin bathrooms)
+      // quedaria pidiendose de nuevo cada 5 min para siempre.
+      update.enrich_requested_at = null;
 
-      if (Object.keys(update).length > 2) {
-        const { error: upErr } = await supabase.from('properties').update(update).eq('id', prop.id);
-        if (upErr) { errors++; CB.onError(); }
-        else { enriched++; CB.onSuccess(); }
-      } else {
-        skipped++;
-        CB.onSuccess();
-      }
+      const meaningfulFields = Object.keys(update)
+        .filter(k => !['enrichment_level', 'enriched_at', 'enrich_requested_at'].includes(k)).length;
+
+      const { error: upErr } = await supabase.from('properties').update(update).eq('id', prop.id);
+      if (upErr) { errors++; CB.onError(); }
+      else if (meaningfulFields > 0) { enriched++; CB.onSuccess(); }
+      else { skipped++; CB.onSuccess(); }
     } catch (e) {
       errors++;
       CB.onError();

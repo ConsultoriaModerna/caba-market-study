@@ -141,53 +141,26 @@ for TYPE in casa ph departamento; do
   sleep 20
 done
 
-# ── Step 4: ZP Enrichment (loop until backlog < 50, batch 100)
-# Smaller batches recycle Chrome more often, capping memory pressure on the
-# 1GB-RAM VPS. Total cap stays at 2000/run via MAX_BATCHES.
-echo "--- [4/7] ZP Enrichment (Puppeteer, batch loop) ---"
+# ── Step 4: ZP Enrichment — solo la cola pedida desde el dashboard
+# 13/09/2026: esto era un loop de batches que enriquecia TODO lo activo con
+# algun campo faltante, todas las noches, sin importar si Nico lo habia
+# abierto o no (~$30-40/mes de proxy al ritmo de altas actual, medido por
+# Nico: 1GB a $7.50 duraba ~1 semana). Ahora enrich-zp-puppeteer.mjs solo
+# procesa `enrich_requested_at` (lo pide la Edge Function request-enrich
+# cuando alguien abre una ficha en el dashboard), y un cron aparte en el VPS
+# (cada 5 min) le da servicio real durante el dia. Esta pasada del nightly es
+# solo la red de seguridad por si ese cron se cayo: si la cola esta vacia
+# (caso normal) no lanza Chrome y no cuesta nada.
+echo "--- [4/7] ZP Enrichment (solo cola de enrich_requested_at) ---"
 ZP_ENRICHED=0
-BATCH=1
-MAX_BATCHES="${ENRICH_MAX_BATCHES:-3}"
-[ "$PROXY_OK" = "1" ] || { echo "  Salteado (proxy caido): sin tunel, cada ficha seria una pagina de error 407 y se escribirian nulls sobre la base."; MAX_BATCHES=0; }
-while [ $BATCH -le $MAX_BATCHES ]; do
-  echo "  Batch $BATCH/$MAX_BATCHES..."
-  ENRICH_OUT=$(node scripts/vps/enrich-zp-puppeteer.mjs 3000 "$ENRICH_BATCH" 2>&1)
-  ENRICH_EXIT=$?
+if [ "$PROXY_OK" = "1" ]; then
+  ENRICH_OUT=$(node scripts/vps/enrich-zp-puppeteer.mjs 3000 "$ENRICH_BATCH" 2>&1) || ERRORS="${ERRORS}ZP enrich failed. "
   echo "$ENRICH_OUT"
-
-  # If circuit breaker aborted, stop enrichment loop immediately
-  if echo "$ENRICH_OUT" | grep -q "\[CB\] ABORT"; then
-    ERRORS="${ERRORS}ZP enrich aborted by circuit breaker (batch $BATCH). "
-    break
-  fi
-  if [ $ENRICH_EXIT -ne 0 ]; then
-    ERRORS="${ERRORS}ZP enrich batch $BATCH failed. "
-    break
-  fi
-
-  # 27/08/2026: esto buscaba 'Updated N', que el script no imprime nunca, asi que
-  # ZP_ENRICHED daba 0 y el parte de Slack informaba "ZP enriched: 0" las noches
-  # en que el enrich creia haber enriquecido 210 fichas. Lo que si imprime es
-  # "🏁 ZP enrichment: N enriched".
-  BATCH_COUNT=$(echo "$ENRICH_OUT" | grep -oP 'ZP enrichment: \K\d+' | awk '{s+=$1} END{print s+0}')
-  ZP_ENRICHED=$((ZP_ENRICHED + BATCH_COUNT))
-
-  REMAINING=$(node -e "
-    import { createClient } from '@supabase/supabase-js';
-    const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-    const { count } = await sb.from('properties')
-      .select('id', { count: 'exact', head: true })
-      .eq('source', 'zonaprop').eq('is_active', true)
-      .not('permalink', 'is', null)
-      .or('description.is.null,covered_area.is.null,bedrooms.is.null,bathrooms.is.null');
-    console.log(count || 0);
-  " --input-type=module 2>/dev/null)
-
-  echo "  Remaining: $REMAINING"
-  [ "$REMAINING" -lt 50 ] && break
-  BATCH=$((BATCH + 1))
-  sleep 10
-done
+  ZP_ENRICHED=$(echo "$ENRICH_OUT" | grep -oP 'ZP enrichment: \K\d+' | head -1)
+  ZP_ENRICHED="${ZP_ENRICHED:-0}"
+else
+  echo "  Salteado (proxy caido): sin tunel, cada ficha seria una pagina de error 407 y se escribirian nulls sobre la base."
+fi
 
 # ── Step 5: ML Enrichment (descriptions, if enabled)
 if [ "$ML_ENABLED" = "true" ]; then

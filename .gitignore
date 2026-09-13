@@ -7,3 +7,6 @@ reports/
 
 # Playwright MCP verification artifacts
 .playwright-mcp/
+
+# Supabase CLI local state (project link, cached versions)
+supabase/.temp/
