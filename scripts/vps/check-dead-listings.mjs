@@ -6,15 +6,18 @@
 // Default: 200 oldest active listings across all sources
 
 import { createClient } from '@supabase/supabase-js';
-import { applyFetchProxy, incrementBudget } from '../lib/proxy.mjs';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { looksLikeProxyError, getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
 
-// 27/08/2026: este script salia DIRECTO por la IP del VPS, que ZonaProp bloquea.
-// Por eso cada ficha devolvia 403 y (antes del fix de abajo) se contaba como
-// "viva". Aun con el 403 ya tratado como "unknown", saliendo directo el chequeo
-// no puede verificar nada nunca: el padron no se depura y stale no caduca. Sale
-// por el mismo proxy residencial que el resto del pipeline. Son requests HEAD-ish
-// de una pagina, el consumo es bajo comparado con el scan.
-applyFetchProxy();
+// 13/09/2026: este script salia con `fetch` proxeado plano. Cloudflare deja
+// pasar scan/enrich (puppeteer + stealth + Chrome real) pero bloquea un fetch
+// crudo, incluso via el mismo proxy residencial: cada ficha de ZP volvia 403
+// y caia en "unknown" (fix del 27/08), asi que el chequeo nunca podia
+// confirmar una baja real, solo acumulaba "sin respuesta" noche tras noche.
+// Reescrito para navegar con el mismo Chrome+stealth que scan-zp-headless.mjs
+// y enrich-zp-puppeteer.mjs, que si pasan Cloudflare.
+puppeteer.use(StealthPlugin());
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -23,79 +26,109 @@ const supabase = createClient(
 
 const BATCH_SIZE = parseInt(process.argv[2] || '200');
 const sourceArg = process.argv.find(a => a.startsWith('--source='))?.split('=')[1] || 'all';
+const PROFILE_DIR = '/opt/caba-market-study/.chrome-profile';
+const BASE_DELAY = 2000;
 
-const USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
-const DELAY_MS = 2000;
+// Circuit breaker — misma logica que enrich-zp-puppeteer.mjs. Un bloqueo de CF
+// o del proxy a mitad de corrida no es distinto acá que en el enrich: hay que
+// frenar antes de gastar el batch entero contra una pared.
+const CB = {
+  consecutiveCf: 0,
+  totalCf: 0,
+  consecutiveProxyDown: 0,
+  consecutiveErrors: 0,
+  currentDelay: BASE_DELAY,
+  MAX_CONSECUTIVE_CF: 3,
+  MAX_TOTAL_CF: 5,
+  MAX_CONSECUTIVE_PROXY_DOWN: 3,
+  MAX_CONSECUTIVE_ERRORS: 10,
 
-// Detection patterns per portal
+  onSuccess() { this.consecutiveCf = 0; this.consecutiveProxyDown = 0; this.consecutiveErrors = 0; this.currentDelay = BASE_DELAY; },
+  onCf() {
+    this.consecutiveCf++; this.totalCf++;
+    this.currentDelay = Math.min(this.currentDelay * 2, 20000);
+    console.log(`  [CB] CF hit #${this.totalCf} (consecutive: ${this.consecutiveCf})`);
+  },
+  onProxyDown() {
+    this.consecutiveProxyDown++;
+    console.log(`  [CB] Proxy down #${this.consecutiveProxyDown}`);
+  },
+  onError() { this.consecutiveErrors++; this.currentDelay = Math.min(this.currentDelay * 1.5, 15000); },
+  shouldPause() { return this.consecutiveCf >= this.MAX_CONSECUTIVE_CF; },
+  shouldAbort() {
+    return this.totalCf >= this.MAX_TOTAL_CF
+      || this.consecutiveProxyDown >= this.MAX_CONSECUTIVE_PROXY_DOWN
+      || this.consecutiveErrors >= this.MAX_CONSECUTIVE_ERRORS;
+  }
+};
+
+// Detection patterns per portal. Trabajan sobre innerText ya renderizado por
+// Chrome (no HTML crudo), asi que ven el mismo texto que veria un usuario.
 const DEAD_PATTERNS = {
   zonaprop: {
-    // ZP redirects to search or shows "no encontramos" for dead listings
-    isDead: (status, url, body) => {
+    isDead: (status, body) => {
       if (status === 404) return 'http_404';
-      if (status === 301 || status === 302) return 'redirect';
-      // ZP returns 200 but with "esta publicacion ya no esta disponible" or redirects to home
       if (body.includes('ya no est') || body.includes('no encontramos')) return 'removed_text';
-      if (body.includes('Publicaci\u00f3n pausada') || body.includes('publicacion pausada')) return 'paused';
+      if (body.includes('Publicación pausada') || body.includes('publicacion pausada')) return 'paused';
       return null;
     }
   },
   argenprop: {
-    isDead: (status, url, body) => {
+    isDead: (status, body) => {
       if (status === 404) return 'http_404';
-      if (status === 301 || status === 302) return 'redirect';
       if (body.includes('no existe') || body.includes('fue eliminad')) return 'removed_text';
-      if (body.includes('Error 404') || body.includes('pagina no encontrada')) return 'page_404';
+      if (body.includes('Error 404') || body.includes('pagina no encontrada') || body.includes('página no encontrada')) return 'page_404';
       return null;
     }
   },
   mercadolibre: {
-    isDead: (status, url, body) => {
+    isDead: (status, body) => {
       if (status === 404) return 'http_404';
-      // ML shows "publicacion finalizada" or redirects
       if (body.includes('finalizada') || body.includes('no existe') || body.includes('ya no est')) return 'removed_text';
-      if (status === 302 || status === 301) return 'redirect';
       return null;
     }
   }
 };
 
-async function checkUrl(permalink) {
+async function checkListing(page, permalink, propId, sourceKey) {
+  incrementBudget('dead-check');
+  let resp;
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    incrementBudget('dead-check');
-    const resp = await fetch(permalink, {
-      headers: { 'User-Agent': USER_AGENT },
-      redirect: 'manual',  // Don't follow redirects, we want to detect them
-      signal: controller.signal
-    });
-    clearTimeout(timeout);
-
-    const status = resp.status;
-    // For redirects, check Location header
-    if (status === 301 || status === 302) {
-      const location = resp.headers.get('location') || '';
-      // If redirect goes to home or search page, it's dead
-      if (location === '/' || location.includes('/buscar') || location.includes('?') || !location.includes('/propiedades/')) {
-        return { status, body: '', redirectTo: location };
-      }
-      // Redirect to another property page might be a slug change, not dead
-      return { status, body: '', redirectTo: location, isSlugChange: true };
-    }
-
-    const body = await resp.text().catch(() => '');
-    return { status, body: body.substring(0, 5000) };
+    resp = await page.goto(permalink, { waitUntil: 'domcontentloaded', timeout: 30000 });
   } catch (e) {
-    if (e.name === 'AbortError') return { status: 0, body: '', error: 'timeout' };
-    return { status: 0, body: '', error: e.message };
+    return { outcome: 'error', reason: e.message };
   }
+
+  // CF JS challenge can take 10-25s to auto-pass, same wait as scan/enrich.
+  await page.waitForFunction(() => !document.title.includes('moment'), { timeout: 20000 }).catch(() => {});
+
+  const finalUrl = page.url();
+  const title = await page.title().catch(() => '');
+  const body = await page.evaluate(() => document.body?.innerText?.slice(0, 3000) || '').catch(() => '');
+  const status = resp && typeof resp.status === 'function' ? resp.status() : 0;
+
+  if (looksLikeProxyError(finalUrl, title, body)) return { outcome: 'proxy_down' };
+  if (title.includes('moment')) return { outcome: 'cf_blocked' };
+
+  // El id numerico (ej. "59309052" de "zp_59309052") va incrustado en el
+  // permalink original. Si la pagina final ya no lo trae, nos mandaron a otro
+  // lado (home, busqueda, u otra ficha): es una baja, no un cambio de slug.
+  const numericId = propId.replace(/^[a-z]+_/, '');
+  const samePage = finalUrl.includes(numericId);
+
+  const detector = DEAD_PATTERNS[sourceKey];
+  if (!detector) return { outcome: 'skip' };
+
+  if (!samePage) return { outcome: 'dead', reason: 'redirect' };
+
+  const reason = detector.isDead(status, body);
+  if (reason) return { outcome: 'dead', reason };
+  return { outcome: 'alive' };
 }
 
 async function main() {
   console.log(`Dead listing checker -- batch ${BATCH_SIZE}, source: ${sourceArg}`);
 
-  // Fetch oldest active listings with permalinks
   let query = supabase.from('properties')
     .select('id, permalink, source, neighborhood, title, last_seen_at')
     .eq('is_active', true)
@@ -114,79 +147,109 @@ async function main() {
 
   console.log(`Checking ${props.length} listings...`);
 
+  console.log('Launching Chrome...');
+  const browser = await puppeteer.launch({
+    headless: false, // Needs xvfb on Linux for Cloudflare
+    executablePath: '/usr/bin/google-chrome',
+    userDataDir: PROFILE_DIR,
+    protocolTimeout: 60000,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--window-size=1280,800',
+      ...getPuppeteerProxyArgs(),
+    ]
+  });
+
+  const page = await browser.newPage();
+  await authenticatePuppeteerProxy(page);
+  await page.setExtraHTTPHeaders({ 'Accept-Language': 'es-AR,es;q=0.9,en;q=0.8' });
+  await enableAssetBlocking(page);
+  await page.setViewport({ width: 1280, height: 800 });
+
+  // Preflight en zonaprop.com.ar antes de gastar el batch, mismo criterio que
+  // scan-zp-headless.mjs / enrich-zp-puppeteer.mjs: distinguir "no llegue" de
+  // "la fuente no tiene resultados" ANTES de tocar la base. Fijo en ZP porque
+  // hoy es la unica fuente con activas (AP y ML en 0); si eso cambia, esto
+  // deberia preflightear por source en vez de asumir ZP para todos.
+  console.log('Testing Cloudflare...');
+  await page.goto('https://www.zonaprop.com.ar', { waitUntil: 'networkidle2', timeout: 30000 });
+  const preTitle = await page.title();
+  const preUrl = page.url();
+  const preBody = await page.evaluate(() => document.body?.innerText?.slice(0, 2000) || '').catch(() => '');
+  if (looksLikeProxyError(preUrl, preTitle, preBody)) {
+    console.error(`❌ No hay salida a internet: el proxy no responde (url=${preUrl}, title="${preTitle}").`);
+    console.error('   Abortando para no marcar nada como muerto ni como vivo sin haber podido verificar.');
+    await browser.close();
+    process.exit(1);
+  }
+  if (preTitle.includes('moment')) {
+    await page.waitForFunction(() => !document.title.includes('moment'), { timeout: 30000 }).catch(() => {});
+    if ((await page.title()).includes('moment')) {
+      console.error('❌ Cloudflare blocked on preflight.');
+      await browser.close();
+      process.exit(1);
+    }
+  }
+  console.log('✅ Cloudflare passed\n');
+
   let dead = 0, alive = 0, errors = 0, skipped = 0, unknown = 0;
   const deadList = [];
 
   for (let i = 0; i < props.length; i++) {
     const p = props[i];
-    const detector = DEAD_PATTERNS[p.source];
-    if (!detector) { skipped++; continue; }
+    if (!DEAD_PATTERNS[p.source]) { skipped++; continue; }
 
-    const result = await checkUrl(p.permalink);
+    if (CB.shouldAbort()) {
+      console.log(`\n[CB] ABORT -- too many blocks (${CB.totalCf} CF, ${CB.consecutiveProxyDown} proxy-down, ${CB.consecutiveErrors} errors). Stopping to protect IP.`);
+      break;
+    }
+    if (CB.shouldPause()) {
+      console.log(`  [CB] ${CB.consecutiveCf} consecutive CF hits. Pausing 120s...`);
+      await new Promise(r => setTimeout(r, 120000));
+      CB.consecutiveCf = 0;
+    }
 
-    if (result.error) {
+    const result = await checkListing(page, p.permalink, p.id, p.source);
+
+    if (result.outcome === 'error') {
       errors++;
-      if (i % 50 === 0) console.log(`  ${i}/${props.length} -- alive:${alive} dead:${dead} err:${errors}`);
-      await sleep(DELAY_MS);
-      continue;
-    }
-
-    if (result.isSlugChange) {
-      alive++;
-      await sleep(DELAY_MS);
-      continue;
-    }
-
-    // 27/08/2026 — el bug que fabricaba el padron.
-    //
-    // isDead() solo devuelve motivo con 404/301/302 o textos de baja. Un 403
-    // (Cloudflare, CloudFront, rate-limit) caia en `return null` y el listing
-    // se contaba VIVO y encima se le refrescaba last_seen_at. Como este script
-    // corre sin proxy y la IP del VPS esta bloqueada, desde el 13/07 las 200
-    // fichas de cada noche devolvian 403 y las 200 se marcaban vivas. Efecto
-    // combinado: la ventana stale de 7 dias no vencio ni una vez en 45 noches
-    // (el propio checker le rearmaba el reloj a todo el padron cada 6,5 dias) y
-    // las "1.290 activas" pasaron a ser un censo congelado del 12-jul que nadie
-    // habia verificado.
-    //
-    // Un chequeo que no llega a la fuente NO es un chequeo con resultado
-    // negativo. Ante 403 / 429 / 5xx / red caida no se toca nada: ni se da de
-    // baja ni se refresca el reloj. Que expire por stale es la respuesta
-    // correcta cuando llevamos semanas sin poder verificar.
-    if (result.status === 403 || result.status === 429 || result.status >= 500 || result.status === 0) {
+      CB.onError();
+    } else if (result.outcome === 'proxy_down') {
+      // 27/08/2026 (heredado): un chequeo que no llega a la fuente NO es un
+      // chequeo con resultado negativo. No se toca is_active ni last_seen_at.
       unknown++;
-      if ((i + 1) % 50 === 0) {
-        console.log(`  ${i + 1}/${props.length} -- alive:${alive} dead:${dead} unknown:${unknown} err:${errors}`);
-      }
-      await sleep(DELAY_MS);
-      continue;
-    }
-
-    const reason = detector.isDead(result.status, p.permalink, result.body);
-    if (reason) {
+      CB.onProxyDown();
+    } else if (result.outcome === 'cf_blocked') {
+      unknown++;
+      CB.onCf();
+    } else if (result.outcome === 'dead') {
       dead++;
-      deadList.push({ id: p.id, source: p.source, neighborhood: p.neighborhood, reason });
-
-      // Mark inactive + persist reason for UI / debugging
+      deadList.push({ id: p.id, source: p.source, neighborhood: p.neighborhood, reason: result.reason });
       const { error: upErr } = await supabase.from('properties')
-        .update({ is_active: false, deactivation_reason: reason, updated_at: new Date().toISOString() })
+        .update({ is_active: false, deactivation_reason: result.reason, updated_at: new Date().toISOString() })
         .eq('id', p.id);
-
       if (upErr) console.log(`  Error deactivating ${p.id}: ${upErr.message}`);
-    } else {
+      CB.onSuccess();
+    } else if (result.outcome === 'alive') {
       alive++;
-      // Update last_seen_at to refresh the stale timer
       await supabase.from('properties')
         .update({ last_seen_at: new Date().toISOString() })
         .eq('id', p.id);
+      CB.onSuccess();
     }
 
-    if ((i + 1) % 50 === 0) {
+    if ((i + 1) % 25 === 0 || i === props.length - 1) {
       console.log(`  ${i + 1}/${props.length} -- alive:${alive} dead:${dead} unknown:${unknown} err:${errors}`);
     }
 
-    await sleep(DELAY_MS);
+    await new Promise(r => setTimeout(r, CB.currentDelay));
   }
+
+  await browser.close();
+  logBudgetSummary();
 
   console.log(`\nDone: ${props.length} checked, ${dead} dead, ${alive} alive, ${unknown} unknown, ${errors} errors, ${skipped} skipped`);
   if (unknown > props.length / 2) {
@@ -198,6 +261,4 @@ async function main() {
   }
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-main().catch(e => { console.error('Fatal:', e.message); process.exit(1); });
+main().catch(e => { console.error('💀 Fatal:', e.message); process.exit(1); });
