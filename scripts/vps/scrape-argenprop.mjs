@@ -9,6 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, applyFetchProxy, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
+import { determineSegment } from '../lib/segment.mjs';
 
 puppeteer.use(StealthPlugin());
 
@@ -115,13 +116,6 @@ const EXTRACT_JS = `(() => {
   const nextBtn = document.querySelector('a.pagination__page-link--next, a[rel="next"]');
   return { count: results.length, results, hasNext: !!nextBtn, title: document.title };
 })()`;
-
-function determineSegment(title) {
-  const t = (title || '').toLowerCase();
-  if (t.includes('refaccionar') || t.includes('a reciclar') || t.includes('para reciclar')) return 'refac';
-  if (t.includes('reciclada') || t.includes('reciclado') || t.includes('refaccionada') || t.includes('a estrenar') || t.includes('a nuevo')) return 'recic';
-  return 'general';
-}
 
 function extractKeywords(title) {
   const kw = [];

@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { looksLikeProxyError, getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
+import { determineSegment } from '../lib/segment.mjs';
 
 puppeteer.use(StealthPlugin());
 
@@ -134,7 +135,7 @@ async function main() {
   // Get ZP properties needing enrichment
   const { data: props, error } = await supabase
     .from('properties')
-    .select('id, permalink, description, covered_area, bedrooms, bathrooms, price')
+    .select('id, permalink, description, covered_area, bedrooms, bathrooms, price, segment')
     .eq('source', 'zonaprop')
     .eq('is_active', true)
     .not('permalink', 'is', null)
@@ -218,6 +219,11 @@ async function main() {
       // DOM section first, innerText regex as fallback.
       const desc = (pageData.description || fromBody.description || '').trim();
       if (!prop.description && desc) update.description = desc.substring(0, 10000);
+      // 13/09/2026: los titulos de ZP son el precio ("USD 240.000"), no traen
+      // texto descriptivo, asi que determineSegment(title) nunca puede detectar
+      // 'refac'/'recic' para esta fuente. La descripcion si trae ese texto una
+      // vez enriquecida, asi que se reclasifica con ella apenas esta disponible.
+      if (desc && (!prop.segment || prop.segment === 'general')) update.segment = determineSegment(desc);
       if (!prop.covered_area && fromBody.covered_area) update.covered_area = fromBody.covered_area;
       if (fromBody.total_area) update.total_area = fromBody.total_area;
       // 27/08/2026: estas dos lineas terminaban en `|| null`, asi que cuando la

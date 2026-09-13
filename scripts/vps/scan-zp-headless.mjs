@@ -10,6 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { looksLikeProxyError, getPuppeteerProxyArgs, authenticatePuppeteerProxy, enableAssetBlocking, incrementBudget, logBudgetSummary } from '../lib/proxy.mjs';
+import { determineSegment } from '../lib/segment.mjs';
 
 puppeteer.use(StealthPlugin());
 
@@ -298,6 +299,10 @@ async function scanLocation(page, location) {
       city: location.city,
       is_active: true,
       enrichment_level: 0,
+      // 13/09/2026: sin esto, segment quedaba NULL en el 100% de las activas
+      // (ZP es la unica fuente viva) y detect-price-drops nunca podia disparar
+      // good_deal/high_gap, que exigen segment='refac'.
+      segment: determineSegment(item.title),
       first_seen_at: new Date().toISOString(),
       last_seen_at: new Date().toISOString(),
       scraped_at: new Date().toISOString(),
@@ -324,6 +329,8 @@ async function scanLocation(page, location) {
     if (features.bedrooms) update.bedrooms = features.bedrooms;
     // Recalc price_per_sqm
     if (price && features.total_area) update.price_per_sqm = Math.round(price / features.total_area);
+    // Backfill segment on touch, self-heals rows that were inserted before this fix
+    if (item.title) update.segment = determineSegment(item.title);
 
     await supabase.from('properties')
       .update(update)
