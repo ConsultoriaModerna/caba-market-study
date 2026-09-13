@@ -100,9 +100,16 @@ for TYPE in casa ph departamento; do
   echo "  >> ZP scan: $TYPE"
   ZP_OUT=$(node scripts/vps/scan-zp-headless.mjs "$ZP_PAGES" --zone=all --type=$TYPE 2>&1) || ERRORS="${ERRORS}ZP scan ($TYPE) failed. "
   echo "$ZP_OUT"
-  # awk-sum collapses N matches (one per zone) into a single integer; head -1 alone would only count the first zone.
-  ZP_T_NEW=$(echo "$ZP_OUT" | grep -oP '\d+ new,' | grep -oP '\d+' | awk '{s+=$1} END{print s+0}')
-  ZP_T_REF=$(echo "$ZP_OUT" | grep -oP '\d+ refreshed' | grep -oP '\d+' | awk '{s+=$1} END{print s+0}')
+  # 13/09/2026: esto pescaba '\d+ new,' contra TODO el output, y el script imprime
+  # ese patron dos veces por corrida: una vez por zona ("Result: N scanned, M new,
+  # ...") y otra vez el total ("Grid scan complete: ... new, ..."), que ya es la
+  # suma de las zonas. El viejo grep+awk sumaba las dos, asi que el parte de Slack
+  # doblaba (o mas, segun cuantas zonas) el alta real. Se lee solo la linea final,
+  # que es la unica que trae el total real de esta corrida.
+  ZP_T_NEW=$(echo "$ZP_OUT" | grep -oP 'Grid scan complete: \d+ scanned, \K\d+' | tail -1)
+  ZP_T_REF=$(echo "$ZP_OUT" | grep -oP 'Grid scan complete: \d+ scanned, \d+ new, \K\d+' | tail -1)
+  ZP_T_NEW="${ZP_T_NEW:-0}"
+  ZP_T_REF="${ZP_T_REF:-0}"
   ZP_NEW=$((ZP_NEW + ZP_T_NEW))
   ZP_REFRESHED=$((ZP_REFRESHED + ZP_T_REF))
   # Check circuit breaker between types
@@ -121,7 +128,11 @@ for TYPE in casa ph departamento; do
   echo "  >> AP scan: $TYPE"
   AP_OUT=$(node scripts/vps/scrape-argenprop.mjs "$AP_PAGES" --zone=all --type=$TYPE 2>&1) || ERRORS="${ERRORS}AP scan ($TYPE) failed. "
   echo "$AP_OUT"
-  AP_T_NEW=$(echo "$AP_OUT" | grep -oP '\d+ new' | grep -oP '\d+' | awk '{s+=$1} END{print s+0}')
+  # 13/09/2026: el script nunca imprime la palabra "new" (imprime "N upserted" en
+  # la linea final "Done: X scraped, Y upserted"), asi que esto grepeaba en falso
+  # y AP_NEW quedaba en 0 siempre, sin importar cuanto scrapeara.
+  AP_T_NEW=$(echo "$AP_OUT" | grep -oP 'Done: \d+ scraped, \K\d+(?= upserted)' | tail -1)
+  AP_T_NEW="${AP_T_NEW:-0}"
   AP_NEW=$((AP_NEW + AP_T_NEW))
   if echo "$AP_OUT" | grep -q "\[CB\] ABORT"; then
     ERRORS="${ERRORS}AP scan ($TYPE) aborted by CB. "
@@ -300,6 +311,15 @@ DROPS_OUT=$(curl -s -X POST "${SUPABASE_URL}/functions/v1/detect-price-drops" \
   -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
   -H 'Content-Type: application/json' -d '{}' 2>&1) || ERRORS="${ERRORS}Price drops failed. "
 echo "Price drops: $DROPS_OUT"
+# 13/09/2026: el parte solo mostraba TOTAL_DROPS, el count acumulado de la vista
+# `price_drops`, que cambia despacio y no dice si la corrida de esta noche
+# detecto algo. Se suma el resultado real de esta invocacion (events_created,
+# el campo que la funcion devuelve) para que "0 eventos esta noche" se vea
+# como tal en vez de tapado por un total historico que sigue subiendo solo.
+DROPS_TONIGHT=$(echo "$DROPS_OUT" | grep -oP '"price_drops":\K\d+')
+EVENTS_TONIGHT=$(echo "$DROPS_OUT" | grep -oP '"events_created":\K\d+')
+DROPS_TONIGHT="${DROPS_TONIGHT:-0}"
+EVENTS_TONIGHT="${EVENTS_TONIGHT:-0}"
 
 # ── Refresh turnover_metrics_weekly materialized view (cheap, ~100ms on 13K rows)
 node -e "
@@ -347,9 +367,10 @@ SLACK_MSG="${SLACK_MSG}  Geocoded: ${GEO_COUNT}\n"
 SLACK_MSG="${SLACK_MSG}  Livability: ${LIV_COUNT}\n"
 SLACK_MSG="${SLACK_MSG}  Stale removed: ${STALE_COUNT}\n"
 SLACK_MSG="${SLACK_MSG}  Dead check: ${DEAD_CHECKED} chequeadas, ${DEAD_COUNT} de baja, ${DEAD_UNKNOWN} sin respuesta\n"
-SLACK_MSG="${SLACK_MSG}  Dedup merged: ${DEDUP_COUNT}\n\n"
+SLACK_MSG="${SLACK_MSG}  Dedup merged: ${DEDUP_COUNT}\n"
+SLACK_MSG="${SLACK_MSG}  Price drops esta noche: ${DROPS_TONIGHT} (${EVENTS_TONIGHT} eventos nuevos)\n\n"
 SLACK_MSG="${SLACK_MSG}*Totals*\n"
-SLACK_MSG="${SLACK_MSG}  Active: ${TOTAL_ACTIVE}  |  Price drops: ${TOTAL_DROPS}  |  Events: ${TOTAL_EVENTS}\n"
+SLACK_MSG="${SLACK_MSG}  Active: ${TOTAL_ACTIVE}  |  Price drops (vista acumulada): ${TOTAL_DROPS}  |  Events: ${TOTAL_EVENTS}\n"
 SLACK_MSG="${SLACK_MSG}  Duration: ${DURATION}s"
 
 if [ -n "$ERRORS" ]; then
